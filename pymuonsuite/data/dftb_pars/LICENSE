@@ -1,0 +1,26 @@
+All data is licensed under the Creative Commons Attribution-ShareAlike 4.0
+International License. The full text of the license can be found at:
+
+https://creativecommons.org/licenses/by-sa/4.0/legalcode
+
+For specific data sets remember to cite the following
+papers, by element:
+
+3-ob-1    
+    [JCTC2013]  J. Chem. Theory Comput., 2013, 9, 338-354.      (O, N, C, H)
+    [JCTC2014]  J. Chem. Theory Comput., 2014, 10, 1518-1537.   (P,S-*)
+    [JCTC2015-1]    J. Phys. Chem. B, 2015, 119, 1062-1082.     (Mg,Zn-*)
+    [JCTC2015-2]    J. Chem. Theory Comput., 2015, 11, 332-342. (Na,F,K,Ca,Cl,Br,I-*)
+
+pbc-0-3
+    [SiC]   E. Rauls, R. Gutierrez, J. Elsner, and Th. Frauenheim, Sol. State Comm. 111, 459 (1999).    (Si-C)
+    [SiO]   C. Koehler, Z. Hajnal, P. Deak, Th. Frauenheim, S. Suhai, Phys. Rev. B 64, 085333 (2001).   (Si-O)
+    [Silicon]   A. Sieck, Th. Frauenheim, and K. A. Jackson, phys. stat. sol. (b) 240, 537 (2003).      (Si)
+    [Fluorine]  C. Koehler and Th. Frauenheim, Surf. Sci. 600, 453 (2006).                              (F)
+    [Iron]  C. Koehler, G. Seifert and Th. Frauenheim, Chem. Phys. 309, 23 (2005).                      (Fe)
+    [SiSi] A. Sieck, PhD. Thesis, University of Paderborn, 2000.                                        (Si-Si)
+
+The full sets and all other data can be found at the following URLs:
+
+3-ob-1      https://www.dftb.org/parameters/download/3ob/3ob-3-1-cc/
+pbc-0-3     https://www.dftb.org/parameters/download/pbc/pbc-0-3-cc/

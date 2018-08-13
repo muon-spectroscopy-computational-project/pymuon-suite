@@ -1,0 +1,13 @@
+{
+  "Hamiltonian_OrbitalResolvedSCC": "Yes", 
+  "Hamiltonian_SpinConstants_Si": "{   -0.0196    -0.0150\n   -0.0150    -0.0144\n\n}", 
+  "Hamiltonian_SCC": "Yes", 
+  "Hamiltonian_SpinConstants": "{", 
+  "Hamiltonian_SpinConstants_Fe": "{   -0.0160    -0.0124    -0.0035\n   -0.0124    -0.0280    -0.0010\n   -0.0035    -0.0010    -0.0155\n\n}", 
+  "Hamiltonian_SpinConstants_F": "{   -0.0370    -0.0312\n   -0.0312    -0.0299\n\n}", 
+  "Hamiltonian_SpinConstants_C": "{   -0.0306    -0.0251\n   -0.0251    -0.0227\n\n}", 
+  "Hamiltonian_SpinConstants_N": "{   -0.0332    -0.0275\n   -0.0275    -0.0255\n\n}", 
+  "Hamiltonian_SpinConstants_O": "{   -0.0352    -0.0296\n   -0.0296    -0.0278\n\n}", 
+  "Hamiltonian_SpinConstants_H": "{   -0.0717\n\n}",
+  "Hamiltonian_SpinPolarisation_": "Colinear"
+}

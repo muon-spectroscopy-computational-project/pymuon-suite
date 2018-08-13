@@ -1,0 +1,9 @@
+{
+  "Hamiltonian_MaxAngularMomentum_F": "p", 
+  "Hamiltonian_MaxAngularMomentum_C": "p", 
+  "Hamiltonian_MaxAngularMomentum_N": "p", 
+  "Hamiltonian_MaxAngularMomentum_O": "p", 
+  "Hamiltonian_MaxAngularMomentum_H": "s", 
+  "Hamiltonian_MaxAngularMomentum_Si": "p", 
+  "Hamiltonian_MaxAngularMomentum_Fe": "d"
+}
