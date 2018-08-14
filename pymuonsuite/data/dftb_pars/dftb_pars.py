@@ -11,7 +11,7 @@ import shutil
 from copy import deepcopy
 
 # Upon loading, print a message for the user
-references_msg = """
+_references_msg = """
 This calculation makes use of the DFTB parametrisations found at 
 
     https://www.dftb.org/
@@ -34,7 +34,15 @@ pbc-0-3
     [Iron]  C. Koehler, G. Seifert and Th. Frauenheim, Chem. Phys. 309, 23 (2005).                      (Fe)
     [SiSi] A. Sieck, PhD. Thesis, University of Paderborn, 2000.                                        (Si-Si)
 """
-print(references_msg)
+
+
+def print_references():
+    print(_references_msg)
+
+def get_license():
+    return open(os.path.join(os.path.split(__file__)[0], 'LICENSE')).read()
+
+print_references() # Print whenever it gets loaded
 
 def parse_params(dir):
     name = dir.split(os.sep)[-2]
@@ -96,8 +104,8 @@ class DFTBArgs(object):
 
     def set_optional(self, name=None, value=False):
         if name is None:
-            print "Optional files available:"
-            print '\n'.join(self._optdict.keys())
+            print("Optional files available:")
+            print('\n'.join(self._optdict.keys()))
         else:
             self._optdict[name] = value
 

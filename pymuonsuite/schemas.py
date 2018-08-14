@@ -29,9 +29,24 @@ def validate_supercell(value):
 def validate_all_of(values, options):
     return all([x.strip() in options for x in values.split(',')])
 
+def validate_str(s):
+    # Validates a string in a Python 2 and 3 compatible way
+    try:
+        return isinstance(s, basestring)
+    except NameError:
+        # It must be Python 3!
+        return isinstance(s, str)
 
-def load_input_file(fname, param_schema):
-    params = yaml.load(open(fname, 'r'))
+def load_input_file(fname, param_schema, merge=None):
+    """Load a given input YAML file and validate it with a schema.
+    """
+
+    if merge is None:
+        params = yaml.load(open(fname, 'r'))
+    else:
+        new_params = yaml.load(open(fname, 'r'))
+        params = dict(merge)
+        params.update(new_params)
 
     try:
         params = param_schema.validate(params)
@@ -41,13 +56,12 @@ def load_input_file(fname, param_schema):
 
     return params
 
-
 # Parameter file schemas and defaults
 MuAirssSchema = Schema({
     # Name to call the folder for containing each structure. This name will
     # be postfixed with a unique number. e.g. struct_001
     Optional('name', default='struct'):
-    str,
+    validate_str,
     # Calculator to generate structure files for. Must be a comma seperated
     # list of values. Currently supported calculators are CASTEP and DFTB+. Can
     # also pass all as an option to generate files for all calculators.
@@ -55,16 +69,16 @@ MuAirssSchema = Schema({
     lambda values: validate_all_of(values, options=('castep', 'dftb+', 'all')),
     # Command to use to run CASTEP.
     Optional('castep_command', default='castep.serial'):
-    str,
+    validate_str,
     # Command to use to run DFTB+.
     Optional('dftb_command', default='dftb+'):
-    str,
+    validate_str,
     # File path to the CASTEP parameter file.
-    Optional('castep_param', default=None):
-    str,
+    Optional('castep_param', default=''):
+    validate_str,
     # The parameter set to use for DFTB+.
     Optional('dftb_set', default='3ob-3-1'):
-    str,
+    validate_str,
     # Whether to turn on periodic boundary conditions in DFTB+
     Optional('dftb_pbc', default=True):
     bool,
@@ -88,11 +102,11 @@ MuAirssSchema = Schema({
     # Name to call the output folder used to store the input files
     # that muon-airss generates.
     Optional('out_folder', default='./muon-airss-out'):
-    str,
+    validate_str,
     # The symbol to use for the muon when writing out the castep custom
     # species.
     Optional('mu_symbol', default='H:mu'):
-    str,
+    validate_str,
     # Maximum number of geometry optimisation steps
     Optional('geom_steps', default=30):
     int,

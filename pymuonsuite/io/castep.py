@@ -35,7 +35,7 @@ def save_muonconf_castep(a, folder, params):
     io.write(os.path.join(folder, '{0}.cell'.format(name)), a)
     ccalc.atoms = a
 
-    if params['castep_param'] is not None:
+    if params['castep_param'] is not '':
         castep_params = yaml.load(open(params['castep_param'], 'r'))
     else:
         castep_params = {}

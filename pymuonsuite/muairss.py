@@ -20,7 +20,9 @@ import argparse as ap
 from spglib import find_primitive
 
 from pymuonsuite.io.castep import save_muonconf_castep
+from pymuonsuite.io.dftb import save_muonconf_dftb
 from pymuonsuite.utils import make_3x3, safe_create_folder
+from pymuonsuite.data.dftb_pars.dftb_pars import get_license
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
 # from _muairss.io.castep import save_castep_format
@@ -99,13 +101,18 @@ def save_muairss_collection(struct, params, batch_path=''):
     # Now save in the appropriate format
     save_formats = {
         'castep': save_muonconf_castep,
-        #        'dftb+': save_dftb_format
+        'dftb+': save_muonconf_dftb
     }
 
     # Which calculators?
     calcs = map(lambda s: s.strip(), params['calculator'].split(','))
     if 'all' in calcs:
-        calcs = save_funcs.keys()
+        calcs = save_formats.keys()
+
+    # Save LICENSE file for DFTB+ parameters
+    if 'dftb+' in calcs:
+        with open(os.path.join(out_path, 'dftb.LICENSE'), 'w') as f:
+            f.write(get_license())
 
     for cname in calcs:
         calc_path = os.path.join(out_path, cname)
@@ -156,12 +163,13 @@ def save_muairss_batch(args, global_params):
         params = dict(global_params)    # Copy
         params['name'] = name
         if parameter_file is not None:
-            params.update(load_input_file(parameter_file, MuAirssSchema))
+            params = load_input_file(parameter_file, MuAirssSchema,
+                                     merge=params)
         params['out_folder'] = params['name']
 
         print("Making {} ---------------------".format(name))
         save_muairss_collection(struct, params,
-                                  batch_path=global_params['out_folder'])
+                                batch_path=global_params['out_folder'])
 
     print("Done!")
 
