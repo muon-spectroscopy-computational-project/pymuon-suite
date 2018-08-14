@@ -25,7 +25,7 @@ if __name__ == '__main__':
           ],
           entry_points={
               'console_scripts': [
-                  #'muon-airss = _muairss.__main__:main'
+                  'pm-muairss-gen = pymuonsuite.muairss:main'
               ]
           },
           python_requires='>=2.7'
