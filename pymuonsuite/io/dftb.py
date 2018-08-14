@@ -5,7 +5,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import shutil
 import json
 
 import numpy as np
@@ -14,8 +13,45 @@ from ase import io
 from ase.calculators.dftb import Dftb
 from ase.calculators.singlepoint import SinglePointCalculator
 
+from pymuonsuite.utils import BackupFile
 from pymuonsuite.data.dftb_pars import DFTBArgs
 
+
+def load_muonconf_dftb(folder):
+    """ Set the tag for a muon in an atoms object
+
+    Args:
+      directory (str): path to a directory to load DFTB+ results
+
+    Returns:
+      calculator (ase.calculator.SinglePointCalculator): a single
+        point calculator for the results of the DFTB+ calculation
+    """
+
+    atoms = io.read(os.path.join(folder, 'geo_end.gen'))
+    results_file = os.path.join(folder, "results.tag")
+    if os.path.isfile(results_file):
+        # DFTB+ was used to perform the optimisation
+        temp_file = os.path.join(folder, "results.tag.bak")
+
+        # We need to backup the results file here because
+        # .read_results() will remove the results file
+        with BackupFile(results_file, temp_file):
+            calc = Dftb(atoms=atoms)
+            calc.atoms_input = atoms
+            calc.directory = folder
+            calc.read_results()
+
+        energy = calc.get_potential_energy()
+        forces = calc.get_forces()
+        charges = calc.get_charges(atoms)
+
+        calc = SinglePointCalculator(atoms, energy=energy,
+                                     forces=forces, charges=charges)
+
+        atoms.set_calculator(calc)
+
+    return atoms
 
 def save_muonconf_dftb(a, folder, params, dftbargs={}):
 

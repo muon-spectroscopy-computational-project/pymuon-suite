@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import shutil
 import numpy as np
 
 
@@ -72,3 +73,32 @@ def safe_create_folder(path):
         return False
 
     return True
+
+
+class BackupFile():
+    """Backup a file before performing an operation
+
+    A class to make a copy of a file before performing some
+    potentially unsafe operation on it. In either succes or failure
+    the copy of the original file it restored.
+    """
+
+    def __init__(self, file_name, backup_file):
+        """Create a temporary backup file while executing some
+        potentially unsafe operation.
+
+        Args:
+          file_name (str): path of the file to backup.
+          backup_file (str): path to backup the file to.
+        """
+        self._file_name = file_name
+        self._backup_file = backup_file
+
+    def __enter__(self):
+        """Copy the file to the backup location"""
+        shutil.copyfile(self._file_name, self._backup_file)
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """Replace and overwrite the file to the original location"""
+        shutil.move(self._backup_file, self._file_name)
