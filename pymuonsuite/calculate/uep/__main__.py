@@ -130,7 +130,7 @@ def geomopt(params, outf=None):
         'Ezp': Ezp,
         'Etot': Etot,
         'sol': sol,     # For any additional details about the calculation
-        'struct': a     # For reference, the structure        
+        'struct': a     # For reference, the structure
     }
 
     return results
