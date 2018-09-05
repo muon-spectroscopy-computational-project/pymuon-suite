@@ -21,11 +21,15 @@ if __name__ == '__main__':
               'pyyaml',
               'schema',
               'spglib',
-              'soprano'
+              'soprano',
+              'parse-fmt>=0.5'
           ],
           entry_points={
               'console_scripts': [
-                  'pm-muairss-gen = pymuonsuite.muairss:main'
+                  ('pm-muairss-gen = '
+                   'pymuonsuite.muairss:main'),
+                  ('pm-uep-opt = '
+                   'pymuonsuite.calculate.uep.__main__:geomopt_entry')
               ]
           },
           python_requires='>=2.7'
