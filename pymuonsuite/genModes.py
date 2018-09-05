@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+# Python 2-to-3 compatibility code
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import sys
 import numpy as np
 import scipy.constants as cnst
@@ -51,19 +57,19 @@ if __name__ == "__main__":
     # And there we go. Find the best triplet
     # For mu_i:
     em_i, em, em_o = get_major_emodes(ph_evecs, mu_i)
-    print "Muon MODES:"
-    print "{0}   # Mass of the particle in kg".format(struct.get_masses()[mu_i]*cnst.u)
-    print "{0} {1} {2} # Eigenvalues, in cm^-1".format(*ph_evals[em_i])
-    print "#### Eigenvector matrix, rows = eigenvectors ####"
+    print("Muon MODES:")
+    print("{0}   # Mass of the particle in kg".format(struct.get_masses()[mu_i]*cnst.u))
+    print("{0} {1} {2} # Eigenvalues, in cm^-1".format(*ph_evals[em_i]))
+    print("#### Eigenvector matrix, rows = eigenvectors ####")
     for e in em:
-        print "{0} {1} {2}".format(*np.real(e))
+        print("{0} {1} {2}".format(*np.real(e)))
 
-    print ""
+    print("")
 
     em_i, em, em_o = get_major_emodes(ph_evecs, ipso_i)
-    print "Ipso hydrogen MODES:"
-    print "{0}   # Mass of the particle in kg".format(struct.get_masses()[ipso_i]*cnst.u)
-    print "{0} {1} {2} # Eigenvalues, in cm^-1".format(*ph_evals[em_i])
-    print "#### Eigenvector matrix, rows = eigenvectors ####"
+    print("Ipso hydrogen MODES:")
+    print("{0}   # Mass of the particle in kg".format(struct.get_masses()[ipso_i]*cnst.u))
+    print("{0} {1} {2} # Eigenvalues, in cm^-1".format(*ph_evals[em_i]))
+    print("#### Eigenvector matrix, rows = eigenvectors ####")
     for e in em:
-        print "{0} {1} {2}".format(*np.real(e))
+        print("{0} {1} {2}".format(*np.real(e)))
