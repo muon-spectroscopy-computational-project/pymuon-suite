@@ -4,10 +4,13 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import re
 import os
 import yaml
+import numpy as np
 from ase import io
 from ase.calculators.castep import Castep
+from scipy.constants import physical_constants as pcnst
 
 from pymuonsuite.utils import list_to_string
 
@@ -50,3 +53,46 @@ def save_muonconf_castep(a, folder, params):
     parameter_file = os.path.join(folder, '{0}.param'.format(name))
     yaml.safe_dump(castep_params, open(parameter_file, 'w'),
                    default_flow_style=False)
+
+
+def parse_castep_ppots(cfile):
+
+    clines = open(cfile).readlines()
+
+    # Find pseudopotential blocks
+    ppot_heads = filter(lambda x: 'Pseudopotential Report' in x[1],
+                        enumerate(clines))
+    ppot_blocks_raw = []
+
+    for pph in ppot_heads:
+        i, _ = pph
+        for j, l in enumerate(clines[i:]):
+            if 'Author:' in l:
+                break
+        ppot_blocks_raw.append(clines[i:i+j])
+
+    # Now on to actually parse them
+    ppot_blocks = {}
+
+    el_re = re.compile(r'Element:\s+([a-zA-Z]{1,2})\s+'
+                       r'Ionic charge:\s+([0-9.]+)')
+    rc_re = re.compile(r'(?:[0-9]+|loc)\s+[0-9]\s+[\-0-9.]+\s+([0-9.]+)')
+    bohr = pcnst['Bohr radius'][0]*1e10
+
+    for ppb in ppot_blocks_raw:
+        el = None
+        q = None
+        rcmin = np.inf
+        for l in ppb:
+            el_m = el_re.search(l)
+            if el_m is not None:
+                el, q = el_m.groups()
+                q = float(q)
+                continue
+            rc_m = rc_re.search(l)
+            if rc_m is not None:
+                rc = float(rc_m.groups()[0])*bohr
+                rcmin = min(rc, rcmin)
+        ppot_blocks[el] = (q, rcmin)
+
+    return ppot_blocks

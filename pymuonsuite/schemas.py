@@ -13,6 +13,7 @@ from __future__ import unicode_literals
 import yaml
 import numpy as np
 from schema import Optional, Schema, SchemaError
+from scipy.constants import physical_constants as pcnst
 
 
 def validate_matrix_shape(x):
@@ -26,8 +27,11 @@ def validate_supercell(value):
             (validate_matrix_shape(value) and np.array(value).dtype == int))
 
 
-def validate_all_of(values, options):
-    return all([x.strip() in options for x in values.split(',')])
+def validate_all_of(*options):
+    def validator(values):
+        return all([x.strip() in options for x in values.split(',')])
+    return validator
+
 
 def validate_str(s):
     # Validates a string in a Python 2 and 3 compatible way
@@ -37,6 +41,21 @@ def validate_str(s):
         # It must be Python 3!
         return isinstance(s, str)
 
+
+def validate_bool(value):
+    return (value.strip().lower() in ('true', 't'))
+
+
+def validate_int3(value):
+    v = np.array(value)
+    return v.shape == (3,) and v.dtype == int
+
+
+def validate_float3(value):
+    v = np.array(value)
+    return v.shape == (3,) and v.dtype == float
+
+
 def load_input_file(fname, param_schema, merge=None):
     """Load a given input YAML file and validate it with a schema.
     """
@@ -44,6 +63,12 @@ def load_input_file(fname, param_schema, merge=None):
     if merge is None:
         params = yaml.load(open(fname, 'r'))
     else:
+        try:
+            param_schema.validate(merge)
+        except SchemaError as e:
+            message = ('Invalid merge params passed to'
+                       ' load_input_file\n{0}'.format(e))
+            raise RuntimeError(message)
         new_params = yaml.load(open(fname, 'r'))
         params = dict(merge)
         params.update(new_params)
@@ -51,10 +76,11 @@ def load_input_file(fname, param_schema, merge=None):
     try:
         params = param_schema.validate(params)
     except SchemaError as e:
-        message = 'Bad formatting in input file {0}\n{1}'.format(fname, e)
+        message = 'Invalid input file {0}\n{1}'.format(fname, e)
         raise RuntimeError(message)
 
     return params
+
 
 # Parameter file schemas and defaults
 MuAirssSchema = Schema({
@@ -66,7 +92,7 @@ MuAirssSchema = Schema({
     # list of values. Currently supported calculators are CASTEP and DFTB+. Can
     # also pass all as an option to generate files for all calculators.
     Optional('calculator', default='dftb+'):
-    lambda values: validate_all_of(values, options=('castep', 'dftb+', 'all')),
+    validate_all_of('castep', 'dftb+', 'all'),
     # Command to use to run CASTEP.
     Optional('castep_command', default='castep.serial'):
     validate_str,
@@ -98,7 +124,7 @@ MuAirssSchema = Schema({
     validate_supercell,
     # List of three integer k-points. Default is [1,1,1].
     Optional('k_points_grid', default=np.ones(3).astype(int)):
-    lambda x: np.array(x).shape == (3,) and np.array(x).dtype == int,
+    validate_int3,
     # Name to call the output folder used to store the input files
     # that muon-airss generates.
     Optional('out_folder', default='./muon-airss-out'):
@@ -117,4 +143,37 @@ MuAirssSchema = Schema({
     # 200 which is also the default for DFTB+.
     Optional('max_scc_steps', default=200):
     int,
+})
+
+
+# Parameter file schema and defaults
+UEPSchema = Schema({
+    # Starting position for muon (absolute coordinates)
+    Optional('mu_pos', default=[0.0, 0.0, 0.0]):
+    validate_float3,
+    # Path from which to load the charge density
+    Optional('chden_path', default=''):
+    validate_str,
+    # Seedname for the charge density calculation
+    Optional('chden_seed', default=None):
+    validate_str,
+    # Maximum number of geometry optimisation steps
+    Optional('geom_steps', default=30):
+    int,
+    # Tolerance on optimisation
+    Optional('opt_tol', default=1e-5):
+    float,
+    # Gaussian Width factor for ionic potential
+    Optional('gw_factor', default=5.0):
+    float,
+    # Optimisation method
+    Optional('opt_method', default='trust-exact'):
+    validate_str,
+    # Particle mass (in kg)
+    Optional('particle_mass',
+             default=pcnst['muon mass'][0]):
+    float,
+    # Sorting for output file
+    Optional('sorted_by', default='tot_energy'):
+    validate_all_of('tot_energy', 'pot_energy', 'kin_energy')
 })
