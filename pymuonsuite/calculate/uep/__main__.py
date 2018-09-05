@@ -5,6 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import pickle
 import numpy as np
 import argparse as ap
 import datetime
@@ -90,10 +91,10 @@ def geomopt(params, outf=None):
     evals, _ = np.linalg.eigh(hess)
     if (evals < 0).any():
         # The minimum is not stable!
-        Ezpe = np.nan
+        Ezp = np.nan
     else:
-        Ezpe = np.sum(0.5*cnst.hbar*(evals/m)**0.5)/cnst.e
-    Etot = Eclass + Ezpe
+        Ezp = np.sum(0.5*cnst.hbar*(evals/m)**0.5)/cnst.e
+    Etot = Eclass + Ezp
 
     if outf is not None:
         outf.write('\n---------\n\n')
@@ -108,11 +109,11 @@ def geomopt(params, outf=None):
             *fxsol))
         outf.write('Classical energy: {0} eV\n'.format(Eclass))
 
-        if np.isnan(Ezpe):
+        if np.isnan(Ezp):
             outf.write('Extremum is saddle point, impossible to compute '
                        'zero-point energy')
         else:
-            outf.write('Zero-point energy: {0} eV\n'.format(Ezpe))
+            outf.write('Zero-point energy: {0} eV\n'.format(Ezp))
             outf.write('Quantum total energy: {0} eV\n'.format(Etot))
 
         dt = datetime.datetime.now() - t0
@@ -120,6 +121,19 @@ def geomopt(params, outf=None):
         outf.write('\n\n')
         outf.write('Calculation time: {0} s'.format(dt.seconds +
                                                     dt.microseconds*1e-6))
+
+    # Finally, return the solution's values
+    results = {
+        'x': xsol,
+        'fx': fxsol,
+        'Eclass': Eclass,
+        'Ezp': Ezp,
+        'Etot': Etot,
+        'sol': sol,     # For any additional details about the calculation
+        'struct': a     # For reference, the structure        
+    }
+
+    return results
 
 
 def geomopt_entry():
@@ -137,7 +151,10 @@ def geomopt_entry():
         params['chden_seed'] = seedname  # Default is the same
 
     with open(seedpath + '.uep', 'w') as outf:
-        geomopt(params, outf)
+        results = geomopt(params, outf)
+
+    # Now dump results
+    pickle.dump(results, open(seedpath + '.uep.pkl', 'w'))
 
 
 if __name__ == "__main__":
