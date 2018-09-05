@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # And there we go. Find the best triplet
     # For mu_i:
     em_i, em, em_o = get_major_emodes(ph_evecs, mu_i)
-    print("Muon MODES:")
+    print("#Muon MODES:")
     print("{0}   # Mass of the particle in kg".format(struct.get_masses()[mu_i]*cnst.u))
     print("{0} {1} {2} # Eigenvalues, in cm^-1".format(*ph_evals[em_i]))
     print("#### Eigenvector matrix, rows = eigenvectors ####")
