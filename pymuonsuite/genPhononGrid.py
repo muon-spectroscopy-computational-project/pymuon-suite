@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+# Python 2-to-3 compatibility code
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import os
 import shutil
 import numpy as np
@@ -133,12 +139,12 @@ if __name__ == "__main__":
     sname = seedname(args.cell_file)
     pname = os.path.splitext(args.cell_file)[0] + '.param'
     if not os.path.isfile(pname):
-        print "WARNING - no .param file was found"
+        print("WARNING - no .param file was found")
 
     if args.w:
         for i, Ri in enumerate(R):
             dirname = '{0}_{1}'.format(sname, i+1)
-            print "Creating folder ", dirname
+            print("Creating folder", dirname)
             try:
                 os.mkdir(dirname)
             except OSError:
@@ -209,7 +215,7 @@ if __name__ == "__main__":
         hfine_table = np.trace(hfine_tensors, axis1=-1, axis2=-2)/3.0
 
         ipso_hfine_tensors = all_hfine_tensors[('H', ipso_i+1)]
-        ipso_hfine_table = np.trace(ipso_hfine_tensors, axis1=-1, 
+        ipso_hfine_table = np.trace(ipso_hfine_tensors, axis1=-1,
                                     axis2=-2)/3.0
 
         E_table = np.array(E_table)
@@ -218,7 +224,7 @@ if __name__ == "__main__":
 
         R_axes = np.array([np.linspace(-3*Ri, 3*Ri, params['grid_n'])
                            for Ri in R])
-        
+
         if not args.num:
             # Wavefunction
             psi_norm = (1.0/(np.prod(R)**2*np.pi**3))**0.25
