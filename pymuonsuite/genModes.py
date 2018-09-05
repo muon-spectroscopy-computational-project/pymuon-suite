@@ -67,7 +67,7 @@ if __name__ == "__main__":
     print("")
 
     em_i, em, em_o = get_major_emodes(ph_evecs, ipso_i)
-    print("Ipso hydrogen MODES:")
+    print("#Ipso hydrogen MODES:")
     print("{0}   # Mass of the particle in kg".format(struct.get_masses()[ipso_i]*cnst.u))
     print("{0} {1} {2} # Eigenvalues, in cm^-1".format(*ph_evals[em_i]))
     print("#### Eigenvector matrix, rows = eigenvectors ####")
