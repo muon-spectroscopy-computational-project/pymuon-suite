@@ -112,6 +112,41 @@ def parse_hyperfine_oldblock(block):
 
     return hfine_dict
 
+def write_displaced_cells(pos, cell_0, R, sname, pname, a_i, evecs, grid_n):
+    """
+    Write grid_n cell files for each eigenvector with a range of muon
+    displacements from -3*R*evec to +3*R*evec
+    """
+    for i, Ri in enumerate(R):
+        dirname = '{0}_{1}'.format(sname, i+1)
+        print("Creating folder", dirname)
+        try:
+            os.mkdir(dirname)
+        except OSError:
+            # Folder already exists
+            pass
+        cell_L = cell_0.copy()
+        pos_L = pos.copy()
+        pos_L[a_i] -= evecs[i]*3*Ri
+        cell_L.set_positions(pos_L)
+        cell_R = cell_0.copy()
+        pos_R = pos.copy()
+        pos_R[a_i] += evecs[i]*3*Ri
+        cell_R.set_positions(pos_R)
+        lg = linspaceGen(
+            cell_L, cell_R, steps=grid_n, periodic=True)
+        for j, c in enumerate(lg):
+            c.set_calculator(cell_0.calc)
+            ase_io.write(os.path.join(dirname,
+                                      '{0}_{1}_{2}.cell'.format(sname, i+1, j+1)), c)
+            # If present, copy param file!
+            try:
+                shutil.copy(pname, os.path.join(dirname,
+                                                '{0}_{1}_{2}.param'.format(sname, i+1, j+1)))
+            except IOError:
+                pass
+    return
+
 if __name__ == "__main__":
 
     parser = ap.ArgumentParser()
@@ -154,34 +189,9 @@ if __name__ == "__main__":
         print("WARNING - no .param file was found")
 
     if args.w:
-        for i, Ri in enumerate(R):
-            dirname = '{0}_{1}'.format(sname, i+1)
-            print("Creating folder", dirname)
-            try:
-                os.mkdir(dirname)
-            except OSError:
-                # Folder already exists
-                pass
-            cell_L = cell_0.copy()
-            pos_L = pos.copy()
-            pos_L[a_i] -= params['evecs'][i]*3*Ri
-            cell_L.set_positions(pos_L)
-            cell_R = cell_0.copy()
-            pos_R = pos.copy()
-            pos_R[a_i] += params['evecs'][i]*3*Ri
-            cell_R.set_positions(pos_R)
-            lg = linspaceGen(
-                cell_L, cell_R, steps=params['grid_n'], periodic=True)
-            for j, c in enumerate(lg):
-                c.set_calculator(cell_0.calc)
-                ase_io.write(os.path.join(dirname,
-                                          '{0}_{1}_{2}.cell'.format(sname, i+1, j+1)), c)
-                # If present, copy param file!
-                try:
-                    shutil.copy(pname, os.path.join(dirname,
-                                                    '{0}_{1}_{2}.param'.format(sname, i+1, j+1)))
-                except IOError:
-                    pass
+        #Write cells with a range of muon displacements
+        write_displaced_cells(pos, cell_0, R, sname, pname, a_i, params['evecs'], params['grid_n'])
+
     else:
         # Parsing
 
