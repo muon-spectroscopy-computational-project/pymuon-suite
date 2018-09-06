@@ -16,6 +16,32 @@ from ase.io.magres import read_magres
 from soprano.utils import seedname, minimum_periodic
 from soprano.collection.generate import linspaceGen
 
+def find_muon_ipso_hydrogen(pos, cell_0, noH, symbol):
+    """
+    Return index of muon in cell postion array. Also return index of nearest
+    hydrogen unless noH flag set.
+    """
+    #Find the muon
+    a_i = -1
+    if cell_0.has('castep_custom_species'):
+        chems = cell_0.get_array('castep_custom_species')
+    else:
+        chems = np.array(cell_0.get_chemical_symbols())
+    a_i = np.where(chems == params['symbol'])[0]
+    print(params['symbol'])
+
+    if not noH:
+        #Find the closest hydrogen
+        iH = np.where(['H' in c and c != params['symbol'] for c in chems])[0]
+        posH = pos[iH]
+        distH = np.linalg.norm(
+            minimum_periodic(posH - pos[a_i], cell_0.get_cell())[0], axis=-1)
+        #Which one is the closest?
+        ipso_i = iH[np.argmin(distH)]
+    else:
+        ipso_i = None
+
+    return a_i, ipso_i
 
 def parse_input_file(infile):
 
@@ -111,24 +137,10 @@ if __name__ == "__main__":
 
     # Displacement in Angstrom
     R = np.sqrt(cnst.hbar/(params['omega']*params['m']))*1e10
-    # Now is the atom we're looking for in here?
-    a_i = -1
 
     pos = cell_0.get_positions()
-    if cell_0.has('castep_custom_species'):
-        chems = cell_0.get_array('castep_custom_species')
-    else:
-        chems = np.array(cell_0.get_chemical_symbols())
-
-    a_i = np.where(chems == params['symbol'])[0]
-    # And find the closest hydrogen
-    if not args.noH:
-        iH = np.where(['H' in c and c != params['symbol'] for c in chems])[0]
-        posH = pos[iH]
-        distH = np.linalg.norm(
-            minimum_periodic(posH - pos[a_i], cell_0.get_cell())[0], axis=-1)
-        # Which one is the closest?
-        ipso_i = iH[np.argmin(distH)]
+    #Find muon and closest hydrogen, if noH flag not set
+    a_i, ipso_i = find_muon_ipso_hydrogen(pos, cell_0, args.noH, params['symbol'])
 
     if len(a_i) != 1:
         raise RuntimeError(
