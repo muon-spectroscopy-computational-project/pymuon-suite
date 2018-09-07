@@ -11,7 +11,7 @@ import numpy as np
 import scipy.constants as cnst
 from ase import Atoms
 from soprano.utils import minimum_periodic
-from pymuonsuite.io.parse_phonon_file import parse_phonon_file
+from pymuonsuite.io.castep import parse_phonon_file
 
 def get_major_emodes(evecs, i):
 
