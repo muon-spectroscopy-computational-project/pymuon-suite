@@ -35,6 +35,7 @@ pbc-0-3
     [SiSi] A. Sieck, PhD. Thesis, University of Paderborn, 2000.                                        (Si-Si)
 """
 
+
 def print_references():
     print(_references_msg)
 
@@ -61,6 +62,7 @@ def parse_params(dir):
         pass
 
     return args
+
 
 parameter_sets = {
     d.split(os.sep)[-2]: parse_params(d)

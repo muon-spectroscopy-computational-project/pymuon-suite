@@ -1,0 +1,5 @@
+{
+  "Hamiltonian_HCorrection_Exponent": 4.0, 
+  "Hamiltonian_Dispersion": "DftD3 {}", 
+  "Hamiltonian_HCorrection": "Damping {"
+}
