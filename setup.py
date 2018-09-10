@@ -7,6 +7,20 @@ from setuptools import setup, find_packages
 
 if __name__ == '__main__':
 
+    # Scan for Slater-Koster files data tree
+    import os
+    import glob
+    sk_pkgdata = []
+    fdir = os.path.dirname(__file__)
+
+    for g in glob.glob(os.path.join(fdir, 'pymuonsuite/data/dftb_pars/*')):
+        if not os.path.isdir(g):
+            continue
+        setname = os.path.split(g)[1]
+        sk_pkgdata += [os.path.join('data/dftb_pars/', setname, '*'),
+                       os.path.join('data/dftb_pars/', setname, setname,
+                                    '*.skf')]
+
     setup(name='PyMuonSuite',
           version='0.0.1',
           description=('A suite of utilities for muon spectroscopy'),
@@ -24,6 +38,7 @@ if __name__ == '__main__':
               'soprano',
               'parse-fmt>=0.5'
           ],
+          package_data={'pymuonsuite': sk_pkgdata},
           entry_points={
               'console_scripts': [
                   ('pm-muairss-gen = '

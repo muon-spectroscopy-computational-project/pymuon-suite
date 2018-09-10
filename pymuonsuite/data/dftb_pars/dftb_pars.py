@@ -20,7 +20,7 @@ All data is licensed under the Creative Commons Attribution-ShareAlike 4.0
 International License. For specific data sets remember to cite the following
 papers, by element:
 
-3-ob-1    
+3-ob-3-1    
     [JCTC2013]  J. Chem. Theory Comput., 2013, 9, 338-354.      (O, N, C, H)
     [JCTC2014]  J. Chem. Theory Comput., 2014, 10, 1518-1537.   (P,S-*)
     [JCTC2015-1]    J. Phys. Chem. B, 2015, 119, 1062-1082.     (Mg,Zn-*)
@@ -35,14 +35,16 @@ pbc-0-3
     [SiSi] A. Sieck, PhD. Thesis, University of Paderborn, 2000.                                        (Si-Si)
 """
 
-
 def print_references():
     print(_references_msg)
+
 
 def get_license():
     return open(os.path.join(os.path.split(__file__)[0], 'LICENSE')).read()
 
-print_references() # Print whenever it gets loaded
+
+print_references()  # Print whenever it gets loaded
+
 
 def parse_params(dir):
     name = dir.split(os.sep)[-2]
@@ -59,7 +61,6 @@ def parse_params(dir):
         pass
 
     return args
-
 
 parameter_sets = {
     d.split(os.sep)[-2]: parse_params(d)
