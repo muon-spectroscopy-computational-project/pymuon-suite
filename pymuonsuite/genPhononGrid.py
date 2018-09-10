@@ -28,7 +28,6 @@ def find_muon_ipso_hydrogen(pos, cell_0, noH, symbol):
     else:
         chems = np.array(cell_0.get_chemical_symbols())
     a_i = np.where(chems == params['symbol'])[0]
-    print(params['symbol'])
 
     if not noH:
         #Find the closest hydrogen
