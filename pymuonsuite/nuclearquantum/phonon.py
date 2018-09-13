@@ -16,6 +16,11 @@ from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 def phonon_hfcc(param_file):
     #Load parameters
     params = load_input_file(param_file, PhononHfccSchema)
+    #Strip .phonon extension for casteppy compatiblity
+    if '.phonon' in params['phonon_file']:
+        params['phonon_file'] = (params['phonon_file'])[:-7]
+    else:
+        raise IOError("Invalid phonon file extension, please use .phonon")
     #Parse phonon data into object
     pd = PhononData(params['phonon_file'])
     #Convert frequencies back to cm-1
