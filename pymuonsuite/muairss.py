@@ -25,11 +25,6 @@ from pymuonsuite.utils import make_3x3, safe_create_folder
 from pymuonsuite.data.dftb_pars.dftb_pars import get_license
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
-# from _muairss.io.castep import save_castep_format
-# from _muairss.io.dftb import save_dftb_format
-# from _muairss.input import load_input_file
-# from _muairss.utils import create_matrix_from_parameter
-
 from ase import Atoms, io
 from ase.build import make_supercell
 from soprano.collection import AtomsCollection
@@ -60,7 +55,12 @@ def generate_muairss_collection(struct, params):
 
     # Make a supercell
     sm = make_3x3(params['supercell'])
-    scell0 = make_supercell(struct, sm)
+    # ASE's make_supercell is weird, avoid if not necessary...
+    smdiag = np.diag(sm)
+    if np.all(np.diag(smdiag) == sm):
+        scell0 = struct.repeat(smdiag)
+    else:
+        scell0 = make_supercell(struct, sm)
 
     reduced_struct = find_primitive_structure(struct)
 
