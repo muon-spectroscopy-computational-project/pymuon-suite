@@ -157,6 +157,8 @@ PhononHfccSchema = Schema({
     'muon_mass': float,
     #Number of grid points(displacements of muon) to use
     'grid_n': int,
+    #Calculator to use. Currently only CASTEP supported.
+    Optional('calculator', default='castep'): validate_str,
     #Write cells with muon displaced if true, otherwise perform hfcc calculation
     Optional('write_cells', default='False'): validate_bool,
     #Ignore ipso hydrogen if true
