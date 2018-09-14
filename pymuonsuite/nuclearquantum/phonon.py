@@ -12,6 +12,7 @@ from soprano.selection import AtomSelection
 
 from pymuonsuite.io.castep import parse_phonon_file
 from pymuonsuite.schemas import load_input_file, PhononHfccSchema
+from pymuonsuite.utils import find_ipso_hydrogen
 
 def phonon_hfcc(param_file):
     #Load parameters
@@ -47,5 +48,10 @@ def phonon_hfcc(param_file):
             except ValueError:
                 print(".phonon file does not contain muon mass")
             break
+
+    #Find ipso hydrogen
+    if not 'True' in params['ignore_ipsoH']:
+        ipso_H_index = find_ipso_hydrogen(mu_index, cell, params['muon_symbol'])
+
 
     return
