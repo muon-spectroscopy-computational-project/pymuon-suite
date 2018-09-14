@@ -14,6 +14,31 @@ from pymuonsuite.io.castep import parse_phonon_file
 from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 from pymuonsuite.utils import find_ipso_hydrogen
 
+def get_major_emodes(evecs, i):
+    """Find the phonon modes of the muon at index i
+
+    | Args:
+    |   evecs (Numpy array): Eigenvectors of phonon modes of molecule in shape
+    |                        (num_modes, num_ions, 3)
+    |   i (int): Index of muon in position array
+    |
+    | Returns:
+    |   major_evecs_i (int[3]): Indices of eigenvectors in evec array
+    |   major_evecs (float[3]): Eigenvectors of muon phonon modes
+    |   major_evecs_ortho (float[3]):
+    """
+    # First, find the eigenmodes whose amplitude is greater for ion i
+    evecs_amp = np.linalg.norm(evecs, axis=-1)
+    ipr = evecs_amp**4/np.sum(evecs_amp**2, axis=-1)[:,None]**2
+    evecs_order = np.argsort(ipr[:,i])
+
+    # How many?
+    major_evecs_i = evecs_order[-3:]
+    major_evecs = evecs[major_evecs_i,i]
+    major_evecs_ortho = np.linalg.qr(major_evecs.T)[0].T
+
+    return major_evecs_i, major_evecs, major_evecs_ortho
+
 def phonon_hfcc(param_file):
     #Load parameters
     params = load_input_file(param_file, PhononHfccSchema)
@@ -38,7 +63,7 @@ def phonon_hfcc(param_file):
     #Find muon index in structure array
     sel = AtomSelection.from_array(cell, 'castep_custom_species', params['muon_symbol'])
     mu_index = sel.indices[0]
-    #Grab muon mass
+    #Get muon mass
     lines =  open(params['phonon_file'] + '.phonon').readlines()
     for i in range(len(lines)):
         if "Fractional Co-ordinates" in lines[i]:
@@ -49,9 +74,15 @@ def phonon_hfcc(param_file):
                 print(".phonon file does not contain muon mass")
             break
 
-    #Find ipso hydrogen
+    #Get muon phonon modes
+    em_i, em, em_o = get_major_emodes(evecs[0], mu_index)
+    em = np.real(em)
+
+    #Find ipso hydrogen location and phonon modes
     if not 'True' in params['ignore_ipsoH']:
         ipso_H_index = find_ipso_hydrogen(mu_index, cell, params['muon_symbol'])
+        em_i_H, em_H, em_o_H = get_major_emodes(evecs[0], ipso_H_index)
+        em_H = np.real(em_H)
 
 
     return
