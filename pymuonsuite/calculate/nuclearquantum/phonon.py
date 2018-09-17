@@ -105,7 +105,8 @@ def phonon_hfcc(param_file):
             try:
                 mu_mass = float(mu_mass)
             except ValueError:
-                print(".phonon file does not contain muon mass")
+                print("ERROR: .phonon file does not contain valid muon mass")
+                raise
             break
     mu_mass = mu_mass*cnst.u #Convert to kg
 
