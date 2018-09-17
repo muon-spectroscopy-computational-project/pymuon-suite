@@ -20,17 +20,15 @@ from pymuonsuite.io.castep import parse_phonon_file
 from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 from pymuonsuite.utils import find_ipso_hydrogen
 
-def create_displaced_cells(cell, R, a_i, grid_n, evecs):
+def create_displaced_cells(cell, a_i, grid_n, disp):
     """Create a range ASE Atoms objects with the displacement of atom at index
     a_i varying between -evecs*3*R and +evecs*3*R with grid_n increments
 
     | Args:
     |   cell (ASE Atoms object): Object containing atom to be displaced
-    |   R (float): Displacement factor in angstroms
     |   a_i (int): Index of atom to be displaced
     |   grid_n (int): Number of increments/objects to create
-    |   evecs (Numpy array): Eigenvector of phonon mode in shape (3), form:
-    |   [x, y, z]
+    |   disp (float): Maximum displacement from original position
     |
     | Returns:
     |   lg(Soprano linspaceGen object): Generator of displaced cells
@@ -38,11 +36,11 @@ def create_displaced_cells(cell, R, a_i, grid_n, evecs):
     pos = cell.get_positions()
     cell_L = cell.copy()
     pos_L = pos.copy()
-    pos_L[a_i] -= evecs*3*R
+    pos_L[a_i] -= disp
     cell_L.set_positions(pos_L)
     cell_R = cell.copy()
     pos_R = pos.copy()
-    pos_R[a_i] += evecs*3*R
+    pos_R[a_i] += disp
     cell_R.set_positions(pos_R)
     lg = linspaceGen(
         cell_L, cell_R, steps=grid_n, periodic=True)
@@ -116,7 +114,6 @@ def phonon_hfcc(param_file):
 
     #Find ipso hydrogen location and phonon modes
     if not params['ignore_ipsoH']:
-        print("Hello")
         ipso_H_index = find_ipso_hydrogen(mu_index, cell, params['muon_symbol'])
         em_i_H, em_H, em_o_H = get_major_emodes(evecs[0], ipso_H_index)
         em_H = np.real(em_H)
@@ -133,7 +130,7 @@ def phonon_hfcc(param_file):
         if not os.path.isfile(pname):
             print("WARNING - no .param file was found")
         for i, Ri in enumerate(R):
-            lg = create_displaced_cells(cell, Ri, mu_index, params['grid_n'], em[i])
+            lg = create_displaced_cells(cell, mu_index, params['grid_n'], 3*em[i]*Ri)
             write_displaced_cells(cell, sname, pname, lg, i)
 
     return
