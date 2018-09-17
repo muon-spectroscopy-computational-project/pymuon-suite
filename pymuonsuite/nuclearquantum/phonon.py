@@ -4,15 +4,49 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
+import shutil
+
 import numpy as np
+import scipy.constants as cnst
 from ase import Atoms
 from ase import io as ase_io
 from casteppy.data.phonon import PhononData
+from soprano.collection.generate import linspaceGen
 from soprano.selection import AtomSelection
+from soprano.utils import seedname
 
 from pymuonsuite.io.castep import parse_phonon_file
 from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 from pymuonsuite.utils import find_ipso_hydrogen
+
+def create_displaced_cells(cell, R, a_i, grid_n, evecs):
+    """Create a range ASE Atoms objects with the displacement of atom at index
+    a_i varying between -evecs*3*R and +evecs*3*R with grid_n increments
+
+    | Args:
+    |   cell (ASE Atoms object): Object containing atom to be displaced
+    |   R (float): Displacement factor in angstroms
+    |   a_i (int): Index of atom to be displaced
+    |   grid_n (int): Number of increments/objects to create
+    |   evecs (Numpy array): Eigenvector of phonon mode in shape (3), form:
+    |   [x, y, z]
+    |
+    | Returns:
+    |   lg(Soprano linspaceGen object): Generator of displaced cells
+    """
+    pos = cell.get_positions()
+    cell_L = cell.copy()
+    pos_L = pos.copy()
+    pos_L[a_i] -= evecs*3*R
+    cell_L.set_positions(pos_L)
+    cell_R = cell.copy()
+    pos_R = pos.copy()
+    pos_R[a_i] += evecs*3*R
+    cell_R.set_positions(pos_R)
+    lg = linspaceGen(
+        cell_L, cell_R, steps=grid_n, periodic=True)
+    return lg
 
 def get_major_emodes(evecs, i):
     """Find the phonon modes of the muon at index i
@@ -73,16 +107,67 @@ def phonon_hfcc(param_file):
             except ValueError:
                 print(".phonon file does not contain muon mass")
             break
+    mu_mass = mu_mass*cnst.u #Convert to kg
 
     #Get muon phonon modes
     em_i, em, em_o = get_major_emodes(evecs[0], mu_index)
     em = np.real(em)
 
     #Find ipso hydrogen location and phonon modes
-    if not 'True' in params['ignore_ipsoH']:
+    if not params['ignore_ipsoH']:
+        print("Hello")
         ipso_H_index = find_ipso_hydrogen(mu_index, cell, params['muon_symbol'])
         em_i_H, em_H, em_o_H = get_major_emodes(evecs[0], ipso_H_index)
         em_H = np.real(em_H)
 
+    #Get muon phonon frequencies and convert to radians/second
+    evals = np.array(pd.freqs[0][em_i]*1e2*cnst.c*np.pi*2)
+    # Displacement in Angstrom
+    R = np.sqrt(cnst.hbar/(evals*mu_mass))*1e10
 
+    #Write cells with displaced muon
+    if params['write_cells']:
+        sname = seedname(params['cell_file'])
+        pname = os.path.splitext(params['cell_file'])[0] + '.param'
+        if not os.path.isfile(pname):
+            print("WARNING - no .param file was found")
+        for i, Ri in enumerate(R):
+            lg = create_displaced_cells(cell, Ri, mu_index, params['grid_n'], em[i])
+            write_displaced_cells(cell, sname, pname, lg, i)
+
+    return
+
+def write_displaced_cells(cell, sname, pname, lg, i):
+    """
+    Write out all modified cells in lg using seedname "sname". Also copy
+    param file at "pname" if one provided.
+
+    | Args:
+    |   cell (ASE Atoms object): Seed cell file, used to set appropriate
+    |                           calculator
+    |   sname (str): Seedname of cell file e.g. seedname.cell
+    |   pname (str): Path of param file to be copies
+    |   lg (Soprano linspaceGen object): Generator containing modified cells
+    |   i (int): Numerical suffix for cell file seedname
+    |
+    | Returns: Nothing
+    """
+    dirname = '{0}_{1}'.format(sname, i+1)
+    print("Creating folder", dirname)
+    try:
+        os.mkdir(dirname)
+    except OSError:
+        # Folder already exists
+        pass
+
+    for j, c in enumerate(lg):
+        c.set_calculator(cell.calc)
+        ase_io.write(os.path.join(dirname,
+                                  '{0}_{1}_{2}.cell'.format(sname, i+1, j+1)), c)
+        # If present, copy param file!
+        try:
+            shutil.copy(pname, os.path.join(dirname,
+                                            '{0}_{1}_{2}.param'.format(sname, i+1, j+1)))
+        except IOError:
+            pass
     return
