@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 
 import argparse as ap
 
-from pymuonsuite.nuclearquantum.phonon import phonon_hfcc
+from pymuonsuite.calculate.nuclearquantum.phonon import phonon_hfcc
 
 if __name__ == "__main__":
     parser = ap.ArgumentParser()
