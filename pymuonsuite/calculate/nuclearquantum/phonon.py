@@ -162,6 +162,10 @@ def phonon_hfcc(param_file):
                     dirname, '{0}_{1}_{2}.castep'.format(sname, i+1, j+1))
                 E_table[-1].append(parse_final_energy(castf))
 
+        E_table = np.array(E_table)
+        if hfine_table.shape != (3, params['grid_n']) or E_table.shape != (3, params['grid_n']):
+            raise RuntimeError("Incomplete or absent magres or castep data")
+
     return
 
 
