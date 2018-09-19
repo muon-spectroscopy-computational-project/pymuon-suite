@@ -16,6 +16,7 @@ from soprano.collection.generate import linspaceGen
 from soprano.selection import AtomSelection
 from soprano.utils import seedname
 
+from pymuonsuite.io.castep import parse_final_energy
 from pymuonsuite.io.castep import parse_phonon_file
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.schemas import load_input_file, PhononHfccSchema
@@ -138,12 +139,14 @@ def phonon_hfcc(param_file):
             write_displaced_cells(cell, sname, pname, lg, i)
 
     else:
-        #Parse hyperfine values from .magres files
+        #Parse hyperfine values from .magres files and energy from .castep files
+        E_table = []
         hfine_table = np.zeros((np.size(R), params['grid_n']))
         ipso_hfine_table = np.zeros((np.size(R), params['grid_n']))
         num_species = np.size(cell.get_array('castep_custom_species'))
         all_hfine_tensors = np.zeros((num_species, np.size(R), params['grid_n'], 3, 3))
         for i, Ri in enumerate(R):
+            E_table.append([])
             dirname = '{0}_{1}'.format(sname, i+1)
             for j in range(params['grid_n']):
                 mfile = os.path.join(
@@ -156,6 +159,9 @@ def phonon_hfcc(param_file):
                 if params['save_tensors']:
                     for k, tensor in enumerate(mgr.get_array('hyperfine')):
                         all_hfine_tensors[k][i][j][:][:] = tensor
+                castf = os.path.join(
+                    dirname, '{0}_{1}_{2}.castep'.format(sname, i+1, j+1))
+                E_table[-1].append(parse_final_energy(castf))
 
     return
 

@@ -98,6 +98,17 @@ def parse_castep_ppots(cfile):
 
     return ppot_blocks
 
+def parse_final_energy(infile):
+    E = None
+    for l in open(infile).readlines():
+        if "Final energy" in l:
+            try:
+                E = float(l.split()[3])
+            except ValueError:
+                raise RuntimeError(
+                    "Corrupt .castep file found: {0}".format(infile))
+    return E
+
 def parse_phonon_file(phfile):
 
     lines = open(phfile).readlines()
