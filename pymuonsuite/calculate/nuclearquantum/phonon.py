@@ -17,6 +17,7 @@ from soprano.selection import AtomSelection
 from soprano.utils import seedname
 
 from pymuonsuite.io.castep import parse_phonon_file
+from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 from pymuonsuite.utils import find_ipso_hydrogen
 
@@ -46,6 +47,7 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
         cell_L, cell_R, steps=grid_n, periodic=True)
     return lg
 
+
 def get_major_emodes(evecs, i):
     """Find the phonon modes of the muon at index i
 
@@ -70,6 +72,7 @@ def get_major_emodes(evecs, i):
     major_evecs_ortho = np.linalg.qr(major_evecs.T)[0].T
 
     return major_evecs_i, major_evecs, major_evecs_ortho
+
 
 def phonon_hfcc(param_file):
     #Load parameters
@@ -123,9 +126,10 @@ def phonon_hfcc(param_file):
     # Displacement in Angstrom
     R = np.sqrt(cnst.hbar/(evals*mu_mass))*1e10
 
+    #Get seedname
+    sname = seedname(params['cell_file'])
     #Write cells with displaced muon
     if params['write_cells']:
-        sname = seedname(params['cell_file'])
         pname = os.path.splitext(params['cell_file'])[0] + '.param'
         if not os.path.isfile(pname):
             print("WARNING - no .param file was found")
@@ -133,7 +137,28 @@ def phonon_hfcc(param_file):
             lg = create_displaced_cells(cell, mu_index, params['grid_n'], 3*em[i]*Ri)
             write_displaced_cells(cell, sname, pname, lg, i)
 
+    else:
+        #Parse hyperfine values from .magres files
+        hfine_table = np.zeros((np.size(R), params['grid_n']))
+        ipso_hfine_table = np.zeros((np.size(R), params['grid_n']))
+        num_species = np.size(cell.get_array('castep_custom_species'))
+        all_hfine_tensors = np.zeros((num_species, np.size(R), params['grid_n'], 3, 3))
+        for i, Ri in enumerate(R):
+            dirname = '{0}_{1}'.format(sname, i+1)
+            for j in range(params['grid_n']):
+                mfile = os.path.join(
+                    dirname, '{0}_{1}_{2}.magres'.format(sname, i+1, j+1))
+                infile = open(mfile, "r")
+                mgr = parse_hyperfine_magres(infile)
+                hfine_table[i][j] = np.trace(mgr.get_array('hyperfine')[mu_index])/3.0
+                if not params['ignore_ipsoH']:
+                    ipso_hfine_table[i][j] = np.trace(mgr.get_array('hyperfine')[ipso_H_index])/3.0
+                if params['save_tensors']:
+                    for k, tensor in enumerate(mgr.get_array('hyperfine')):
+                        all_hfine_tensors[k][i][j][:][:] = tensor
+
     return
+
 
 def write_displaced_cells(cell, sname, pname, lg, i):
     """
