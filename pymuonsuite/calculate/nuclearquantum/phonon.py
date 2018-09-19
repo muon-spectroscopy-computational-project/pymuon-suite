@@ -151,8 +151,7 @@ def phonon_hfcc(param_file):
             for j in range(params['grid_n']):
                 mfile = os.path.join(
                     dirname, '{0}_{1}_{2}.magres'.format(sname, i+1, j+1))
-                infile = open(mfile, "r")
-                mgr = parse_hyperfine_magres(infile)
+                mgr = parse_hyperfine_magres(mfile)
                 hfine_table[i][j] = np.trace(mgr.get_array('hyperfine')[mu_index])/3.0
                 if not params['ignore_ipsoH']:
                     ipso_hfine_table[i][j] = np.trace(mgr.get_array('hyperfine')[ipso_H_index])/3.0

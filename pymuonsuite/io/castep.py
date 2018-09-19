@@ -99,6 +99,15 @@ def parse_castep_ppots(cfile):
     return ppot_blocks
 
 def parse_final_energy(infile):
+    """
+    Parse final energy from .castep file
+
+    | Args:
+    |   infile (str): Directory of .castep file
+    |
+    | Returns:
+    |   E (float): Value of final energy
+    """
     E = None
     for l in open(infile).readlines():
         if "Final energy" in l:

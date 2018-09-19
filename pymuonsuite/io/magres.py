@@ -9,9 +9,19 @@ import numpy as np
 from ase.io.magres import read_magres
 
 def parse_hyperfine_magres(infile):
+    """
+    Parse .magres file inluding magres_old block if present
 
+    | Args:
+    |   infile (str): Directory of .magres file
+    |
+    | Returns:
+    |   mgr (ASE Magres object): Object containing .magres data
+    """
+
+    file = open(infile, "r")
     # First, `simply parse the magres file via ASE
-    mgr = read_magres(infile, True)
+    mgr = read_magres(file, True)
 
     # Now go for the magres_old block
 
@@ -32,6 +42,16 @@ def parse_hyperfine_magres(infile):
 
 
 def parse_hyperfine_oldblock(block):
+    """
+    Parse a magres_old block into a dictionary
+
+    | Args:
+    |   block (str): magres_old block
+    |
+    | Returns:
+    |   hfine_dict (dict{"species" (str):tensor (int[3][3])}):
+    |                         Dictionary containing hyperfine data
+    """
 
     hfine_dict = {}
 
