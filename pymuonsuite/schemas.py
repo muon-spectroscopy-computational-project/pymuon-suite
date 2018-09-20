@@ -158,13 +158,13 @@ PhononHfccSchema = Schema({
     #Calculator to use. Currently only CASTEP supported.
     Optional('calculator', default='castep'): validate_str,
     #Write cells with muon displaced if true, otherwise perform hfcc calculation
-    Optional('write_cells', default='False'): bool,
+    Optional('write_cells', default=False): bool,
     #Ignore ipso hydrogen if true
-    Optional('ignore_ipsoH', default='False'): bool,
+    Optional('ignore_ipsoH', default=False): bool,
     #Save all hyperfine tensors if true
-    Optional('save_tensors', default='False'): bool,
+    Optional('save_tensors', default=False): bool,
     #Solve the Schroedinger equation numerically on the three axes
-    Optional('numerical_solver', default='False'): bool
+    Optional('numerical_solver', default=False): bool
 })
 
 # Parameter file schema and defaults
