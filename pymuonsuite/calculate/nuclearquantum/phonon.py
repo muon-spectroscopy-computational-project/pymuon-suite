@@ -74,8 +74,8 @@ def get_major_emodes(evecs, i):
 
     return major_evecs_i, major_evecs, major_evecs_ortho
 
-def phonon_average(R, grid_n, sname, freqs, E_table, hfine_table, hfine_tensors, mu_mass,
-                    ipso_hfine_table = None, ipso_hfine_tensors = None, num_solve = False, noH = False):
+def phonon_average(R, grid_n, sname, symbols, freqs, E_table, hfine_table, hfine_tensors, all_hfine_tensors, mu_mass,
+                    ipso_hfine_table = None, ipso_hfine_tensors = None, num_solve = False, noH = False, save_tens = False):
     R_axes = np.array([np.linspace(-3*Ri, 3*Ri, grid_n)
                        for Ri in R])
 
@@ -147,6 +147,17 @@ def phonon_average(R, grid_n, sname, freqs, E_table, hfine_table, hfine_tensors,
     else:
         ipso_D1 = None
         ipso_D2 = None
+
+    if save_tens:
+        # Also save tensor file
+        tensfile = open(sname + '_tensors.dat', 'w')
+        for i in range(np.size(all_hfine_tensors, 0)):
+            hfine_tensors_i = all_hfine_tensors[i]
+            # Carry out the average
+            hfine_avg = np.sum(
+            r2psi2[:, :, None, None]*hfine_tensors_i, axis=(0, 1))/np.sum(r2psi2)
+            tensfile.write('{0} {1}\n'.format(symbols[i], i))
+            tensfile.write('\n'.join(['\t'.join([str(x) for x in l]) for l in hfine_avg]) + '\n')
 
     # Now the potential, measured vs. theoretical
     harm_K = mu_mass*freqs**2
@@ -253,8 +264,10 @@ def phonon_hfcc(param_file):
         if hfine_table.shape != (3, params['grid_n']) or E_table.shape != (3, params['grid_n']):
             raise RuntimeError("Incomplete or absent magres or castep data")
 
-        D1, D2, ipso_D1, ipso_D2 = phonon_average(R, params['grid_n'], sname, evals, E_table, hfine_table, all_hfine_tensors[mu_index], mu_mass,
-                            ipso_hfine_table, all_hfine_tensors[ipso_H_index], num_solve = False, noH = False)
+        symbols = cell.get_array('castep_custom_species')
+        D1, D2, ipso_D1, ipso_D2 = phonon_average(R, params['grid_n'], sname, symbols, evals, E_table, hfine_table, all_hfine_tensors[mu_index],
+                            all_hfine_tensors, mu_mass, ipso_hfine_table, all_hfine_tensors[ipso_H_index], num_solve = params['numerical_solver'],
+                            noH = params['ignore_ipsoH'], save_tens = params['save_tensors'])
 
         print(D1, D2, ipso_D1, ipso_D2)
 
