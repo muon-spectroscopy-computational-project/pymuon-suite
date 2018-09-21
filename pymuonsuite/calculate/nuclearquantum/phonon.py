@@ -147,6 +147,7 @@ def phonon_average(R, grid_n, sname, symbols, freqs, E_table, hfine_table, hfine
     else:
         ipso_D1 = None
         ipso_D2 = None
+        np.savetxt(sname + '_tensors.dat', hfine_tens_avg)
 
     if save_tens:
         # Also save tensor file
