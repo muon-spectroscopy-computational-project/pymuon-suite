@@ -12,7 +12,7 @@ if __name__ == "__main__":
     parser = ap.ArgumentParser()
     parser.add_argument('calculation_type', type=str,
         help="""Type of calculation to be performed, currently supports:
-                Quantum effects as phonons: phonon_hfcc""")
+                'phonon_hfcc': Nuclear quantum effects simulated by phonons""")
     parser.add_argument('parameter_file', type=str,
         help="YAML file containing relevant input parameters")
 

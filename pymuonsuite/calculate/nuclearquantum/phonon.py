@@ -22,6 +22,31 @@ from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 from pymuonsuite.utils import find_ipso_hydrogen
 
+def get_major_emodes(evecs, i):
+    """Find the phonon modes of the muon at index i
+
+    | Args:
+    |   evecs (Numpy float array, shape: (num_modes, num_ions, 3)):
+    |                                   Eigenvectors of phonon modes of molecule
+    |   i (int): Index of muon in position array
+    |
+    | Returns:
+    |   major_evecs_i (int[3]): Indices of eigenvectors in evec array
+    |   major_evecs (float[3]): Eigenvectors of muon phonon modes
+    |   major_evecs_ortho (float[3]):
+    """
+    # First, find the eigenmodes whose amplitude is greater for ion i
+    evecs_amp = np.linalg.norm(evecs, axis=-1)
+    ipr = evecs_amp**4/np.sum(evecs_amp**2, axis=-1)[:,None]**2
+    evecs_order = np.argsort(ipr[:,i])
+
+    # How many?
+    major_evecs_i = evecs_order[-3:]
+    major_evecs = evecs[major_evecs_i,i]
+    major_evecs_ortho = np.linalg.qr(major_evecs.T)[0].T
+
+    return major_evecs_i, major_evecs, major_evecs_ortho
+
 def create_displaced_cells(cell, a_i, grid_n, disp):
     """Create a range ASE Atoms objects with the displacement of atom at index
     a_i varying between -evecs*3*R and +evecs*3*R with grid_n increments
@@ -48,36 +73,58 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
         cell_L, cell_R, steps=grid_n, periodic=True)
     return lg
 
-
-def get_major_emodes(evecs, i):
-    """Find the phonon modes of the muon at index i
+def write_displaced_cells(cell, sname, pname, lg, i):
+    """
+    Write out all modified cells in lg using seedname "sname". Also copy
+    param file at "pname" if one provided.
 
     | Args:
-    |   evecs (Numpy array): Eigenvectors of phonon modes of molecule in shape
-    |                        (num_modes, num_ions, 3)
-    |   i (int): Index of muon in position array
+    |   cell (ASE Atoms object): Seed cell file, used to set appropriate
+    |                           calculator
+    |   sname (str): Seedname of cell file e.g. seedname.cell
+    |   pname (str): Path of param file to be copied
+    |   lg (Soprano linspaceGen object): Generator containing modified cells
+    |   i (int): Numerical suffix for cell file seedname
     |
-    | Returns:
-    |   major_evecs_i (int[3]): Indices of eigenvectors in evec array
-    |   major_evecs (float[3]): Eigenvectors of muon phonon modes
-    |   major_evecs_ortho (float[3]):
+    | Returns: Nothing
     """
-    # First, find the eigenmodes whose amplitude is greater for ion i
-    evecs_amp = np.linalg.norm(evecs, axis=-1)
-    ipr = evecs_amp**4/np.sum(evecs_amp**2, axis=-1)[:,None]**2
-    evecs_order = np.argsort(ipr[:,i])
+    dirname = '{0}_{1}'.format(sname, i+1)
+    print("Creating folder", dirname)
+    try:
+        os.mkdir(dirname)
+    except OSError:
+        # Folder already exists
+        pass
 
-    # How many?
-    major_evecs_i = evecs_order[-3:]
-    major_evecs = evecs[major_evecs_i,i]
-    major_evecs_ortho = np.linalg.qr(major_evecs.T)[0].T
-
-    return major_evecs_i, major_evecs, major_evecs_ortho
+    for j, c in enumerate(lg):
+        c.set_calculator(cell.calc)
+        ase_io.write(os.path.join(dirname,
+                                  '{0}_{1}_{2}.cell'.format(sname, i+1, j+1)), c)
+        # If present, copy param file!
+        try:
+            shutil.copy(pname, os.path.join(dirname,
+                                            '{0}_{1}_{2}.param'.format(sname, i+1, j+1)))
+        except IOError:
+            pass
+    return
 
 def calc_wavefunction(R, grid_n, mu_mass, E_table, hfine_table, sname = None,
                         num_solve = False, write_table = True):
     """
     Calculate wavefunction
+
+    | Args:
+    |   R (Numpy float array): Displacement factors along all phonon axes
+    |   grid_n (int): Number of displacements per axis
+    |   mu_mass (float): Mass of muon
+    |   E_table (Numpy float array, shape:(size(R), grid_n)): Table of system
+    |   energies for each muon displacement for each axis.
+    |   hfine_table (Numpy float array, shape:(size(R), grid_n)): Table of
+    |   hyperfine coupling constants
+    |   sname (str): Seedname of file to write to
+    |   num_solve (bool): Solve schroedinger equation numerically using qlab
+    |   write_table: Write out table of wavefunction values
+
     """
     R_axes = np.array([np.linspace(-3*Ri, 3*Ri, grid_n)
                        for Ri in R])
@@ -186,6 +233,18 @@ def calc_harm_potential(R, grid_n, mu_mass, freqs, E_table, sname):
     np.savetxt(sname + '_V.dat', all_table.T)
 
 def phonon_hfcc(param_file):
+    """
+    Given a file containing phonon modes of a muoniated molecule, either write
+    out a set of structure files with the muon progressively displaced in grid_n
+    increments along the axes of the phonon modes, or read in hyperfine coupling
+    values from a set of .magres files with such a set of muon displacements and
+    average them to give an estimate of the actual hfcc accounting for nuclear quantum effects.
+
+    | Args:
+    |   param_file(str): Filename of .yaml file containing input parameters
+    |
+    | Returns: Nothing
+    """
     #Load parameters
     params = load_input_file(param_file, PhononHfccSchema)
     #Strip .phonon extension for casteppy compatiblity
@@ -287,40 +346,4 @@ def phonon_hfcc(param_file):
             write_tensors(sname, all_hfine_tensors, r2psi2, symbols)
         calc_harm_potential(R, params['grid_n'], mu_mass, evals, E_table, sname)
 
-    return
-
-
-def write_displaced_cells(cell, sname, pname, lg, i):
-    """
-    Write out all modified cells in lg using seedname "sname". Also copy
-    param file at "pname" if one provided.
-
-    | Args:
-    |   cell (ASE Atoms object): Seed cell file, used to set appropriate
-    |                           calculator
-    |   sname (str): Seedname of cell file e.g. seedname.cell
-    |   pname (str): Path of param file to be copied
-    |   lg (Soprano linspaceGen object): Generator containing modified cells
-    |   i (int): Numerical suffix for cell file seedname
-    |
-    | Returns: Nothing
-    """
-    dirname = '{0}_{1}'.format(sname, i+1)
-    print("Creating folder", dirname)
-    try:
-        os.mkdir(dirname)
-    except OSError:
-        # Folder already exists
-        pass
-
-    for j, c in enumerate(lg):
-        c.set_calculator(cell.calc)
-        ase_io.write(os.path.join(dirname,
-                                  '{0}_{1}_{2}.cell'.format(sname, i+1, j+1)), c)
-        # If present, copy param file!
-        try:
-            shutil.copy(pname, os.path.join(dirname,
-                                            '{0}_{1}_{2}.param'.format(sname, i+1, j+1)))
-        except IOError:
-            pass
     return
