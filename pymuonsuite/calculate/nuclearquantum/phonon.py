@@ -76,6 +76,9 @@ def get_major_emodes(evecs, i):
 
 def calc_wavefunction(R, grid_n, mu_mass, E_table, hfine_table, sname = None,
                         num_solve = False, write_table = True):
+    """
+    Calculate wavefunction
+    """
     R_axes = np.array([np.linspace(-3*Ri, 3*Ri, grid_n)
                        for Ri in R])
 
@@ -153,7 +156,7 @@ def avg_hfine_tensor(r2psi2, hfine_table, hfine_tensors, noH, ipso_hfine_table =
         ipso_D1 = None
         ipso_D2 = None
         np.savetxt(sname + '_tensors.dat', hfine_tens_avg)
-        
+
     return D1, D2, ipso_D1, ipso_D2
 
 def write_tensors(sname, all_hfine_tensors, r2psi2, symbols):
@@ -277,10 +280,11 @@ def phonon_hfcc(param_file):
         symbols = cell.get_array('castep_custom_species')
 
         r2psi2 = calc_wavefunction(R, params['grid_n'], mu_mass, E_table, hfine_table, sname,
-                                False, True)
+                                params['numerical_solver'], True)
         D1, D2, ipso_D1, ipso_D2 = avg_hfine_tensor(r2psi2, hfine_table, all_hfine_tensors[mu_index],
                                                 params['ignore_ipsoH'], ipso_hfine_table, all_hfine_tensors[ipso_H_index], sname)
-        write_tensors(sname, all_hfine_tensors, r2psi2, symbols)
+        if (params['save_tensors']):
+            write_tensors(sname, all_hfine_tensors, r2psi2, symbols)
         calc_harm_potential(R, params['grid_n'], mu_mass, evals, E_table, sname)
 
     return
@@ -295,7 +299,7 @@ def write_displaced_cells(cell, sname, pname, lg, i):
     |   cell (ASE Atoms object): Seed cell file, used to set appropriate
     |                           calculator
     |   sname (str): Seedname of cell file e.g. seedname.cell
-    |   pname (str): Path of param file to be copies
+    |   pname (str): Path of param file to be copied
     |   lg (Soprano linspaceGen object): Generator containing modified cells
     |   i (int): Numerical suffix for cell file seedname
     |
