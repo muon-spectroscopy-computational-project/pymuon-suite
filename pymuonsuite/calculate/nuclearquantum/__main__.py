@@ -11,6 +11,7 @@ from __future__ import unicode_literals
 import argparse as ap
 
 from pymuonsuite.calculate.nuclearquantum.phonon import phonon_hfcc
+from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 
 if __name__ == "__main__":
     parser = ap.ArgumentParser()
@@ -22,8 +23,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    #Load parameters
+    params = load_input_file(args.parameter_file, PhononHfccSchema)
+
     if args.calculation_type == "phonon_hfcc":
-        phonon_hfcc(args.parameter_file)
+        phonon_hfcc(params)
     else:
         raise RuntimeError("""Invalid calculation type entered, please use
                               python -h flag to see currently supported types""")

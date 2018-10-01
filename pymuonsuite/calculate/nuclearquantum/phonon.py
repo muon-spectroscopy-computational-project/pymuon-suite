@@ -23,7 +23,6 @@ from soprano.utils import seedname
 from pymuonsuite.io.castep import parse_final_energy
 from pymuonsuite.io.castep import parse_phonon_file
 from pymuonsuite.io.magres import parse_hyperfine_magres
-from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 from pymuonsuite.utils import find_ipso_hydrogen
 
 def get_major_emodes(evecs, i):
@@ -236,7 +235,7 @@ def calc_harm_potential(R, grid_n, mu_mass, freqs, E_table, sname):
     all_table = np.concatenate((R_axes, harm_V, E_table), axis=0)
     np.savetxt(sname + '_V.dat', all_table.T)
 
-def phonon_hfcc(param_file):
+def phonon_hfcc(params):
     """
     Given a file containing phonon modes of a muoniated molecule, either write
     out a set of structure files with the muon progressively displaced in grid_n
@@ -245,12 +244,10 @@ def phonon_hfcc(param_file):
     average them to give an estimate of the actual hfcc accounting for nuclear quantum effects.
 
     | Args:
-    |   param_file(str): Filename of .yaml file containing input parameters
+    |   params (str): Dictionary of parameters parsed using PhononHfccSchema
     |
     | Returns: Nothing
     """
-    #Load parameters
-    params = load_input_file(param_file, PhononHfccSchema)
     #Strip .phonon extension for casteppy compatiblity
     if '.phonon' in params['phonon_file']:
         params['phonon_file'] = (params['phonon_file'])[:-7]
