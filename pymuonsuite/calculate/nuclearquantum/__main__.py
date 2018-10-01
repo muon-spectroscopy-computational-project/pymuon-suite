@@ -20,6 +20,8 @@ if __name__ == "__main__":
                 'phonon_hfcc': Nuclear quantum effects simulated by phonons""")
     parser.add_argument('parameter_file', type=str,
         help="YAML file containing relevant input parameters")
+    parser.add_argument('-w',   action='store_true', default=False,
+                        help="Create and write input files instead of parsing the results")
 
     args = parser.parse_args()
 
@@ -27,7 +29,7 @@ if __name__ == "__main__":
     params = load_input_file(args.parameter_file, PhononHfccSchema)
 
     if args.calculation_type == "phonon_hfcc":
-        phonon_hfcc(params)
+        phonon_hfcc(params, args.w)
     else:
         raise RuntimeError("""Invalid calculation type entered, please use
                               python -h flag to see currently supported types""")

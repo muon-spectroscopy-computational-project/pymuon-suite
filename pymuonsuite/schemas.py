@@ -155,8 +155,6 @@ PhononHfccSchema = Schema({
     'grid_n': int,
     #Calculator to use. Currently only CASTEP supported.
     Optional('calculator', default='castep'): validate_str,
-    #Write cells with muon displaced if true, otherwise perform hfcc calculation
-    Optional('write_cells', default=False): bool,
     #Ignore ipso hydrogen if true
     Optional('ignore_ipsoH', default=False): bool,
     #Save all hyperfine tensors if true

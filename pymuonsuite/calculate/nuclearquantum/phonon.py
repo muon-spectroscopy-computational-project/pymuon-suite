@@ -8,6 +8,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import argparse as ap
 import os
 import shutil
 
@@ -235,7 +236,7 @@ def calc_harm_potential(R, grid_n, mu_mass, freqs, E_table, sname):
     all_table = np.concatenate((R_axes, harm_V, E_table), axis=0)
     np.savetxt(sname + '_V.dat', all_table.T)
 
-def phonon_hfcc(params):
+def phonon_hfcc(params, args_write):
     """
     Given a file containing phonon modes of a muoniated molecule, either write
     out a set of structure files with the muon progressively displaced in grid_n
@@ -245,6 +246,7 @@ def phonon_hfcc(params):
 
     | Args:
     |   params (dict): Dictionary of parameters parsed using PhononHfccSchema
+    |   args_write (bool): Write files if true, parse if false
     |
     | Returns: Nothing
     """
@@ -267,16 +269,7 @@ def phonon_hfcc(params):
     sel = AtomSelection.from_array(cell, 'castep_custom_species', params['muon_symbol'])
     mu_index = sel.indices[0]
     #Get muon mass
-    lines =  open(sname + '.phonon').readlines()
-    for i in range(len(lines)):
-        if "Fractional Co-ordinates" in lines[i]:
-            mu_mass = lines[i+1+mu_index].split()[5]
-            try:
-                mu_mass = float(mu_mass)
-            except ValueError:
-                print("ERROR: .phonon file does not contain valid muon mass")
-                raise
-            break
+    mu_mass = float(cell.calc.cell.species_mass.value.split()[2])
     mu_mass = mu_mass*cnst.u #Convert to kg
 
     #Get muon phonon modes
@@ -295,7 +288,7 @@ def phonon_hfcc(params):
     R = np.sqrt(cnst.hbar/(evals*mu_mass))*1e10
 
     #Write cells with displaced muon
-    if params['write_cells']:
+    if args_write:
         pname = sname + '.param'
         if not os.path.isfile(pname):
             print("WARNING - no .param file was found")
