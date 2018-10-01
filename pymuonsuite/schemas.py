@@ -147,8 +147,6 @@ MuAirssSchema = Schema({
 
 # Parameter file schema and defaults
 PhononHfccSchema = Schema({
-    #File containing phonon evalues+evectors
-    'phonon_file': validate_str,
     #File containing structural info about molecule/crystal
     'cell_file': validate_str,
     #Symbol used to represent muon

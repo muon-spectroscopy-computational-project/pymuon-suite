@@ -244,17 +244,14 @@ def phonon_hfcc(params):
     average them to give an estimate of the actual hfcc accounting for nuclear quantum effects.
 
     | Args:
-    |   params (str): Dictionary of parameters parsed using PhononHfccSchema
+    |   params (dict): Dictionary of parameters parsed using PhononHfccSchema
     |
     | Returns: Nothing
     """
-    #Strip .phonon extension for casteppy compatiblity
-    if '.phonon' in params['phonon_file']:
-        params['phonon_file'] = (params['phonon_file'])[:-7]
-    else:
-        raise IOError("Invalid phonon file extension, please use .phonon")
+    #Get seedname
+    sname = seedname(params['cell_file'])
     #Parse phonon data into object
-    pd = PhononData(params['phonon_file'])
+    pd = PhononData(sname)
     #Convert frequencies back to cm-1
     pd.convert_e_units('1/cm')
     #Create eigenvector array that is formatted to work with get_major_emodes.
@@ -265,12 +262,12 @@ def phonon_hfcc(params):
                 evecs[i][j][k][:] = pd.eigenvecs[i][j*pd.n_ions+k][:]
 
     #Read in cell file
-    cell = ase_io.read(params['cell_file'])
+    cell = ase_io.read(sname + '.cell')
     #Find muon index in structure array
     sel = AtomSelection.from_array(cell, 'castep_custom_species', params['muon_symbol'])
     mu_index = sel.indices[0]
     #Get muon mass
-    lines =  open(params['phonon_file'] + '.phonon').readlines()
+    lines =  open(sname + '.phonon').readlines()
     for i in range(len(lines)):
         if "Fractional Co-ordinates" in lines[i]:
             mu_mass = lines[i+1+mu_index].split()[5]
@@ -297,11 +294,9 @@ def phonon_hfcc(params):
     # Displacement in Angstrom
     R = np.sqrt(cnst.hbar/(evals*mu_mass))*1e10
 
-    #Get seedname
-    sname = seedname(params['cell_file'])
     #Write cells with displaced muon
     if params['write_cells']:
-        pname = os.path.splitext(params['cell_file'])[0] + '.param'
+        pname = sname + '.param'
         if not os.path.isfile(pname):
             print("WARNING - no .param file was found")
         for i, Ri in enumerate(R):
@@ -346,5 +341,7 @@ def phonon_hfcc(params):
         if (params['save_tensors']):
             write_tensors(sname, all_hfine_tensors, r2psi2, symbols)
         calc_harm_potential(R, params['grid_n'], mu_mass, evals, E_table, sname)
+
+        print(D1, D2, ipso_D1, ipso_D2)
 
     return
