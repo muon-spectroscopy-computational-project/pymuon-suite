@@ -13,7 +13,7 @@ import argparse as ap
 from pymuonsuite.calculate.nuclearquantum.phonon import phonon_hfcc
 from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 
-if __name__ == "__main__":
+def nq_entry():
     parser = ap.ArgumentParser()
     parser.add_argument('calculation_type', type=str,
         help="""Type of calculation to be performed, currently supports:
@@ -33,3 +33,6 @@ if __name__ == "__main__":
     else:
         raise RuntimeError("""Invalid calculation type entered, please use
                               python -h flag to see currently supported types""")
+
+if __name__ == "__main__":
+    nq_entry()
