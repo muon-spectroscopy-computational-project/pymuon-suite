@@ -44,7 +44,9 @@ if __name__ == '__main__':
                   ('pm-muairss-gen = '
                    'pymuonsuite.muairss:main'),
                   ('pm-uep-opt = '
-                   'pymuonsuite.calculate.uep.__main__:geomopt_entry')
+                   'pymuonsuite.calculate.uep.__main__:geomopt_entry'),
+                  ('pm-nq = '
+                   'pymuonsuite.calculate.nuclearquantum.__main__:nq_entry')
               ]
           },
           python_requires='>=2.7'

@@ -145,6 +145,23 @@ MuAirssSchema = Schema({
     int,
 })
 
+# Parameter file schema and defaults
+PhononHfccSchema = Schema({
+    #File containing structural info about molecule/crystal
+    'cell_file': validate_str,
+    #Symbol used to represent muon
+    'muon_symbol': validate_str,
+    #Number of grid points(displacements of muon) to use
+    'grid_n': int,
+    #Calculator to use. Currently only CASTEP supported.
+    Optional('calculator', default='castep'): validate_str,
+    #Ignore ipso hydrogen if true
+    Optional('ignore_ipsoH', default=False): bool,
+    #Save all hyperfine tensors if true
+    Optional('save_tensors', default=False): bool,
+    #Solve the Schroedinger equation numerically on the three axes
+    Optional('numerical_solver', default=False): bool
+})
 
 # Parameter file schema and defaults
 UEPSchema = Schema({

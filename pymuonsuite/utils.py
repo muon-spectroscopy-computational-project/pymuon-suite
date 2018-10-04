@@ -6,7 +6,32 @@ from __future__ import unicode_literals
 
 import shutil
 import numpy as np
+from soprano.utils import minimum_periodic
 
+def find_ipso_hydrogen(a_i, cell, symbol):
+    """Find closest hydrogen to atom at index a_i in cell
+
+    | Args:
+    |   a_i (int): Index of atom in cell position array
+    |   cell (Atoms object): ASE atoms object for molecule
+    |   symbol (str): Chemical symbol of relevant atom
+    |
+    | Returns:
+    |   ipso_i (int): Index of closest hydrogen in cell position array
+    """
+    if cell.has('castep_custom_species'):
+        chems = cell.get_array('castep_custom_species')
+    else:
+        chems = np.array(cell.get_chemical_symbols())
+    pos = cell.get_positions()
+    iH = np.where(['H' in c and c != symbol for c in chems])[0]
+    posH = pos[iH]
+    distH = np.linalg.norm(
+        minimum_periodic(posH - pos[a_i], cell.get_cell())[0], axis=-1)
+    #Which one is the closest?
+    ipso_i = iH[np.argmin(distH)]
+
+    return ipso_i
 
 def list_to_string(arr):
     """Create a str from a list an array of list of numbers
