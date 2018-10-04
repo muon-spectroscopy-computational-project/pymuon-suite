@@ -91,7 +91,10 @@ def save_muonconf_dftb(a, folder, params, dftbargs={}):
             np.sum(spins))
 
     # Add any custom arguments
-    args.update(dftbargs)
+    if isinstance(dftbargs, DFTBArgs):
+        args.update(dftbargs.args)
+    else:
+        args.update(dftbargs)
 
     if params['dftb_pbc']:
         dcalc = Dftb(label=name, atoms=a,

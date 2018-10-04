@@ -46,7 +46,7 @@ if __name__ == '__main__':
                   ('pm-uep-opt = '
                    'pymuonsuite.calculate.uep.__main__:geomopt_entry'),
                   ('pm-nq = '
-                   'pymuonsuite.calculate.nuclearquantum.__main__:nq_entry')
+                   'pymuonsuite.quantum.__main__:nq_entry')
               ]
           },
           python_requires='>=2.7'
