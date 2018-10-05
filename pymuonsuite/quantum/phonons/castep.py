@@ -9,9 +9,22 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
+import shutil
+
 import numpy as np
+import scipy.constants as cnst
+from ase import Atoms
 from ase import io as ase_io
+from soprano.collection.generate import linspaceGen
 from soprano.selection import AtomSelection
+from soprano.utils import seedname
+
+
+from pymuonsuite.io.castep import parse_final_energy, parse_phonon_file
+from pymuonsuite.io.magres import parse_hyperfine_magres
+from pymuonsuite.quantum.grid import calc_wavefunction, avg_hfine_tensor
+from pymuonsuite.quantum.grid import write_tensors, calc_harm_potential
 from pymuonsuite.utils import find_ipso_hydrogen
 from pymuonsuite.quantum.phonons.utils import get_major_emodes
 try:

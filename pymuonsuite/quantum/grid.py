@@ -8,21 +8,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import argparse as ap
-import os
-import shutil
-
 import numpy as np
 import scipy.constants as cnst
 from ase import Atoms
-from ase import io as ase_io
-from soprano.collection.generate import linspaceGen
-from soprano.selection import AtomSelection
-from soprano.utils import seedname
 
-from pymuonsuite.io.castep import parse_final_energy
-from pymuonsuite.io.castep import parse_phonon_file
-from pymuonsuite.io.magres import parse_hyperfine_magres
 
 def calc_wavefunction(R, grid_n, mu_mass, E_table, hfine_table, sname = None,
                         num_solve = False, write_table = True):
