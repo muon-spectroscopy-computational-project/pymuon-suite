@@ -56,7 +56,7 @@ def generate_muairss_collection(struct, params):
     # Make a supercell
     sm = make_3x3(params['supercell'])
     # ASE's make_supercell is weird, avoid if not necessary...
-    smdiag = np.diag(sm)
+    smdiag = np.diag(sm).astype(int)
     if np.all(np.diag(smdiag) == sm):
         scell0 = struct.repeat(smdiag)
     else:
