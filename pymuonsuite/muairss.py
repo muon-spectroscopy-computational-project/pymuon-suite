@@ -27,6 +27,7 @@ from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
 from ase import Atoms, io
 from ase.build import make_supercell
+from soprano.utils import safe_input
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 
@@ -122,12 +123,12 @@ def save_muairss_collection(struct, params, batch_path=''):
 
 def safe_create_folder(folder_name):
     while os.path.isdir(folder_name):
-        ans = raw_input(('Folder {} exists, overwrite (y/N)? '
+        ans = safe_input(('Folder {} exists, overwrite (y/N)? '
                          ).format(folder_name))
         if ans == 'y':
             shutil.rmtree(folder_name)
         else:
-            folder_name = raw_input('Please input new folder name:\n')
+            folder_name = safe_input('Please input new folder name:\n')
     try:
         os.mkdir(folder_name)
     except OSError:
