@@ -19,7 +19,7 @@ try:
 except ImportError:
     raise ImportError("""
 Can't use castep phonon interface due to casteppy not being installed.
-Please download and install casteppy from GitHub:
+Please download and install casteppy from Bitbucket:
 
 HTTPS:  https://bitbucket.org/casteppy/casteppy.git
 SSH:    git@bitbucket.org:casteppy/casteppy.git
