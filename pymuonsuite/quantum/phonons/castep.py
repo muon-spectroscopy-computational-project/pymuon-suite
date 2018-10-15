@@ -16,10 +16,10 @@ import numpy as np
 import scipy.constants as cnst
 from ase import Atoms
 from ase import io as ase_io
+from soprano.collection import AtomsCollection
 from soprano.collection.generate import linspaceGen
 from soprano.selection import AtomSelection
 from soprano.utils import seedname
-
 
 from pymuonsuite.io.castep import parse_final_energy, parse_phonon_file
 from pymuonsuite.io.magres import parse_hyperfine_magres
@@ -81,23 +81,10 @@ def write_displaced_cells(cell, sname, pname, lg, i):
     | Returns: Nothing
     """
     dirname = '{0}_{1}'.format(sname, i+1)
-    print("Creating folder", dirname)
-    try:
-        os.mkdir(dirname)
-    except OSError:
-        # Folder already exists
-        pass
 
-    for j, c in enumerate(lg):
-        c.set_calculator(cell.calc)
-        ase_io.write(os.path.join(dirname,
-                                  '{0}_{1}_{2}.cell'.format(sname, i+1, j+1)), c)
-        # If present, copy param file!
-        try:
-            shutil.copy(pname, os.path.join(dirname,
-                                            '{0}_{1}_{2}.param'.format(sname, i+1, j+1)))
-        except IOError:
-            pass
+    collection = AtomsCollection(lg)
+    collection.save_tree(dirname, "cell")
+
     return
 
 def phonon_hfcc(params, args_write):
@@ -131,6 +118,7 @@ def phonon_hfcc(params, args_write):
 
     # Read in cell file
     cell = ase_io.read(sname + '.cell')
+    cell.info['name'] = sname
     # Find muon index in structure array
     sel = AtomSelection.from_array(
         cell, 'castep_custom_species', params['muon_symbol'])
@@ -161,6 +149,7 @@ def phonon_hfcc(params, args_write):
         if not os.path.isfile(pname):
             print("WARNING - no .param file was found")
         for i, Ri in enumerate(R):
+            cell.info['name'] = sname + '_' + str(i+1)
             lg = create_displaced_cells(
                 cell, mu_index, params['grid_n'], 3*em[i]*Ri)
             write_displaced_cells(cell, sname, pname, lg, i)
