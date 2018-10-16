@@ -86,7 +86,8 @@ def write_displaced_cells(cell, sname, lg, i):
 
     return
 
-def phonon_hfcc(params, args_write):
+def phonon_hfcc(cell_f, mu_sym, grid_n, calculator, ignore_ipsoH, save_tensors,
+                numerical_solver, args_write):
     """
     Given a file containing phonon modes of a muoniated molecule, either write
     out a set of structure files with the muon progressively displaced in
@@ -102,7 +103,7 @@ def phonon_hfcc(params, args_write):
     | Returns: Nothing
     """
     # Get seedname
-    sname = seedname(params['cell_file'])
+    sname = seedname(cell_f)
     # Parse phonon data into object
     pd = PhononData(sname)
     # Convert frequencies back to cm-1
@@ -120,7 +121,7 @@ def phonon_hfcc(params, args_write):
     cell.info['name'] = sname
     # Find muon index in structure array
     sel = AtomSelection.from_array(
-        cell, 'castep_custom_species', params['muon_symbol'])
+        cell, 'castep_custom_species', mu_sym)
     mu_index = sel.indices[0]
     # Get muon mass
     mu_mass = float(cell.calc.cell.species_mass.value.split()[2])
@@ -131,9 +132,9 @@ def phonon_hfcc(params, args_write):
     em = np.real(em)
 
     # Find ipso hydrogen location and phonon modes
-    if not params['ignore_ipsoH']:
+    if not ignore_ipsoH:
         ipso_H_index = find_ipso_hydrogen(
-            mu_index, cell, params['muon_symbol'])
+            mu_index, cell, mu_sym)
         em_i_H, em_H, em_o_H = get_major_emodes(evecs[0], ipso_H_index)
         em_H = np.real(em_H)
 
@@ -147,28 +148,28 @@ def phonon_hfcc(params, args_write):
         for i, Ri in enumerate(R):
             cell.info['name'] = sname + '_' + str(i+1)
             lg = create_displaced_cells(
-                cell, mu_index, params['grid_n'], 3*em[i]*Ri)
+                cell, mu_index, grid_n, 3*em[i]*Ri)
             write_displaced_cells(cell, sname, lg, i)
 
     else:
         # Parse hyperfine values from .magres files and energy from .castep
         # files
         E_table = []
-        hfine_table = np.zeros((np.size(R), params['grid_n']))
-        ipso_hfine_table = np.zeros((np.size(R), params['grid_n']))
+        hfine_table = np.zeros((np.size(R), grid_n))
+        ipso_hfine_table = np.zeros((np.size(R), grid_n))
         num_species = np.size(cell.get_array('castep_custom_species'))
         all_hfine_tensors = np.zeros(
-            (num_species, np.size(R), params['grid_n'], 3, 3))
+            (num_species, np.size(R), grid_n, 3, 3))
         for i, Ri in enumerate(R):
             E_table.append([])
             dirname = '{0}_{1}'.format(sname, i+1)
-            for j in range(params['grid_n']):
+            for j in range(grid_n):
                 mfile = os.path.join(dirname,
                     '{0}_{1}_{2}/{0}_{1}_{2}.magres'.format(sname, i+1, j))
                 mgr = parse_hyperfine_magres(mfile)
                 hfine_table[i][j] = np.trace(
                     mgr.get_array('hyperfine')[mu_index])/3.0
-                if not params['ignore_ipsoH']:
+                if not ignore_ipsoH:
                     ipso_hfine_table[i][j] = np.trace(
                         mgr.get_array('hyperfine')[ipso_H_index])/3.0
                 else:
@@ -180,26 +181,26 @@ def phonon_hfcc(params, args_write):
                 E_table[-1].append(parse_final_energy(castf))
 
         E_table = np.array(E_table)
-        if (hfine_table.shape != (3, params['grid_n']) or
-                E_table.shape != (3, params['grid_n'])):
+        if (hfine_table.shape != (3, grid_n) or
+                E_table.shape != (3, grid_n)):
             raise RuntimeError("Incomplete or absent magres or castep data")
 
         symbols = cell.get_array('castep_custom_species')
 
-        r2psi2 = calc_wavefunction(R, params['grid_n'], mu_mass, E_table,
+        r2psi2 = calc_wavefunction(R, grid_n, mu_mass, E_table,
                                    hfine_table, sname,
-                                   params['numerical_solver'], True)
+                                   numerical_solver, True)
         D1, D2, ipso_D1, ipso_D2 = avg_hfine_tensor(r2psi2, hfine_table,
                                                     all_hfine_tensors[
                                                         mu_index],
-                                                    params['ignore_ipsoH'],
+                                                    ignore_ipsoH,
                                                     ipso_hfine_table,
                                                     all_hfine_tensors[
                                                         ipso_H_index],
                                                     sname)
-        if (params['save_tensors']):
+        if (save_tensors):
             write_tensors(sname, all_hfine_tensors, r2psi2, symbols)
-        calc_harm_potential(R, params['grid_n'],
+        calc_harm_potential(R, grid_n,
                             mu_mass, evals, E_table, sname)
 
     return
