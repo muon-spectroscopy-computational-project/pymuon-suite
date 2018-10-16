@@ -65,7 +65,7 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
         cell_L, cell_R, steps=grid_n, periodic=True)
     return lg
 
-def write_displaced_cells(cell, sname, pname, lg, i):
+def write_displaced_cells(cell, sname, lg, i):
     """
     Write out all modified cells in lg using seedname "sname". Also copy
     param file at "pname" if one provided.
@@ -74,7 +74,6 @@ def write_displaced_cells(cell, sname, pname, lg, i):
     |   cell (ASE Atoms object): Seed cell file, used to set appropriate
     |                           calculator
     |   sname (str): Seedname of cell file e.g. seedname.cell
-    |   pname (str): Path of param file to be copied
     |   lg (Soprano linspaceGen object): Generator containing modified cells
     |   i (int): Numerical suffix for cell file seedname
     |
@@ -145,14 +144,11 @@ def phonon_hfcc(params, args_write):
 
     # Write cells with displaced muon
     if args_write:
-        pname = sname + '.param'
-        if not os.path.isfile(pname):
-            print("WARNING - no .param file was found")
         for i, Ri in enumerate(R):
             cell.info['name'] = sname + '_' + str(i+1)
             lg = create_displaced_cells(
                 cell, mu_index, params['grid_n'], 3*em[i]*Ri)
-            write_displaced_cells(cell, sname, pname, lg, i)
+            write_displaced_cells(cell, sname, lg, i)
 
     else:
         # Parse hyperfine values from .magres files and energy from .castep
