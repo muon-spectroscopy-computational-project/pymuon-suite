@@ -65,27 +65,6 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
         cell_L, cell_R, steps=grid_n, periodic=True)
     return lg
 
-def write_displaced_cells(cell, sname, lg, i):
-    """
-    Write out all modified cells in lg using seedname "sname". Also copy
-    param file at "pname" if one provided.
-
-    | Args:
-    |   cell (ASE Atoms object): Seed cell file, used to set appropriate
-    |                           calculator
-    |   sname (str): Seedname of cell file e.g. seedname.cell
-    |   lg (Soprano linspaceGen object): Generator containing modified cells
-    |   i (int): Numerical suffix for cell file seedname
-    |
-    | Returns: Nothing
-    """
-    dirname = '{0}_{1}'.format(sname, i+1)
-
-    collection = AtomsCollection(lg)
-    collection.save_tree(dirname, "cell")
-
-    return
-
 def phonon_hfcc(cell_f, mu_sym, grid_n, calculator, pname, ignore_ipsoH,
                             save_tensors, numerical_solver, args_write):
     """
