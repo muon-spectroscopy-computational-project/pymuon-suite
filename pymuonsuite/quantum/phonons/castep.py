@@ -163,8 +163,8 @@ def phonon_hfcc(params, args_write):
             E_table.append([])
             dirname = '{0}_{1}'.format(sname, i+1)
             for j in range(params['grid_n']):
-                mfile = os.path.join(
-                    dirname, '{0}_{1}_{2}.magres'.format(sname, i+1, j+1))
+                mfile = os.path.join(dirname,
+                    '{0}_{1}_{2}/{0}_{1}_{2}.magres'.format(sname, i+1, j))
                 mgr = parse_hyperfine_magres(mfile)
                 hfine_table[i][j] = np.trace(
                     mgr.get_array('hyperfine')[mu_index])/3.0
@@ -175,8 +175,8 @@ def phonon_hfcc(params, args_write):
                     ipso_hfine_table = None
                 for k, tensor in enumerate(mgr.get_array('hyperfine')):
                     all_hfine_tensors[k][i][j][:][:] = tensor
-                castf = os.path.join(
-                    dirname, '{0}_{1}_{2}.castep'.format(sname, i+1, j+1))
+                castf = os.path.join(dirname,
+                    '{0}_{1}_{2}/{0}_{1}_{2}.castep'.format(sname, i+1, j))
                 E_table[-1].append(parse_final_energy(castf))
 
         E_table = np.array(E_table)
