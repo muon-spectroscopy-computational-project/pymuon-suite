@@ -86,8 +86,8 @@ def write_displaced_cells(cell, sname, lg, i):
 
     return
 
-def phonon_hfcc(cell_f, mu_sym, grid_n, calculator, ignore_ipsoH, save_tensors,
-                numerical_solver, args_write):
+def phonon_hfcc(cell_f, mu_sym, grid_n, calculator, pname, ignore_ipsoH,
+                            save_tensors, numerical_solver, args_write):
     """
     Given a file containing phonon modes of a muoniated molecule, either write
     out a set of structure files with the muon progressively displaced in
@@ -147,9 +147,15 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calculator, ignore_ipsoH, save_tensors,
     if args_write:
         for i, Ri in enumerate(R):
             cell.info['name'] = sname + '_' + str(i+1)
-            lg = create_displaced_cells(
-                cell, mu_index, grid_n, 3*em[i]*Ri)
-            write_displaced_cells(cell, sname, lg, i)
+            dirname = '{0}_{1}'.format(sname, i+1)
+            lg = create_displaced_cells(cell, mu_index, grid_n, 3*em[i]*Ri)
+            #write_displaced_cells(cell, sname, lg, i)
+            collection = AtomsCollection(lg)
+            collection.save_tree(dirname, "cell")
+            if pname:
+                for j in range(grid_n):
+                    shutil.copy(pname, os.path.join(dirname,
+                         '{0}_{1}_{2}/{0}_{1}_{2}.param'.format(sname, i+1, j)))
 
     else:
         # Parse hyperfine values from .magres files and energy from .castep
