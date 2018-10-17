@@ -65,8 +65,8 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
         cell_L, cell_R, steps=grid_n, periodic=True)
     return lg
 
-def phonon_hfcc(cell_f, mu_sym, grid_n, calculator, pname, ignore_ipsoH,
-                            save_tensors, numerical_solver, args_write):
+def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
+                ignore_ipsoH=False, save_tens=False, solver=False, args_w=False):
     """
     Given a file containing phonon modes of a muoniated molecule, either write
     out a set of structure files with the muon progressively displaced in
@@ -76,8 +76,17 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calculator, pname, ignore_ipsoH,
     accounting for nuclear quantum effects.
 
     | Args:
-    |   params (dict): Dictionary of parameters parsed using PhononHfccSchema
-    |   args_write (bool): Write files if true, parse if false
+    |   cell_f (str): Path to structure file (e.g. .cell file for CASTEP)
+    |   mu_sym (str): Symbol used to represent muon in structure file
+    |   grid_n (int): Number of increments to make along each phonon axis
+    |   calc (str): Calculator used (e.g. CASTEP)
+    |   pname (str): Path of param file which will be copied into folders
+    |                along with displaced cell files for convenience
+    |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
+    |   save_tens (bool): If true, save full hyperfine tensors for all atoms
+    |   solver (bool): If true, use qlab to numerically solve the schroedinger
+    |                  equation
+    |   args_w (bool): Write files if true, parse if false
     |
     | Returns: Nothing
     """
@@ -123,7 +132,7 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calculator, pname, ignore_ipsoH,
     R = np.sqrt(cnst.hbar/(evals*mu_mass))*1e10
 
     # Write cells with displaced muon
-    if args_write:
+    if args_w:
         for i, Ri in enumerate(R):
             cell.info['name'] = sname + '_' + str(i+1)
             dirname = '{0}_{1}'.format(sname, i+1)
@@ -174,7 +183,7 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calculator, pname, ignore_ipsoH,
 
         r2psi2 = calc_wavefunction(R, grid_n, mu_mass, E_table,
                                    hfine_table, sname,
-                                   numerical_solver, True)
+                                   solver, True)
         D1, D2, ipso_D1, ipso_D2 = avg_hfine_tensor(r2psi2, hfine_table,
                                                     all_hfine_tensors[
                                                         mu_index],
@@ -183,7 +192,7 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calculator, pname, ignore_ipsoH,
                                                     all_hfine_tensors[
                                                         ipso_H_index],
                                                     sname)
-        if (save_tensors):
+        if (save_tens):
             write_tensors(sname, all_hfine_tensors, r2psi2, symbols)
         calc_harm_potential(R, grid_n,
                             mu_mass, evals, E_table, sname)
