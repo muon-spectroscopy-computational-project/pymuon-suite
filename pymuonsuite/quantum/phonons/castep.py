@@ -39,6 +39,8 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
 
+
+
 def create_displaced_cells(cell, a_i, grid_n, disp):
     """Create a range ASE Atoms objects with the displacement of atom at index
     a_i varying between -evecs*3*R and +evecs*3*R with grid_n increments
@@ -65,30 +67,26 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
         cell_L, cell_R, steps=grid_n, periodic=True)
     return lg
 
-def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
-                ignore_ipsoH=False, save_tens=False, solver=False, args_w=False):
-    """
-    Given a file containing phonon modes of a muoniated molecule, either write
-    out a set of structure files with the muon progressively displaced in
-    grid_n increments along the axes of the phonon modes, or read in hyperfine
-    coupling values from a set of .magres files with such a set of muon
-    displacements and average them to give an estimate of the actual hfcc
-    accounting for nuclear quantum effects.
+def castep_muon_modes(cell_f, mu_sym, ignore_ipsoH):
+    """Return data about muon index, mass, phonon modes and eigenvalues and
+       optionally the ipso hydrogen's index from a castep .cell and .phonon
+       file.
 
     | Args:
-    |   cell_f (str): Path to structure file (e.g. .cell file for CASTEP)
-    |   mu_sym (str): Symbol used to represent muon in structure file
-    |   grid_n (int): Number of increments to make along each phonon axis
-    |   calc (str): Calculator used (e.g. CASTEP)
-    |   pname (str): Path of param file which will be copied into folders
-    |                along with displaced cell files for convenience
-    |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
-    |   save_tens (bool): If true, save full hyperfine tensors for all atoms
-    |   solver (bool): If true, use qlab to numerically solve the schroedinger
-    |                  equation
-    |   args_w (bool): Write files if true, parse if false
+    |   cell_f (str): Path of cell file
+    |   mu_sym (str): Symbol used to represent muon
+    |   ignore_ipsoH (bool): If true, do not find ipso hydrogen index
     |
-    | Returns: Nothing
+    | Returns:
+    |   cell (ASE Atoms object): ASE structure data
+    |   sname (str): Cell file name minus file extension
+    |   mu_index (int): Index of muon in cell file
+    |   ipso_H_index (int): Index of ipso hydrogen in cell file
+    |   mu_mass (float): Mass of muon
+    |   em_i (int[3]): Indices of eigenvectors in evec array
+    |   em (float[3]): Eigenvectors of muon phonon modes
+    |   em_o (float[3]):
+    |   evals (float[3]): Eigenvalues of muon phonon modes
     """
     # Get seedname
     sname = seedname(cell_f)
@@ -119,15 +117,49 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
     em_i, em, em_o = get_major_emodes(evecs[0], mu_index)
     em = np.real(em)
 
-    # Find ipso hydrogen location and phonon modes
+    # Find ipso hydrogen location
     if not ignore_ipsoH:
-        ipso_H_index = find_ipso_hydrogen(
-            mu_index, cell, mu_sym)
-        em_i_H, em_H, em_o_H = get_major_emodes(evecs[0], ipso_H_index)
-        em_H = np.real(em_H)
+        ipso_H_index = find_ipso_hydrogen(mu_index, cell, mu_sym)
+    else:
+        ipso_H_index = None
 
     # Get muon phonon frequencies and convert to radians/second
     evals = np.array(pd.freqs[0][em_i]*1e2*cnst.c*np.pi*2)
+
+    return cell, sname, mu_index, ipso_H_index, mu_mass, em_i, em, em_o, evals
+
+def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
+                ignore_ipsoH=False, save_tens=False, solver=False, args_w=False):
+    """
+    Given a file containing phonon modes of a muoniated molecule, either write
+    out a set of structure files with the muon progressively displaced in
+    grid_n increments along the axes of the phonon modes, or read in hyperfine
+    coupling values from a set of .magres files with such a set of muon
+    displacements and average them to give an estimate of the actual hfcc
+    accounting for nuclear quantum effects.
+
+    | Args:
+    |   cell_f (str): Path to structure file (e.g. .cell file for CASTEP)
+    |   mu_sym (str): Symbol used to represent muon in structure file
+    |   grid_n (int): Number of increments to make along each phonon axis
+    |   calc (str): Calculator used (e.g. CASTEP)
+    |   pname (str): Path of param file which will be copied into folders
+    |                along with displaced cell files for convenience
+    |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
+    |   save_tens (bool): If true, save full hyperfine tensors for all atoms
+    |   solver (bool): If true, use qlab to numerically solve the schroedinger
+    |                  equation
+    |   args_w (bool): Write files if true, parse if false
+    |
+    | Returns: Nothing
+    """
+    #Parse muon data using appropriate parser for calculator
+    if (calc.strip().lower() in 'castep'):
+        cell, sname, mu_index, ipso_H_index, mu_mass, em_i, em, em_o, evals = \
+        castep_muon_modes(cell_f, mu_sym, ignore_ipsoH)
+    else:
+        raise RuntimeError("Invalid calculator entered ('{0}').".format(calc))
+
     # Displacement in Angstrom
     R = np.sqrt(cnst.hbar/(evals*mu_mass))*1e10
 
@@ -137,9 +169,9 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
             cell.info['name'] = sname + '_' + str(i+1)
             dirname = '{0}_{1}'.format(sname, i+1)
             lg = create_displaced_cells(cell, mu_index, grid_n, 3*em[i]*Ri)
-            #write_displaced_cells(cell, sname, lg, i)
             collection = AtomsCollection(lg)
             collection.save_tree(dirname, "cell")
+            #Copy paramater file if specified
             if pname:
                 for j in range(grid_n):
                     shutil.copy(pname, os.path.join(dirname,
