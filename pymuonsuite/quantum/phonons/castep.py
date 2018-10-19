@@ -181,11 +181,9 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
         # Parse hyperfine values from .magres files and energy from .castep
         # files
         E_table = []
-        hfine_table = np.zeros((np.size(R), grid_n))
-        ipso_hfine_table = np.zeros((np.size(R), grid_n))
+        hfine_table = ipso_hfine_table = np.zeros((np.size(R), grid_n))
         num_species = np.size(cell.get_array('castep_custom_species'))
-        all_hfine_tensors = np.zeros(
-            (num_species, np.size(R), grid_n, 3, 3))
+        all_hfine_tensors = np.zeros((num_species, np.size(R), grid_n, 3, 3))
         for i, Ri in enumerate(R):
             E_table.append([])
             dirname = '{0}_{1}'.format(sname, i+1)
