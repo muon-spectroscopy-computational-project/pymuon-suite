@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 
 import argparse as ap
 
-from pymuonsuite.calculate.quantum.phonons.castep import phonon_hfcc
+from pymuonsuite.quantum.phonons.castep import phonon_hfcc
 from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 
 
@@ -30,7 +30,9 @@ def nq_entry():
     params = load_input_file(args.parameter_file, PhononHfccSchema)
 
     if args.calculation_type == "phonon_hfcc":
-        phonon_hfcc(params, args.w)
+        phonon_hfcc(params['cell_file'], params['muon_symbol'], params['grid_n'],
+                    params['calculator'], params['param_file'], params['ignore_ipsoH'],
+                    params['save_tensors'], params['numerical_solver'], args.w)
     else:
         raise RuntimeError("""Invalid calculation type entered, please use
                               python -h flag to see currently supported types""")
