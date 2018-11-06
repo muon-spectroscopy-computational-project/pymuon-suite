@@ -94,7 +94,7 @@ class DFTBArgs(object):
 
         args = deepcopy(self._args)
 
-        for name, value in self._optdict.iteritems():
+        for name, value in self._optdict.items():
             if value:
                 args.update(json.load(open(os.path.join(self._path,
                                                         name))))
