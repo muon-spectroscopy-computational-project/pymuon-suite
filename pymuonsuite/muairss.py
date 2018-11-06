@@ -106,7 +106,7 @@ def save_muairss_collection(struct, params, batch_path=''):
     }
 
     # Which calculators?
-    calcs = map(lambda s: s.strip().lower(), params['calculator'].split(','))
+    calcs = [s.strip().lower() for s in params['calculator'].split(',')]
     if 'all' in calcs:
         calcs = save_formats.keys()
 
