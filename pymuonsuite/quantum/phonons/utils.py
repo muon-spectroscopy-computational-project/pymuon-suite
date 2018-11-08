@@ -16,9 +16,9 @@ def get_major_emodes(evecs, i):
     |   i (int): Index of muon in position array
     |
     | Returns:
-    |   major_evecs_i (int[3]): Indices of eigenvectors in evec array
+    |   major_evecs_i (int[3]): Indices of muon eigenvectors in evecs
     |   major_evecs (float[3]): Eigenvectors of muon phonon modes
-    |   major_evecs_ortho (float[3]):
+    |   major_evecs_ortho (float[3]): Orthogonolised muon modes
     """
     # First, find the eigenmodes whose amplitude is greater for ion i
     evecs_amp = np.linalg.norm(evecs, axis=-1)

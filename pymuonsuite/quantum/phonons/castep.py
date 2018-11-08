@@ -43,7 +43,7 @@ and try again.""")
 
 def create_displaced_cells(cell, a_i, grid_n, disp):
     """Create a range ASE Atoms objects with the displacement of atom at index
-    a_i varying between -evecs*3*R and +evecs*3*R with grid_n increments
+    a_i varying between -disp and +disp with grid_n increments
 
     | Args:
     |   cell (ASE Atoms object): Object containing atom to be displaced
@@ -67,66 +67,37 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
         cell_L, cell_R, steps=grid_n, periodic=True)
     return lg
 
-def castep_muon_modes(cell_f, mu_sym, ignore_ipsoH):
-    """Return data about muon index, mass, phonon modes and eigenvalues and
-       optionally the ipso hydrogen's index from a castep .cell and .phonon
-       file.
+def parse_castep_muon(sname, mu_sym, ignore_ipsoH):
+    """Parse muon data from CASTEP cell file, returning an ASE Atoms object
+    alongside the muon and ipso hydrogen index and muon mass.
 
     | Args:
-    |   cell_f (str): Path of cell file
+    |   sname (str): Cell file name minus extension (i.e. <seedname>.cell)
     |   mu_sym (str): Symbol used to represent muon
     |   ignore_ipsoH (bool): If true, do not find ipso hydrogen index
-    |
     | Returns:
     |   cell (ASE Atoms object): ASE structure data
-    |   sname (str): Cell file name minus file extension
     |   mu_index (int): Index of muon in cell file
     |   ipso_H_index (int): Index of ipso hydrogen in cell file
     |   mu_mass (float): Mass of muon
-    |   em_i (int[3]): Indices of eigenvectors in evec array
-    |   em (float[3]): Eigenvectors of muon phonon modes
-    |   em_o (float[3]):
-    |   evals (float[3]): Eigenvalues of muon phonon modes
     """
-    # Get seedname
-    sname = seedname(cell_f)
-    # Parse phonon data into object
-    pd = PhononData(sname)
-    # Convert frequencies back to cm-1
-    pd.convert_e_units('1/cm')
-    # Create eigenvector array that is formatted to work with get_major_emodes.
-    evecs = np.zeros((pd.n_qpts, pd.n_branches, pd.n_ions, 3),
-                     dtype='complex128')
-    for i in range(pd.n_qpts):
-        for j in range(pd.n_branches):
-            for k in range(pd.n_ions):
-                evecs[i][j][k][:] = pd.eigenvecs[i][j*pd.n_ions+k][:]
-
     # Read in cell file
-    cell = ase_io.read(sname + '.cell')
+    cell = ase_io.read(sname + ".cell")
     cell.info['name'] = sname
+    # Get muon mass
+    mu_mass = float(cell.calc.cell.species_mass.value.split()[2])
+    mu_mass = mu_mass*cnst.u  # Convert to kg
     # Find muon index in structure array
     sel = AtomSelection.from_array(
         cell, 'castep_custom_species', mu_sym)
     mu_index = sel.indices[0]
-    # Get muon mass
-    mu_mass = float(cell.calc.cell.species_mass.value.split()[2])
-    mu_mass = mu_mass*cnst.u  # Convert to kg
-
-    # Get muon phonon modes
-    em_i, em, em_o = get_major_emodes(evecs[0], mu_index)
-    em = np.real(em)
-
     # Find ipso hydrogen location
     if not ignore_ipsoH:
         ipso_H_index = find_ipso_hydrogen(mu_index, cell, mu_sym)
     else:
         ipso_H_index = None
 
-    # Get muon phonon frequencies and convert to radians/second
-    evals = np.array(pd.freqs[0][em_i]*1e2*cnst.c*np.pi*2)
-
-    return cell, sname, mu_index, ipso_H_index, mu_mass, em_i, em, em_o, evals
+    return cell, mu_index, ipso_H_index, mu_mass
 
 def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
                 ignore_ipsoH=False, save_tens=False, solver=False, args_w=False):
@@ -155,23 +126,37 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
     """
     #Parse muon data using appropriate parser for calculator
     if (calc.strip().lower() in 'castep'):
-        cell, sname, mu_index, ipso_H_index, mu_mass, em_i, em, em_o, evals = \
-        castep_muon_modes(cell_f, mu_sym, ignore_ipsoH)
+        sname = seedname(cell_f)
+        cell, mu_index, ipso_H_index, mu_mass = parse_castep_muon(sname, mu_sym,
+                                                                   ignore_ipsoH)
+        # Parse phonon data into object
+        pd = PhononData(sname)
+        # Convert frequencies back to cm-1
+        pd.convert_e_units('1/cm')
+        # Get phonon frequencies
+        evals = pd.freqs
+        evecs = pd.eigenvecs
     else:
         raise RuntimeError("Invalid calculator entered ('{0}').".format(calc))
 
+    # Get muon phonon modes
+    mu_evecs_index, mu_evecs, mu_evecs_ortho = get_major_emodes(evecs[0], mu_index)
+    mu_evecs = np.real(mu_evecs)
+    #Get muon phonon frequencies and convert to radians/second
+    mu_evals = np.array(evals[0][mu_evecs_index]*1e2*cnst.c*np.pi*2)
     # Displacement in Angstrom
-    R = np.sqrt(cnst.hbar/(evals*mu_mass))*1e10
+    R = np.sqrt(cnst.hbar/(mu_evals*mu_mass))*1e10
+
 
     # Write cells with displaced muon
     if args_w:
         for i, Ri in enumerate(R):
             cell.info['name'] = sname + '_' + str(i+1)
             dirname = '{0}_{1}'.format(sname, i+1)
-            lg = create_displaced_cells(cell, mu_index, grid_n, 3*em[i]*Ri)
+            lg = create_displaced_cells(cell, mu_index, grid_n, 3*mu_evecs[i]*Ri)
             collection = AtomsCollection(lg)
             collection.save_tree(dirname, "cell")
-            #Copy paramater file if specified
+            #Copy parameter file if specified
             if pname:
                 for j in range(grid_n):
                     shutil.copy(pname, os.path.join(dirname,
@@ -225,6 +210,6 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
         if (save_tens):
             write_tensors(sname, all_hfine_tensors, r2psi2, symbols)
         calc_harm_potential(R, grid_n,
-                            mu_mass, evals, E_table, sname)
+                            mu_mass, mu_evals, E_table, sname)
 
     return
