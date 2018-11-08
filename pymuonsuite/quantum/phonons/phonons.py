@@ -18,10 +18,9 @@ from ase import Atoms
 from ase import io as ase_io
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import linspaceGen
-from soprano.selection import AtomSelection
 from soprano.utils import seedname
 
-from pymuonsuite.io.castep import parse_final_energy, parse_phonon_file
+from pymuonsuite.io.castep import parse_final_energy, parse_castep_muon
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.quantum.grid import calc_wavefunction, avg_hfine_tensor
 from pymuonsuite.quantum.grid import write_tensors, calc_harm_potential
@@ -66,38 +65,6 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
     lg = linspaceGen(
         cell_L, cell_R, steps=grid_n, periodic=True)
     return lg
-
-def parse_castep_muon(sname, mu_sym, ignore_ipsoH):
-    """Parse muon data from CASTEP cell file, returning an ASE Atoms object
-    alongside the muon and ipso hydrogen index and muon mass.
-
-    | Args:
-    |   sname (str): Cell file name minus extension (i.e. <seedname>.cell)
-    |   mu_sym (str): Symbol used to represent muon
-    |   ignore_ipsoH (bool): If true, do not find ipso hydrogen index
-    | Returns:
-    |   cell (ASE Atoms object): ASE structure data
-    |   mu_index (int): Index of muon in cell file
-    |   ipso_H_index (int): Index of ipso hydrogen in cell file
-    |   mu_mass (float): Mass of muon
-    """
-    # Read in cell file
-    cell = ase_io.read(sname + ".cell")
-    cell.info['name'] = sname
-    # Get muon mass
-    mu_mass = float(cell.calc.cell.species_mass.value.split()[2])
-    mu_mass = mu_mass*cnst.u  # Convert to kg
-    # Find muon index in structure array
-    sel = AtomSelection.from_array(
-        cell, 'castep_custom_species', mu_sym)
-    mu_index = sel.indices[0]
-    # Find ipso hydrogen location
-    if not ignore_ipsoH:
-        ipso_H_index = find_ipso_hydrogen(mu_index, cell, mu_sym)
-    else:
-        ipso_H_index = None
-
-    return cell, mu_index, ipso_H_index, mu_mass
 
 def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
                 ignore_ipsoH=False, save_tens=False, solver=False, args_w=False):

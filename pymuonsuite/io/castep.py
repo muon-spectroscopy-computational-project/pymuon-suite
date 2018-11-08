@@ -8,12 +8,15 @@ import re
 import os
 import yaml
 import numpy as np
+import scipy.constants as cnst
 from ase import Atoms
 from ase import io
 from ase.calculators.castep import Castep
-from scipy.constants import physical_constants as pcnst
+from soprano.selection import AtomSelection
+
 
 from pymuonsuite.utils import list_to_string
+from pymuonsuite.utils import find_ipso_hydrogen
 
 
 def save_muonconf_castep(a, folder, params):
@@ -56,6 +59,38 @@ def save_muonconf_castep(a, folder, params):
                    default_flow_style=False)
 
 
+def parse_castep_muon(sname, mu_sym, ignore_ipsoH):
+    """Parse muon data from CASTEP cell file, returning an ASE Atoms object
+    alongside the muon and ipso hydrogen index and muon mass.
+
+    | Args:
+    |   sname (str): Cell file name minus extension (i.e. <seedname>.cell)
+    |   mu_sym (str): Symbol used to represent muon
+    |   ignore_ipsoH (bool): If true, do not find ipso hydrogen index
+    | Returns:
+    |   cell (ASE Atoms object): ASE structure data
+    |   mu_index (int): Index of muon in cell file
+    |   ipso_H_index (int): Index of ipso hydrogen in cell file
+    |   mu_mass (float): Mass of muon
+    """
+    # Read in cell file
+    cell = io.read(sname + ".cell")
+    cell.info['name'] = sname
+    # Get muon mass
+    mu_mass = float(cell.calc.cell.species_mass.value.split()[2])
+    mu_mass = mu_mass*cnst.u  # Convert to kg
+    # Find muon index in structure array
+    sel = AtomSelection.from_array(
+        cell, 'castep_custom_species', mu_sym)
+    mu_index = sel.indices[0]
+    # Find ipso hydrogen location
+    if not ignore_ipsoH:
+        ipso_H_index = find_ipso_hydrogen(mu_index, cell, mu_sym)
+    else:
+        ipso_H_index = None
+
+    return cell, mu_index, ipso_H_index, mu_mass
+
 def parse_castep_ppots(cfile):
 
     clines = open(cfile).readlines()
@@ -78,7 +113,7 @@ def parse_castep_ppots(cfile):
     el_re = re.compile(r'Element:\s+([a-zA-Z]{1,2})\s+'
                        r'Ionic charge:\s+([0-9.]+)')
     rc_re = re.compile(r'(?:[0-9]+|loc)\s+[0-9]\s+[\-0-9.]+\s+([0-9.]+)')
-    bohr = pcnst['Bohr radius'][0]*1e10
+    bohr = cnst.physical_constants['Bohr radius'][0]*1e10
 
     for ppb in ppot_blocks_raw:
         el = None
@@ -117,63 +152,3 @@ def parse_final_energy(infile):
                 raise RuntimeError(
                     "Corrupt .castep file found: {0}".format(infile))
     return E
-
-def parse_phonon_file(phfile):
-
-    lines = open(phfile).readlines()
-
-    def parse_pos(block):
-        posblock = {'pos': [], 'sym': [], 'm': []}
-        for l in block:
-            l_spl = l.split()
-            posblock['pos'].append(map(float, l_spl[1:4]))
-            posblock['sym'].append(l_spl[4])
-            posblock['m'].append(float(l_spl[5]))
-
-        return posblock
-
-    def parse_modes(block, num_ions, num_modes):
-        evecs = [[None for i in range(num_ions)] for m in range(num_modes)]
-        for l in block:
-            l_spl = l.split()
-            m, i = map(int, l_spl[:2])
-            evecs[m-1][i-1] = [float(l_spl[j])+1.0j*float(l_spl[j+1]) for j in range(2,8,2)]
-
-        return evecs
-
-    num_ions = 0
-    num_modes = 0
-    cell = None
-    posblock = None
-    phonon_freq = None
-    phonon_modes = None
-    for i in range(len(lines)):
-        l = lines[i]
-        # First, grab cell
-        if "Number of ions" in l:
-            num_ions = int(l.split()[-1])
-        if "Number of branches" in l:
-            num_modes = int(l.split()[-1])
-        if "Unit cell vectors (A)" in l:
-            cell = [[float(x) for x in e.split()] for e in lines[i+1:i+4]]
-        if  "Fractional Co-ordinates" in l:
-            posblock = parse_pos(lines[i+1:i+num_ions+1])
-        if "q-pt=" in l:
-            # Phonon frequency parsing time!
-            phonon_freq = [float(m.split()[-1]) for m in lines[i+1:i+num_modes+1]]
-        if "Phonon Eigenvectors" in l:
-            # Mode eigenvectors time
-            phonon_modes = parse_modes(lines[i+2:i+num_modes*num_ions+2], num_ions, num_modes)
-
-    # Did it all go well?
-    if None in (num_ions, num_modes, cell, posblock, phonon_freq, phonon_modes):
-        raise RuntimeError('Invalid phonon file {0}'.format(phfile))
-
-    # Now make it into an ASE atoms object
-    struct = Atoms([s.split(':')[0] for s in posblock['sym']],
-                   cell=cell,
-                   scaled_positions=posblock['pos'],
-                   masses=posblock['m'])
-    struct.set_array('castep_custom_species', np.array(posblock['sym']))
-
-    return struct, np.array(phonon_freq), np.array(phonon_modes)
