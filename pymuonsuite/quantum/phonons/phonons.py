@@ -122,6 +122,8 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
             dirname = '{0}_{1}'.format(sname, i+1)
             lg = create_displaced_cells(cell, mu_index, grid_n, 3*mu_evecs[i]*Ri)
             collection = AtomsCollection(lg)
+            for atom in collection:
+                atom.set_calculator(cell.calc)
             collection.save_tree(dirname, "cell")
             #Copy parameter file if specified
             if pname:
