@@ -91,11 +91,12 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
     |
     | Returns: Nothing
     """
+    cell = ase_io.read(cell_f)
+    sname = seedname(cell_f)
     #Parse muon data using appropriate parser for calculator
     if (calc.strip().lower() in 'castep'):
-        sname = seedname(cell_f)
-        cell, mu_index, ipso_H_index, mu_mass = parse_castep_muon(sname, mu_sym,
-                                                                   ignore_ipsoH)
+        mu_index, ipso_H_index, mu_mass = parse_castep_muon(cell, mu_sym,
+                                                            ignore_ipsoH)
         # Parse phonon data into object
         pd = PhononData(sname)
         # Convert frequencies back to cm-1

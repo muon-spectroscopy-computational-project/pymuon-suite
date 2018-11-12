@@ -59,23 +59,19 @@ def save_muonconf_castep(a, folder, params):
                    default_flow_style=False)
 
 
-def parse_castep_muon(sname, mu_sym, ignore_ipsoH):
-    """Parse muon data from CASTEP cell file, returning an ASE Atoms object
-    alongside the muon and ipso hydrogen index and muon mass.
+def parse_castep_muon(cell, mu_sym, ignore_ipsoH):
+    """Parse muon data from CASTEP cell file, returning
+       the muon and ipso hydrogen index and muon mass.
 
     | Args:
-    |   sname (str): Cell file name minus extension (i.e. <seedname>.cell)
+    |   cell (ASE atoms object): ASE Atoms object containing CASTEP cell data
     |   mu_sym (str): Symbol used to represent muon
     |   ignore_ipsoH (bool): If true, do not find ipso hydrogen index
     | Returns:
-    |   cell (ASE Atoms object): ASE structure data
     |   mu_index (int): Index of muon in cell file
     |   ipso_H_index (int): Index of ipso hydrogen in cell file
     |   mu_mass (float): Mass of muon
     """
-    # Read in cell file
-    cell = io.read(sname + ".cell")
-    cell.info['name'] = sname
     # Get muon mass
     mu_mass = float(cell.calc.cell.species_mass.value.split()[2])
     mu_mass = mu_mass*cnst.u  # Convert to kg
@@ -89,7 +85,7 @@ def parse_castep_muon(sname, mu_sym, ignore_ipsoH):
     else:
         ipso_H_index = None
 
-    return cell, mu_index, ipso_H_index, mu_mass
+    return mu_index, ipso_H_index, mu_mass
 
 def parse_castep_ppots(cfile):
 
