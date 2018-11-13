@@ -163,7 +163,10 @@ PhononHfccSchema = Schema({
     #Save all hyperfine tensors if true
     Optional('save_tensors', default=False): bool,
     #Solve the Schroedinger equation numerically on the three axes
-    Optional('numerical_solver', default=False): bool
+    Optional('numerical_solver', default=False): bool,
+    #If True, use dftb+ to calculate phonon modes. Otherwise read in CASTEP
+    #phonons. Dftb+ is less accurate but much quicker.
+    Optional('dftb_phonons', default=False): bool
 })
 
 # Parameter file schema and defaults

@@ -32,7 +32,8 @@ def nq_entry():
     if args.calculation_type == "phonon_hfcc":
         phonon_hfcc(params['cell_file'], params['muon_symbol'], params['grid_n'],
                     params['calculator'], params['param_file'], params['ignore_ipsoH'],
-                    params['save_tensors'], params['numerical_solver'], args.w)
+                    params['save_tensors'], params['numerical_solver'], args.w,
+                    params['dftb_phonons'])
     else:
         raise RuntimeError("""Invalid calculation type entered, please use
                               python -h flag to see currently supported types""")

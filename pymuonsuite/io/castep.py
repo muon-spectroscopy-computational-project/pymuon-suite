@@ -70,7 +70,7 @@ def parse_castep_muon(cell, mu_sym, ignore_ipsoH):
     | Returns:
     |   mu_index (int): Index of muon in cell file
     |   ipso_H_index (int): Index of ipso hydrogen in cell file
-    |   mu_mass (float): Mass of muon
+    |   mu_mass (float): Mass of muon in kg
     """
     # Get muon mass
     mu_mass = float(cell.calc.cell.species_mass.value.split()[2])

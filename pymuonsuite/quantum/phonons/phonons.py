@@ -16,6 +16,9 @@ import numpy as np
 import scipy.constants as cnst
 from ase import Atoms
 from ase import io as ase_io
+from ase.calculators.dftb import Dftb
+from ase.dft import kpoints
+from ase.phonons import Phonons
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import linspaceGen
 from soprano.utils import seedname
@@ -67,7 +70,8 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
     return lg
 
 def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
-                ignore_ipsoH=False, save_tens=False, solver=False, args_w=False):
+                ignore_ipsoH=False, save_tens=False, solver=False, args_w=False,
+                dftb_phonons=False):
     """
     Given a file containing phonon modes of a muoniated molecule, either write
     out a set of structure files with the muon progressively displaced in
@@ -97,20 +101,35 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
     if (calc.strip().lower() in 'castep'):
         mu_index, ipso_H_index, mu_mass = parse_castep_muon(cell, mu_sym,
                                                             ignore_ipsoH)
-        # Parse phonon data into object
-        pd = PhononData(sname)
-        # Convert frequencies back to cm-1
-        pd.convert_e_units('1/cm')
-        # Get phonon frequencies
-        evals = pd.freqs
-        evecs = pd.eigenvecs
     else:
         raise RuntimeError("Invalid calculator entered ('{0}').".format(calc))
 
+    if dftb_phonons:
+        #Calculate phonon modes using ASE and DFTB+
+        masses = cell.get_masses()
+        masses[-1] = mu_mass/cnst.u
+        cell.set_masses(masses)
+        phonon_calc = Dftb(kpts=[1,1,1])
+        ph = Phonons(cell, phonon_calc)
+        ph.run()
+        ph.read(acoustic=True)
+        path = kpoints.monkhorst_pack((1,1,1))
+        evals, evecs = ph.band_structure(path, True)
+        evals *= 8065.5 #Convert from eV to cm-1
+    else:
+        # Parse CASTEP phonon data into casteppy object
+        pd = PhononData(sname)
+        # Convert frequencies back to cm-1
+        pd.convert_e_units('1/cm')
+        # Get phonon frequencies+modes
+        evals = pd.freqs
+        evecs = pd.eigenvecs
+
     # Get muon phonon modes
     mu_evecs_index, mu_evecs, mu_evecs_ortho = get_major_emodes(evecs[0], mu_index)
+    mu_evecs = mu_evecs/np.linalg.norm(mu_evecs, axis=-1, keepdims=True)
     mu_evecs = np.real(mu_evecs)
-    #Get muon phonon frequencies and convert to radians/second
+    # Get muon phonon frequencies and convert to radians/second
     mu_evals = np.array(evals[0][mu_evecs_index]*1e2*cnst.c*np.pi*2)
     # Displacement in Angstrom
     R = np.sqrt(cnst.hbar/(mu_evals*mu_mass))*1e10
