@@ -92,6 +92,8 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
     |   solver (bool): If true, use qlab to numerically solve the schroedinger
     |                  equation
     |   args_w (bool): Write files if true, parse if false
+    |   dftb_phonons(bool): Use dftb+ to calculate phonons if true. Otherwise,
+    |                       read in CASTEP phonons.
     |
     | Returns: Nothing
     """
