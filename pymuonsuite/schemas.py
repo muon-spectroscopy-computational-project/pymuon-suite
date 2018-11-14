@@ -153,7 +153,7 @@ PhononHfccSchema = Schema({
     'muon_symbol': validate_str,
     #Number of grid points(displacements of muon) to use
     'grid_n': int,
-    #Calculator to use. Currently only CASTEP supported.
+    #Type of structure file being input. Valid values: 'castep'
     Optional('calculator', default='castep'): validate_str,
     #Path of parameter file which can be copied into folders with displaced cell
     #files for convenience
