@@ -1,6 +1,8 @@
 """Phonons extracted from CASTEP results
 
 Requites casteppy installed
+
+Author: Adam Laverack
 """
 
 # Python 2-to-3 compatibility code

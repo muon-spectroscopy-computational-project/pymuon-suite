@@ -1,3 +1,7 @@
+"""
+Author: Simone Sturniolo(Functionality) and Adam Laverack(Interface)
+"""
+
 # Python 2-to-3 compatibility code
 from __future__ import absolute_import
 from __future__ import division
