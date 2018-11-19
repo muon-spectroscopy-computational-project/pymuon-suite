@@ -65,7 +65,7 @@ def calc_wavefunction(R, grid_n, mu_mass, E_table, hfine_table, sname = None,
     return r2psi2
 
 def avg_hfine_tensor(r2psi2, hfine_table, hfine_tensors, noH, ipso_hfine_table = None,
-                        ipso_hfine_tensors = None, sname = None):
+                        ipso_hfine_tensors = None, sname = ''):
     hfine_avg = np.sum(r2psi2*hfine_table)/np.sum(r2psi2)
     # Now average of dipolar components
     hfine_tens_avg = np.sum(
