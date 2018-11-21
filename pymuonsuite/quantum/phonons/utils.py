@@ -12,17 +12,17 @@ import numpy as np
 
 
 def get_major_emodes(evecs, i):
-    """Find the phonon modes of the muon at index i
+    """Find the phonon modes of the atom at index i
 
     | Args:
     |   evecs (Numpy float array, shape: (num_modes, num_ions, 3)):
     |                                   Eigenvectors of phonon modes of molecule
-    |   i (int): Index of muon in position array
+    |   i (int): Index of atom in position array
     |
     | Returns:
-    |   major_evecs_i (int[3]): Indices of muon eigenvectors in evecs
-    |   major_evecs (float[3]): Eigenvectors of muon phonon modes
-    |   major_evecs_ortho (float[3]): Orthogonalised muon modes
+    |   major_evecs_i (int[3]): Indices of atom's phonon eigenvectors in evecs
+    |   major_evecs (float[3]): Eigenvectors of atom's phonon modes
+    |   major_evecs_ortho (float[3]): Orthogonalised phonon modes
     """
     # First, find the eigenmodes whose amplitude is greater for ion i
     evecs_amp = np.linalg.norm(evecs, axis=-1)
