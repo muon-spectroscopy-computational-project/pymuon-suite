@@ -30,7 +30,7 @@ from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.quantum.grid import calc_wavefunction, avg_hfine_tensor
 from pymuonsuite.quantum.grid import write_tensors, calc_harm_potential
 from pymuonsuite.utils import find_ipso_hydrogen
-from pymuonsuite.quantum.phonons.utils import get_major_emodes
+from pymuonsuite.quantum.vibrational.utils import get_major_emodes
 try:
     from casteppy.data.phonon import PhononData
 except ImportError:

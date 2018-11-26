@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 
 import argparse as ap
 
-from pymuonsuite.quantum.phonons.phonons import phonon_hfcc
+from pymuonsuite.quantum.vibrational.phonons import phonon_hfcc
 from pymuonsuite.schemas import load_input_file, PhononHfccSchema
 
 
