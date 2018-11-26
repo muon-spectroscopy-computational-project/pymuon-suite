@@ -43,7 +43,7 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
 
-def ase_phonons(cell):
+def ase_phonon_calc(cell, dftb_phonons):
     """
 
     | Args:
@@ -52,8 +52,10 @@ def ase_phonons(cell):
     | Returns:
     |
     """
-    #Calculate phonon modes using ASE and DFTB+
-    phonon_calc = Dftb(kpts=[1,1,1])
+    if dftb_phonons:
+        phonon_calc = Dftb(kpts=[1,1,1])
+    else:
+        phonon_calc = cell.get_calculator()
     ph = Phonons(cell, phonon_calc)
     ph.run()
     ph.read(acoustic=True)
@@ -90,7 +92,7 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
 
 def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
                 ignore_ipsoH=False, save_tens=False, solver=False, args_w=False,
-                dftb_phonons=False):
+                ase_phonons=False, dftb_phonons=False):
     """
     Given a file containing phonon modes of a muoniated molecule, either write
     out a set of structure files with the muon progressively displaced in
@@ -125,11 +127,12 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
     else:
         raise RuntimeError("Invalid calculator entered ('{0}').".format(calc))
 
-    if dftb_phonons:
+    if ase_phonons:
+        #Calculate phonons using ASE
         masses = cell.get_masses()
         masses[-1] = mu_mass/cnst.u
         cell.set_masses(masses)
-        evals, evecs = ase_phonons(cell)
+        evals, evecs = ase_phonon_calc(cell, dftb_phonons)
     else:
         # Parse CASTEP phonon data into casteppy object
         pd = PhononData(sname)
