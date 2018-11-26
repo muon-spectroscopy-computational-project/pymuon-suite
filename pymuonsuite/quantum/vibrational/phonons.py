@@ -44,13 +44,19 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 and try again.""")
 
 def ase_phonon_calc(cell, dftb_phonons):
-    """
+    """Calculate phonon modes of a molecule using ASE. If dftb_phonons is true,
+    DFTB+ will be used as the calculator. Otherwise, the input cell's calculator
+    will be used. A report of the phonon modes will be written to a file and
+    arrays of the eigenvectors and eigenvalues returned.
 
     | Args:
-    |
-    |
+    |   cell(ASE Atoms object): Atoms object with geometry to calculate modes
+    |   for.
+    |   dftb_phonons(bool): If True, use DFTB+ to calculate. If False, use
+    |   cell's default calculator.
     | Returns:
-    |
+    |   evals(float[k-points][modes]): Eigenvalues of phonon modes
+    |   evecs(float[k-points][modes][ions][3]): Eigenvectors of phonon modes
     """
     if dftb_phonons:
         phonon_calc = Dftb(kpts=[1,1,1])
