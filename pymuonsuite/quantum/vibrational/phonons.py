@@ -62,6 +62,22 @@ def ase_phonon_calc(cell, dftb_phonons):
     path = kpoints.monkhorst_pack((1,1,1))
     evals, evecs = ph.band_structure(path, True)
     evals *= 8065.5 #Convert from eV to cm-1
+
+    #Write phonon report
+    filename = "ase_phonons.dat"
+    phonfile = open(filename, 'a')
+    print("Writing phonon report in location: ", filename)
+    phonfile.write("Eigenvalues\n")
+    for i, kpt in enumerate(evals):
+        phonfile.write("Mode Frequency(cm-1) k-point = {0}\n".format(i))
+        for j, value in enumerate(kpt):
+            phonfile.write("{0} \t{1}\n".format(j, value))
+    phonfile.write("Eigenvectors\n")
+    phonfile.write("Mode Ion Vector\n")
+    for i, mode in enumerate(evecs[0]):
+        for j, ion in enumerate(mode):
+            phonfile.write("{0} {1} \t{2}\n".format(i, j, ion))
+
     return evals, evecs
 
 def create_displaced_cells(cell, a_i, grid_n, disp):
