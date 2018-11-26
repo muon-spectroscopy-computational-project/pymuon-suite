@@ -43,7 +43,24 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
 
+def ase_phonons(cell):
+    """
 
+    | Args:
+    |
+    |
+    | Returns:
+    |
+    """
+    #Calculate phonon modes using ASE and DFTB+
+    phonon_calc = Dftb(kpts=[1,1,1])
+    ph = Phonons(cell, phonon_calc)
+    ph.run()
+    ph.read(acoustic=True)
+    path = kpoints.monkhorst_pack((1,1,1))
+    evals, evecs = ph.band_structure(path, True)
+    evals *= 8065.5 #Convert from eV to cm-1
+    return evals, evecs
 
 def create_displaced_cells(cell, a_i, grid_n, disp):
     """Create a range ASE Atoms objects with the displacement of atom at index
@@ -109,17 +126,10 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
         raise RuntimeError("Invalid calculator entered ('{0}').".format(calc))
 
     if dftb_phonons:
-        #Calculate phonon modes using ASE and DFTB+
         masses = cell.get_masses()
         masses[-1] = mu_mass/cnst.u
         cell.set_masses(masses)
-        phonon_calc = Dftb(kpts=[1,1,1])
-        ph = Phonons(cell, phonon_calc)
-        ph.run()
-        ph.read(acoustic=True)
-        path = kpoints.monkhorst_pack((1,1,1))
-        evals, evecs = ph.band_structure(path, True)
-        evals *= 8065.5 #Convert from eV to cm-1
+        evals, evecs = ase_phonons(cell)
     else:
         # Parse CASTEP phonon data into casteppy object
         pd = PhononData(sname)
