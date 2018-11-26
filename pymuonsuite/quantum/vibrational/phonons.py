@@ -166,8 +166,6 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
 
     # Get muon phonon modes
     mu_evecs_index, mu_evecs, mu_evecs_ortho = get_major_emodes(evecs[0], mu_index)
-    mu_evecs = mu_evecs/np.linalg.norm(mu_evecs, axis=-1, keepdims=True)
-    mu_evecs = np.real(mu_evecs)
     # Get muon phonon frequencies and convert to radians/second
     mu_evals = np.array(evals[0][mu_evecs_index]*1e2*cnst.c*np.pi*2)
     # Displacement in Angstrom
