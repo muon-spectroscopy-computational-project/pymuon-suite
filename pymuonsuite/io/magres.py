@@ -10,13 +10,13 @@ from ase.io.magres import read_magres
 
 def parse_hyperfine_magres(infile):
     """
-    Parse .magres file inluding magres_old block if present
+    Parse hyperfine values from .magres file
 
     | Args:
     |   infile (str): Directory of .magres file
     |
     | Returns:
-    |   mgr (ASE Magres object): Object containing .magres data
+    |   mgr (ASE Magres object): Object containing .magres hyperfine data
     """
 
     file = open(infile, "r")
