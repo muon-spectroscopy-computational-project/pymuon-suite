@@ -226,9 +226,8 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
 
         symbols = cell.get_array('castep_custom_species')
 
-        r2psi2 = calc_wavefunction(R, grid_n, mu_mass, E_table,
-                                   hfine_table, sname,
-                                   solver, True)
+        r2psi2 = calc_wavefunction(R, grid_n, E_table = E_table,
+            write_table = True, value_table = hfine_table, sname = sname)
         D1, D2, ipso_D1, ipso_D2 = avg_hfine_tensor(r2psi2, hfine_table,
                                                     all_hfine_tensors[
                                                         mu_index],
