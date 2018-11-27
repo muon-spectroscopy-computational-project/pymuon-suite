@@ -13,19 +13,19 @@ import scipy.constants as cnst
 from ase import Atoms
 
 
-def calc_wavefunction(R, grid_n, mu_mass, E_table, hfine_table, sname = None,
+def calc_wavefunction(R, grid_n, atom_mass, E_table, hfine_table, sname = None,
                         num_solve = False, write_table = True):
     """
-    Calculate wavefunction
+    Calculate harmonic oscillator wavefunction
 
     | Args:
-    |   R (Numpy float array): Displacement factors along all phonon axes
+    |   R (Numpy float array): Displacement Amplitude along all phonon axes
     |   grid_n (int): Number of displacements per axis
-    |   mu_mass (float): Mass of muon
-    |   E_table (Numpy float array, shape:(size(R), grid_n)): Table of system
-    |   energies for each muon displacement for each axis.
+    |   atom_mass (float): Mass of atom
+    |   E_table (Numpy float array, shape:(size(R), grid_n)): Table of final
+    |       system energies for each muon displacement for each axis
     |   hfine_table (Numpy float array, shape:(size(R), grid_n)): Table of
-    |   hyperfine coupling constants
+    |       hyperfine coupling constants for atom
     |   sname (str): Seedname of file to write to
     |   num_solve (bool): Solve schroedinger equation numerically using qlab
     |   write_table: Write out table of wavefunction values
@@ -51,7 +51,7 @@ def calc_wavefunction(R, grid_n, mu_mass, E_table, hfine_table, sname = None,
         psi = []
         for i, Ri in enumerate(R):
             qSol = QSolution([(-3e-10*Ri, 3e-10*Ri)], grid_n,
-                             E_table[i]*cnst.electron_volt, mu_mass)
+                             E_table[i]*cnst.electron_volt, atom_mass)
             psi.append(qSol.evec_grid(0))
         psi = np.array(psi)
     # Oh, and save the densities!
