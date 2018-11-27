@@ -129,14 +129,18 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
     |   grid_n (int): Number of increments to make along each phonon axis
     |   calc (str): Calculator used (e.g. CASTEP)
     |   pname (str): Path of param file which will be copied into folders
-    |                along with displaced cell files for convenience
+    |       along with displaced cell files for convenience
     |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
     |   save_tens (bool): If true, save full hyperfine tensors for all atoms
     |   solver (bool): If true, use qlab to numerically solve the schroedinger
-    |                  equation
+    |       equation
     |   args_w (bool): Write files if true, parse if false
-    |   dftb_phonons(bool): Use dftb+ to calculate phonons if true. Otherwise,
-    |                       read in CASTEP phonons.
+    |   ase_phonons(bool): If True, use ASE to calculate phonon modes. ASE will
+    |       use the calculator of the input cell, e.g. CASTEP for .cell files. Set
+    |       dftb_phonons to True in order to use dftb+ as the calculator instead.
+    |       If False, will read in CASTEP phonons.
+    |   dftb_phonons(bool): Use dftb+ to calculate phonons if true. Requires
+    |       ase_phonons set to true
     |
     | Returns: Nothing
     """

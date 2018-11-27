@@ -166,7 +166,7 @@ PhononHfccSchema = Schema({
     Optional('numerical_solver', default=False): bool,
     #If True, use ASE to calculate phonon modes. ASE will use the calculator
     #of the input cell, e.g. CASTEP for .cell files. Set dftb_phonons to True
-    #in order to use dftb+ as the calculator instead/
+    #in order to use dftb+ as the calculator instead.
     Optional('ase_phonons', default=False): bool,
     #If True, use dftb+ to calculate phonon modes. Must have ase_phonons set to
     #True for this to do anything.
