@@ -228,7 +228,7 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
         r2psi2 = calc_wavefunction(R, grid_n, E_table = E_table,
             write_table = True, value_table = hfine_table, sname = sname)
 
-        hfine_tens_avg = weighted_tens_avg(r2psi2, all_hfine_tensors)
+        hfine_tens_avg = weighted_tens_avg(all_hfine_tensors, r2psi2)
         write_tensors(hfine_tens_avg, sname, symbols)
 
         calc_harm_potential(R, grid_n, mu_mass, mu_evals, E_table, sname)

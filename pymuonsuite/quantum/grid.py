@@ -71,9 +71,21 @@ def calc_wavefunction(R, grid_n, num_solve = False, atom_mass = None,
 
     return r2psi2
 
-def weighted_tens_avg(weight, tensors):
+def weighted_tens_avg(tensors, weight):
     """
-    Calculate the weighted average of tensors? (finish)
+    Given a set of 3x3 tensors resulting from the sampling of a property on an
+    NxM grid for a set of atoms, calculate a weighted average of the tensors for
+    each atom using a given weight for each grid point.
+
+    | Args:
+    |   tensors(Numpy float array, shape:(Atoms,N,M,3,3)): For each atom, an NxM
+    |       set of shape 3x3 tensors from an NxM sampling grid.
+    |   weight(Numpy float array, shape:(N,M)): A set of weights for each point
+    |       on the NxM grid.
+    |
+    | Returns:
+    |   tens_avg(Numpy float array, shape:(Atoms,3,3)): The averaged tensor for
+    |       each atom.
     """
     tens_avg = np.zeros((np.size(tensors, 0), 3, 3))
     for i in range(np.size(tensors, 0)):
@@ -82,6 +94,18 @@ def weighted_tens_avg(weight, tensors):
     return tens_avg
 
 def write_tensors(tensors, sname, symbols):
+    """
+    Write out a set of 3x3 tensors for every atom in a system.
+
+    | Args:
+    |   tensors(Numpy float array, shape: (Atoms, 3, 3): A list of 3x3 tensors
+    |       for each atom.
+    |   sname(str): Seedname for file (i.e. filename will be sname_tensors.dat).
+    |   symbols(str array): List containing chemical symbol of each atom in
+    |       system.
+    |
+    | Returns: Nothing
+    """
     tensfile = open(sname + '_tensors.dat', 'w')
     for i in range(np.size(tensors, 0)):
         tensfile.write('{0} {1}\n'.format(symbols[i], i))
