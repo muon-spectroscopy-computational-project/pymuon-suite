@@ -20,7 +20,7 @@ def calc_wavefunction(R, grid_n, num_solve = False, atom_mass = None,
     Calculate harmonic oscillator wavefunction
 
     | Args:
-    |   R (Numpy float array): Displacement Amplitude along all phonon axes
+    |   R (Numpy float array): Displacement amplitudes along phonon axes
     |   grid_n (int): Number of displacements per axis
     |   num_solve (bool): Solve schroedinger equation numerically using qlab
     |   atom_mass (float): Mass of atom, required for num_solve
@@ -117,6 +117,20 @@ def avg_hfine_tensor(r2psi2, hfine_table, hfine_tensors, noH, ipso_hfine_table =
         np.savetxt(sname + '_tensors.dat', hfine_tens_avg)
 
     return D1, D2, ipso_D1, ipso_D2
+
+def weighted_tens_avg(weight, tensors, sname = ''):
+    """
+    Calculate the weighted average of tensors? (finish)
+    """
+    tens_avg = np.zeros((np.size(tensors, 0), 3, 3))
+    for i in range(np.size(tensors, 0)):
+        tens_avg[i] = np.sum(
+            weight[:, :, None, None]*tensors[i], axis=(0, 1))/np.sum(weight)
+    return tens_avg
+
+def hfine_report():
+
+    return
 
 def write_tensors(sname, all_hfine_tensors, r2psi2, symbols):
     # Also save tensor file

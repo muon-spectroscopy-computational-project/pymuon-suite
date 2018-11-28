@@ -28,7 +28,7 @@ from soprano.utils import seedname
 from pymuonsuite.io.castep import parse_final_energy, parse_castep_muon
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.quantum.grid import calc_wavefunction, avg_hfine_tensor
-from pymuonsuite.quantum.grid import write_tensors, calc_harm_potential
+from pymuonsuite.quantum.grid import write_tensors, calc_harm_potential, weighted_tens_avg
 from pymuonsuite.utils import find_ipso_hydrogen
 from pymuonsuite.quantum.vibrational.utils import get_major_emodes
 try:
@@ -228,17 +228,16 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
 
         r2psi2 = calc_wavefunction(R, grid_n, E_table = E_table,
             write_table = True, value_table = hfine_table, sname = sname)
+
         D1, D2, ipso_D1, ipso_D2 = avg_hfine_tensor(r2psi2, hfine_table,
-                                                    all_hfine_tensors[
-                                                        mu_index],
-                                                    ignore_ipsoH,
-                                                    ipso_hfine_table,
-                                                    all_hfine_tensors[
-                                                        ipso_H_index],
-                                                    sname)
+            all_hfine_tensors[mu_index], ignore_ipsoH, ipso_hfine_table,
+            all_hfine_tensors[ipso_H_index], sname)
+
         if (save_tens):
             write_tensors(sname, all_hfine_tensors, r2psi2, symbols)
-        calc_harm_potential(R, grid_n,
-                            mu_mass, mu_evals, E_table, sname)
+
+        calc_harm_potential(R, grid_n, mu_mass, mu_evals, E_table, sname)
+
+        #weighted_tens_avg(r2psi2, all_hfine_tensors, 'test')
 
     return
