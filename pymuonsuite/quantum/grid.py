@@ -71,53 +71,6 @@ def calc_wavefunction(R, grid_n, num_solve = False, atom_mass = None,
 
     return r2psi2
 
-def avg_hfine_tensor(r2psi2, hfine_table, hfine_tensors, noH, ipso_hfine_table = None,
-                        ipso_hfine_tensors = None, sname = ''):
-    hfine_avg = np.sum(r2psi2*hfine_table)/np.sum(r2psi2)
-    # Now average of dipolar components
-    hfine_tens_avg = np.sum(
-        r2psi2[:, :, None, None]*hfine_tensors, axis=(0, 1))/np.sum(r2psi2)
-    # Diagonalise
-    evals, evecs = np.linalg.eigh(hfine_tens_avg)
-    evals, evecs = zip(*sorted(zip(evals, evecs), key=lambda x: abs(x[0])))
-    evals_notr = -np.array(evals)+np.average(evals)
-
-    if abs(evals_notr[2]) > abs(evals_notr[0]):
-        D1 = evals_notr[2]
-        D2 = evals_notr[1]-evals_notr[0]
-    else:
-        D1 = evals_notr[0]
-        D2 = evals_notr[2]-evals_notr[1]
-
-    if not noH:
-        ipso_avg = np.sum(r2psi2*ipso_hfine_table)/np.sum(r2psi2)
-
-        # Now average of dipolar components
-        ipso_hfine_tens_avg = np.sum(
-            r2psi2[:, :, None, None]*ipso_hfine_tensors, axis=(0, 1))/np.sum(r2psi2)
-        # Diagonalise
-        evals, evecs = np.linalg.eigh(ipso_hfine_tens_avg)
-        evals, evecs = zip(
-            *sorted(zip(evals, evecs), key=lambda x: abs(x[0])))
-        evals_notr = -np.array(evals)+np.average(evals)
-
-        # Save the two of them
-        np.savetxt(sname + '_tensors.dat', np.concatenate([hfine_tens_avg,
-                                                           ipso_hfine_tens_avg]))
-
-        if abs(evals_notr[2]) > abs(evals_notr[0]):
-            ipso_D1 = evals_notr[2]
-            ipso_D2 = evals_notr[1]-evals_notr[0]
-        else:
-            ipso_D1 = evals_notr[0]
-            ipso_D2 = evals_notr[2]-evals_notr[1]
-    else:
-        ipso_D1 = None
-        ipso_D2 = None
-        np.savetxt(sname + '_tensors.dat', hfine_tens_avg)
-
-    return D1, D2, ipso_D1, ipso_D2
-
 def weighted_tens_avg(weight, tensors):
     """
     Calculate the weighted average of tensors? (finish)
@@ -133,9 +86,6 @@ def write_tensors(tensors, sname, symbols):
     for i in range(np.size(tensors, 0)):
         tensfile.write('{0} {1}\n'.format(symbols[i], i))
         tensfile.write('\n'.join(['\t'.join([str(x) for x in l]) for l in tensors[i]]) + '\n')
-
-def hfine_report():
-    return
 
 def calc_harm_potential(R, grid_n, mu_mass, freqs, E_table, sname):
     R_axes = np.array([np.linspace(-3*Ri, 3*Ri, grid_n)
