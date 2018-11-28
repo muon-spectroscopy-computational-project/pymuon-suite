@@ -27,8 +27,8 @@ from soprano.utils import seedname
 
 from pymuonsuite.io.castep import parse_final_energy, parse_castep_muon
 from pymuonsuite.io.magres import parse_hyperfine_magres
-from pymuonsuite.quantum.grid import calc_wavefunction, avg_hfine_tensor
-from pymuonsuite.quantum.grid import write_tensors, calc_harm_potential, weighted_tens_avg
+from pymuonsuite.quantum.grid import calc_wavefunction, weighted_tens_avg
+from pymuonsuite.quantum.grid import calc_harm_potential, write_tensors
 from pymuonsuite.utils import find_ipso_hydrogen
 from pymuonsuite.quantum.vibrational.utils import get_major_emodes
 try:
@@ -113,7 +113,7 @@ def create_displaced_cells(cell, a_i, grid_n, disp):
     return lg
 
 def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
-                ignore_ipsoH=False, save_tens=False, solver=False, args_w=False,
+                ignore_ipsoH=False, solver=False, args_w=False,
                 ase_phonons=False, dftb_phonons=False):
     """
     Given a file containing phonon modes of a muoniated molecule, either write
@@ -131,7 +131,6 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
     |   pname (str): Path of param file which will be copied into folders
     |       along with displaced cell files for convenience
     |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
-    |   save_tens (bool): If true, save full hyperfine tensors for all atoms
     |   solver (bool): If true, use qlab to numerically solve the schroedinger
     |       equation
     |   args_w (bool): Write files if true, parse if false
@@ -229,15 +228,9 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
         r2psi2 = calc_wavefunction(R, grid_n, E_table = E_table,
             write_table = True, value_table = hfine_table, sname = sname)
 
-        D1, D2, ipso_D1, ipso_D2 = avg_hfine_tensor(r2psi2, hfine_table,
-            all_hfine_tensors[mu_index], ignore_ipsoH, ipso_hfine_table,
-            all_hfine_tensors[ipso_H_index], sname)
-
-        if (save_tens):
-            write_tensors(sname, all_hfine_tensors, r2psi2, symbols)
+        hfine_tens_avg = weighted_tens_avg(r2psi2, all_hfine_tensors)
+        write_tensors(hfine_tens_avg, sname, symbols)
 
         calc_harm_potential(R, grid_n, mu_mass, mu_evals, E_table, sname)
-
-        #weighted_tens_avg(r2psi2, all_hfine_tensors, 'test')
 
     return

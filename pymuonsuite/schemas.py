@@ -160,8 +160,6 @@ PhononHfccSchema = Schema({
     Optional('param_file', default=None): validate_str,
     #Ignore ipso hydrogen if true
     Optional('ignore_ipsoH', default=False): bool,
-    #Save all hyperfine tensors if true
-    Optional('save_tensors', default=False): bool,
     #Solve the Schroedinger equation numerically on the three axes
     Optional('numerical_solver', default=False): bool,
     #If True, use ASE to calculate phonon modes. ASE will use the calculator

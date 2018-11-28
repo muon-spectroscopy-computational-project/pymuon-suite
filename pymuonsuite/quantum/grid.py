@@ -118,7 +118,7 @@ def avg_hfine_tensor(r2psi2, hfine_table, hfine_tensors, noH, ipso_hfine_table =
 
     return D1, D2, ipso_D1, ipso_D2
 
-def weighted_tens_avg(weight, tensors, sname = ''):
+def weighted_tens_avg(weight, tensors):
     """
     Calculate the weighted average of tensors? (finish)
     """
@@ -128,20 +128,14 @@ def weighted_tens_avg(weight, tensors, sname = ''):
             weight[:, :, None, None]*tensors[i], axis=(0, 1))/np.sum(weight)
     return tens_avg
 
-def hfine_report():
-
-    return
-
-def write_tensors(sname, all_hfine_tensors, r2psi2, symbols):
-    # Also save tensor file
+def write_tensors(tensors, sname, symbols):
     tensfile = open(sname + '_tensors.dat', 'w')
-    for i in range(np.size(all_hfine_tensors, 0)):
-        hfine_tensors_i = all_hfine_tensors[i]
-        # Carry out the average
-        hfine_avg = np.sum(
-        r2psi2[:, :, None, None]*hfine_tensors_i, axis=(0, 1))/np.sum(r2psi2)
+    for i in range(np.size(tensors, 0)):
         tensfile.write('{0} {1}\n'.format(symbols[i], i))
-        tensfile.write('\n'.join(['\t'.join([str(x) for x in l]) for l in hfine_avg]) + '\n')
+        tensfile.write('\n'.join(['\t'.join([str(x) for x in l]) for l in tensors[i]]) + '\n')
+
+def hfine_report():
+    return
 
 def calc_harm_potential(R, grid_n, mu_mass, freqs, E_table, sname):
     R_axes = np.array([np.linspace(-3*Ri, 3*Ri, grid_n)
