@@ -1,5 +1,5 @@
 """
-Author: Simone Sturniolo(Functionality) and Adam Laverack(Interface)
+Author: Simone Sturniolo and Adam Laverack
 """
 
 # Python 2-to-3 compatibility code
