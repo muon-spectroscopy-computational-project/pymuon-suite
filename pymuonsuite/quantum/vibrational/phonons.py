@@ -2,7 +2,7 @@
 
 Requites casteppy installed
 
-Author: Adam Laverack
+Author: Adam Laverack and Simone Sturniolo
 """
 
 # Python 2-to-3 compatibility code
@@ -27,10 +27,9 @@ from soprano.utils import seedname
 
 from pymuonsuite.io.castep import parse_final_energy, parse_castep_muon
 from pymuonsuite.io.magres import parse_hyperfine_magres
+from pymuonsuite.io.output import write_tensors
 from pymuonsuite.quantum.grid import calc_wavefunction, weighted_tens_avg
-from pymuonsuite.quantum.grid import calc_harm_potential, write_tensors
-from pymuonsuite.utils import find_ipso_hydrogen
-from pymuonsuite.quantum.vibrational.utils import get_major_emodes
+from pymuonsuite.utils import find_ipso_hydrogen, create_displaced_cells
 try:
     from casteppy.data.phonon import PhononData
 except ImportError:
@@ -86,31 +85,66 @@ def ase_phonon_calc(cell, dftb_phonons):
 
     return evals, evecs
 
-def create_displaced_cells(cell, a_i, grid_n, disp):
-    """Create a range ASE Atoms objects with the displacement of atom at index
-    a_i varying between -disp and +disp with grid_n increments
+def calc_harm_potential(R, grid_n, mass, freqs, E_table, sname):
+    """
+    Calculate the harmonic potential at all displacements on the grid for an
+    atom and write out to file in a format that can be plotted.
 
     | Args:
-    |   cell (ASE Atoms object): Object containing atom to be displaced
-    |   a_i (int): Index of atom to be displaced
-    |   grid_n (int): Number of increments/objects to create
-    |   disp (float): Maximum displacement from original position
+    |   R(Numpy float array, shape:(axes)): Displacement amplitude along each
+    |       axis
+    |   grid_n(int): Number of grid points along each axis
+    |   mass(float): Mass of atom
+    |   freqs(Numpy float array, shape:(axes)): Frequencies of harmonic
+    |       oscillator along each axis
+    |   E_table(Numpy float array, shape:(np.size(R), grid_n)): Table of CASTEP
+    |       final system energies.
+    |   sname(str): Seedname to be used for filename (i.e. filename will be
+    |       sname_V.dat
+    |
+    | Returns: Nothing
+    """
+    R_axes = np.array([np.linspace(-3*Ri, 3*Ri, grid_n)
+                       for Ri in R])
+    # Now the potential, measured vs. theoretical
+    harm_K = mass*freqs**2
+    harm_V = (0.5*harm_K[:, None]*(R_axes*1e-10)**2)/cnst.electron_volt
+    # Normalise E_table
+    if E_table.shape[1] % 2 == 1:
+        E_table -= (E_table[:, E_table.shape[1]//2])[:, None]
+    else:
+        E_table -= (E_table[:, E_table.shape[1]//2] +
+                    E_table[:, E_table.shape[1]//2-1])[:, None]/2.0
+    all_table = np.concatenate((R_axes, harm_V, E_table), axis=0)
+    np.savetxt(sname + '_V.dat', all_table.T)
+
+def get_major_emodes(evecs, i):
+    """Find the normalized phonon modes of the atom at index i
+
+    | Args:
+    |   evecs (Numpy float array, shape: (num_modes, num_ions, 3)):
+    |                                   Eigenvectors of phonon modes of molecule
+    |   i (int): Index of atom in position array
     |
     | Returns:
-    |   lg(Soprano linspaceGen object): Generator of displaced cells
+    |   major_evecs_i (int[3]): Indices of atom's phonon eigenvectors in evecs
+    |   major_evecs (float[3]): Normalized eigenvectors of atom's phonon modes
+    |   major_evecs_ortho (float[3]): Orthogonalised phonon modes
     """
-    pos = cell.get_positions()
-    cell_L = cell.copy()
-    pos_L = pos.copy()
-    pos_L[a_i] -= disp
-    cell_L.set_positions(pos_L)
-    cell_R = cell.copy()
-    pos_R = pos.copy()
-    pos_R[a_i] += disp
-    cell_R.set_positions(pos_R)
-    lg = linspaceGen(
-        cell_L, cell_R, steps=grid_n, periodic=True)
-    return lg
+    # First, find the eigenmodes whose amplitude is greater for ion i
+    evecs_amp = np.linalg.norm(evecs, axis=-1)
+    ipr = evecs_amp**4/np.sum(evecs_amp**2, axis=-1)[:, None]**2
+    evecs_order = np.argsort(ipr[:, i])
+
+    # How many?
+    major_evecs_i = evecs_order[-3:]
+    major_evecs = evecs[major_evecs_i, i]
+    major_evecs_ortho = np.linalg.qr(major_evecs.T)[0].T
+
+    major_evecs = major_evecs/np.linalg.norm(major_evecs, axis=-1, keepdims=True)
+    major_evecs = np.real(major_evecs)
+
+    return major_evecs_i, major_evecs, major_evecs_ortho
 
 def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
                 ignore_ipsoH=False, solver=False, args_w=False,
