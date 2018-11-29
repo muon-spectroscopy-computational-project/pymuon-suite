@@ -79,8 +79,8 @@ def weighted_tens_avg(tensors, weight):
 
     | Args:
     |   tensors(Numpy float array, shape:(Atoms,N,M,3,3)): For each atom, an NxM
-    |       set of shape 3x3 tensors from an NxM sampling grid.
-    |   weight(Numpy float array, shape:(N,M)): A set of weights for each point
+    |       set of shape 3x3 tensors.
+    |   weight(Numpy float array, shape:(N,M)): A weighting for each point
     |       on the NxM grid.
     |
     | Returns:
@@ -112,6 +112,10 @@ def write_tensors(tensors, sname, symbols):
         tensfile.write('\n'.join(['\t'.join([str(x) for x in l]) for l in tensors[i]]) + '\n')
 
 def calc_harm_potential(R, grid_n, mu_mass, freqs, E_table, sname):
+    """
+    Calculate the harmonic potential at all displacements on the grid and write
+    out to file in a format that can be plotted.
+    """
     R_axes = np.array([np.linspace(-3*Ri, 3*Ri, grid_n)
                        for Ri in R])
     # Now the potential, measured vs. theoretical
