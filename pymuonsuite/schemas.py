@@ -146,13 +146,16 @@ MuAirssSchema = Schema({
 })
 
 # Parameter file schema and defaults
-PhononHfccSchema = Schema({
+MuonHarmonicSchema = Schema({
     #File containing structural info about molecule/crystal
     'cell_file': validate_str,
     #Symbol used to represent muon
     'muon_symbol': validate_str,
     #Number of grid points(displacements of muon) to use
     'grid_n': int,
+    #Property to be calculated, currently accepted values: "hyperfine" (hyperfine
+    #coupling tensors)
+    'property': validate_str,
     #Type of structure file being input. Valid values: 'castep'
     Optional('calculator', default='castep'): validate_str,
     #Path of parameter file which can be copied into folders with displaced cell

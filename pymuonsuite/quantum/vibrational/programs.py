@@ -37,21 +37,23 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
 
-def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
+def muon_harmonic(cell_f, mu_sym, grid_n, property, calc='castep', pname=None,
                 ignore_ipsoH=False, solver=False, args_w=False,
                 ase_phonons=False, dftb_phonons=False):
     """
-    Given a file containing phonon modes of a muoniated molecule, either write
+    Given a file containing phonon modes of a muonated molecule, write
     out a set of structure files with the muon progressively displaced in
-    grid_n increments along the axes of the phonon modes, or read in hyperfine
-    coupling values from a set of .magres files with such a set of muon
-    displacements and average them to give an estimate of the actual hfcc
-    accounting for nuclear quantum effects.
+    grid_n increments along each axis of the phonon modes, creating a grid.
+    Alternatively, read in coupling values calculated at each point of a grid
+    created using this function's write mode and average them to give an estimate
+    of the actual value accounting for nuclear quantum effects.
 
     | Args:
     |   cell_f (str): Path to structure file (e.g. .cell file for CASTEP)
     |   mu_sym (str): Symbol used to represent muon in structure file
     |   grid_n (int): Number of increments to make along each phonon axis
+    |   property(str): Property to be calculated. Currently accepted values:
+    |       "hyperfine" (hyperfine tensors),
     |   calc (str): Calculator used (e.g. CASTEP)
     |   pname (str): Path of param file which will be copied into folders
     |       along with displaced cell files for convenience
@@ -117,44 +119,45 @@ def phonon_hfcc(cell_f, mu_sym, grid_n, calc='castep', pname=None,
                          '{0}_{1}_{2}/{0}_{1}_{2}.param'.format(sname, i+1, j)))
 
     else:
-        # Parse hyperfine values from .magres files and energy from .castep
-        # files
+        # Parse tensors from appropriate files and energy from .castep files
         E_table = []
         hfine_table = ipso_hfine_table = np.zeros((np.size(R), grid_n))
         num_species = np.size(cell.get_array('castep_custom_species'))
-        all_hfine_tensors = np.zeros((num_species, np.size(R), grid_n, 3, 3))
+        grid_tensors = np.zeros((num_species, np.size(R), grid_n, 3, 3))
         for i, Ri in enumerate(R):
             E_table.append([])
             dirname = '{0}_{1}'.format(sname, i+1)
             for j in range(grid_n):
-                mfile = os.path.join(dirname,
-                    '{0}_{1}_{2}/{0}_{1}_{2}.magres'.format(sname, i+1, j))
-                mgr = parse_hyperfine_magres(mfile)
-                hfine_table[i][j] = np.trace(
-                    mgr.get_array('hyperfine')[mu_index])/3.0
-                if not ignore_ipsoH:
-                    ipso_hfine_table[i][j] = np.trace(
-                        mgr.get_array('hyperfine')[ipso_H_index])/3.0
+                if property == 'hyperfine':
+                    tensor_file = os.path.join(dirname,
+                        '{0}_{1}_{2}/{0}_{1}_{2}.magres'.format(sname, i+1, j))
+                    tensors = (parse_hyperfine_magres(tensor_file)).get_array('hyperfine')
+                    hfine_table[i][j] = np.trace(
+                        tensors[mu_index])/3.0
+                    if not ignore_ipsoH:
+                        ipso_hfine_table[i][j] = np.trace(
+                            tensors[ipso_H_index])/3.0
+                    else:
+                        ipso_hfine_table = None
                 else:
-                    ipso_hfine_table = None
-                for k, tensor in enumerate(mgr.get_array('hyperfine')):
-                    all_hfine_tensors[k][i][j][:][:] = tensor
+                    raise ValueError("Invalid value for property")
+                for k, tensor in enumerate(tensors):
+                    grid_tensors[k][i][j][:][:] = tensor
                 castf = os.path.join(dirname,
                     '{0}_{1}_{2}/{0}_{1}_{2}.castep'.format(sname, i+1, j))
                 E_table[-1].append(parse_final_energy(castf))
 
         E_table = np.array(E_table)
-        if (hfine_table.shape != (3, grid_n) or
-                E_table.shape != (3, grid_n)):
-            raise RuntimeError("Incomplete or absent magres or castep data")
+        if (E_table.shape != (np.size(R), grid_n)):
+            raise RuntimeError("Incomplete or absent castep data")
 
         symbols = cell.get_array('castep_custom_species')
 
         r2psi2 = calc_wavefunction(R, grid_n, E_table = E_table,
             write_table = True, value_table = hfine_table, sname = sname)
 
-        hfine_tens_avg = weighted_tens_avg(all_hfine_tensors, r2psi2)
-        write_tensors(hfine_tens_avg, sname, symbols)
+        tens_avg = weighted_tens_avg(grid_tensors, r2psi2)
+        write_tensors(tens_avg, sname, symbols)
 
         calc_harm_potential(R, grid_n, mu_mass, mu_evals, E_table, sname)
 

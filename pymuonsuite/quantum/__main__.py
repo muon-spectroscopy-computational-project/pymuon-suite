@@ -10,15 +10,16 @@ from __future__ import unicode_literals
 
 import argparse as ap
 
-from pymuonsuite.quantum.vibrational.programs import phonon_hfcc
-from pymuonsuite.schemas import load_input_file, PhononHfccSchema
+from pymuonsuite.quantum.vibrational.programs import muon_harmonic
+from pymuonsuite.schemas import load_input_file, MuonHarmonicSchema
 
 
 def nq_entry():
     parser = ap.ArgumentParser()
     parser.add_argument('calculation_type', type=str,
                         help="""Type of calculation to be performed, currently supports:
-                'phonon_hfcc': Nuclear quantum effects simulated by phonons""")
+                'muon_harmonic': Nuclear quantum effects of muon simulated
+                by treating muon as a particle in a quantum harmonic oscillator""")
     parser.add_argument('parameter_file', type=str,
                         help="YAML file containing relevant input parameters")
     parser.add_argument('-w',   action='store_true', default=False,
@@ -27,13 +28,13 @@ def nq_entry():
     args = parser.parse_args()
 
     # Load parameters
-    params = load_input_file(args.parameter_file, PhononHfccSchema)
+    params = load_input_file(args.parameter_file, MuonHarmonicSchema)
 
-    if args.calculation_type == "phonon_hfcc":
-        phonon_hfcc(params['cell_file'], params['muon_symbol'], params['grid_n'],
-                    params['calculator'], params['param_file'], params['ignore_ipsoH'],
-                    params['numerical_solver'], args.w, params['ase_phonons'],
-                    params['dftb_phonons'])
+    if args.calculation_type == "muon_harmonic":
+        muon_harmonic(params['cell_file'], params['muon_symbol'], params['grid_n'],
+                    params['property'], params['calculator'], params['param_file'],
+                    params['ignore_ipsoH'], params['numerical_solver'], args.w,
+                    params['ase_phonons'], params['dftb_phonons'])
     else:
         raise RuntimeError("""Invalid calculation type entered, please use
                               python -h flag to see currently supported types""")
