@@ -14,24 +14,21 @@ from ase import Atoms
 
 
 def calc_wavefunction(R, grid_n, num_solve = False, atom_mass = None,
-                      E_table = None, write_table = True, value_table = None,
-                      sname = None):
+                      E_table = None, write_table = True, sname = ''):
     """
     Calculate harmonic oscillator wavefunction
 
     | Args:
-    |   R (Numpy float array): Displacement amplitudes along phonon axes
-    |   grid_n (int): Number of displacements per axis
+    |   R(Numpy float array, shape:(axes)): Displacement amplitude along each
+    |       axis
+    |   grid_n(int): Number of grid points along each axis
     |   num_solve (bool): Solve schroedinger equation numerically using qlab
     |   atom_mass (float): Mass of atom, required for num_solve
     |   E_table (Numpy float, shape:(size(R), grid_n)): Array of final
     |       system energies at each displacement on the grid, required for
-    |       num_solve and write_table
-    |   write_table: Write out table of wavefunction values in format:
-    |       Displacement | Energy | Prob. Density | Coup. const.
-    |   value_table (Numpy float, shape:(size(R), grid_n)): Array of
-    |       coupling constants for atom at each displacement on the grid,
-    |       required for write_table
+    |       num_solve
+    |   write_table: Write out table of probability densities in format:
+    |       Displacement | Prob. Density
     |   sname (str): Seedname of file to write to, required for write_table
     |
     | Returns:
@@ -64,7 +61,7 @@ def calc_wavefunction(R, grid_n, num_solve = False, atom_mass = None,
     # Oh, and save the densities!
     if write_table:
         psi_table = np.concatenate(
-            (R_axes, E_table, psi**2, value_table), axis=0)
+            (R_axes, psi**2), axis=0)
         np.savetxt(sname + '_psi.dat', psi_table.T)
     # And average
     r2psi2 = R_axes**2*np.abs(psi)**2

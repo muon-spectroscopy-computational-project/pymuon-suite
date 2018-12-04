@@ -21,6 +21,7 @@ from soprano.utils import seedname
 from pymuonsuite.io.castep import parse_castep_muon, parse_final_energy
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.io.output import write_tensors
+from pymuonsuite.quantum.output import hfine_report
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc, calc_harm_potential
 from pymuonsuite.quantum.vibrational.phonons import get_major_emodes
 from pymuonsuite.quantum.vibrational.grid import calc_wavefunction, weighted_tens_avg
@@ -36,33 +37,6 @@ HTTPS:  https://bitbucket.org/casteppy/casteppy.git
 SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
-
-def hfine_report(R, grid_n, tensors, hfine_tens_avg, r2psi2, sname, symbol):
-    hfine_table = np.zeros((np.size(R), grid_n))
-    for i, axis in enumerate(tensors):
-        for j, tensor in enumerate(axis):
-            hfine_table[i][j] = np.trace(tensor)/3.0
-
-    ofile = open(sname + '_report.txt', 'a')
-
-    hfine_avg = np.sum(r2psi2*hfine_table)/np.sum(r2psi2)
-    ofile.write('Predicted hyperfine coupling on labeled atom ({1}): {0} MHz\n'.format(
-        hfine_avg, symbol))
-
-    evals, evecs = np.linalg.eigh(hfine_tens_avg)
-    evals, evecs = zip(*sorted(zip(evals, evecs), key=lambda x: abs(x[0])))
-    evals_notr = -np.array(evals)+np.average(evals)
-
-    if abs(evals_notr[2]) > abs(evals_notr[0]):
-        D1 = evals_notr[2]
-        D2 = evals_notr[1]-evals_notr[0]
-    else:
-        D1 = evals_notr[0]
-        D2 = evals_notr[2]-evals_notr[1]
-
-    ofile.write(('Predicted dipolar hyperfine components on labeled atom ({2}):\n'
-                 'D1:\t{0} MHz\nD2:\t{1} MHz\n').format(
-        D1, D2, symbol))
 
 def muon_harmonic(cell_f, mu_sym, grid_n, property, calc='castep', pname=None,
                 ignore_ipsoH=False, solver=False, args_w=False,
@@ -146,11 +120,12 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, calc='castep', pname=None,
                          '{0}_{1}_{2}/{0}_{1}_{2}.param'.format(sname, i+1, j)))
 
     else:
-        # Parse tensors from appropriate files and energy from .castep files
         E_table = []
         hfine_table = ipso_hfine_table = np.zeros((np.size(R), grid_n))
         num_species = np.size(cell.get_array('castep_custom_species'))
         grid_tensors = np.zeros((num_species, np.size(R), grid_n, 3, 3))
+
+        # Parse tensors from appropriate files and energy from .castep files
         for i, Ri in enumerate(R):
             E_table.append([])
             dirname = '{0}_{1}'.format(sname, i+1)
@@ -173,8 +148,8 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, calc='castep', pname=None,
 
         symbols = cell.get_array('castep_custom_species')
 
-        r2psi2 = calc_wavefunction(R, grid_n, E_table = E_table,
-            write_table = True, value_table = hfine_table, sname = sname)
+        #Calculate vibrational average of property and write it out
+        r2psi2 = calc_wavefunction(R, grid_n, write_table = True, sname = sname)
         tens_avg = weighted_tens_avg(grid_tensors, r2psi2)
         write_tensors(tens_avg, sname, symbols)
         calc_harm_potential(R, grid_n, mu_mass, mu_evals, E_table, sname)
