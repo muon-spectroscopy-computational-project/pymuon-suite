@@ -47,7 +47,7 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, calc='castep', pname=None,
     grid_n increments along each axis of the phonon modes, creating a grid.
     Alternatively, read in coupling values calculated at each point of a grid
     created using this function's write mode and average them to give an estimate
-    of the actual value accounting for nuclear quantum effects.
+    of the actual coupling values accounting for nuclear quantum effects.
 
     | Args:
     |   cell_f (str): Path to structure file (e.g. .cell file for CASTEP)
@@ -55,19 +55,19 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, calc='castep', pname=None,
     |   grid_n (int): Number of increments to make along each phonon axis
     |   property(str): Property to be calculated. Currently accepted values:
     |       "hyperfine" (hyperfine tensors),
-    |   calc (str): Calculator used (e.g. CASTEP)
+    |   calc (str): Calculator of input file (e.g. CASTEP for .cell files)
     |   pname (str): Path of param file which will be copied into folders
     |       along with displaced cell files for convenience
     |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
-    |   solver (bool): If true, use qlab to numerically solve the schroedinger
-    |       equation
+    |   solver (bool): If true, use qlab (only if installed) to numerically
+    |       calculate the harmonic wavefunction
     |   args_w (bool): Write files if true, parse if false
-    |   ase_phonons(bool): If True, use ASE to calculate phonon modes. ASE will
+    |   ase_phonons(bool): If true, use ASE to calculate phonon modes. ASE will
     |       use the calculator of the input cell, e.g. CASTEP for .cell files. Set
     |       dftb_phonons to True in order to use dftb+ as the calculator instead.
-    |       If False, will read in CASTEP phonons.
-    |   dftb_phonons(bool): Use dftb+ to calculate phonons if true. Requires
-    |       ase_phonons set to true
+    |       If false, will read in CASTEP phonons.
+    |   dftb_phonons(bool): Use dftb+ with ASE to calculate phonons if true.
+    |       Requires ase_phonons set to true.
     |
     | Returns: Nothing
     """

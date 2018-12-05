@@ -18,18 +18,6 @@ from ase.calculators.dftb import Dftb
 from ase.dft import kpoints
 from ase.phonons import Phonons
 
-try:
-    from casteppy.data.phonon import PhononData
-except ImportError:
-    raise ImportError("""
-Can't use castep phonon interface due to casteppy not being installed.
-Please download and install casteppy from Bitbucket:
-
-HTTPS:  https://bitbucket.org/casteppy/casteppy.git
-SSH:    git@bitbucket.org:casteppy/casteppy.git
-
-and try again.""")
-
 def ase_phonon_calc(cell, dftb_phonons):
     """Calculate phonon modes of a molecule using ASE. If dftb_phonons is true,
     DFTB+ will be used as the calculator. Otherwise, the input cell's calculator
