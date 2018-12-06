@@ -153,10 +153,10 @@ MuonHarmonicSchema = Schema({
     'muon_symbol': validate_str,
     #Number of grid points(displacements of muon) to use
     'grid_n': int,
-    #Property to be calculated, currently accepted values: "hyperfine" (hyperfine
+    #Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
     #coupling tensors)
     'property': validate_str,
-    #Is value being calculated a matrix, vector, or scalar? (e.g. hyperfine
+    #Is value being calculated a 'matrix', 'vector', or 'scalar'? (e.g. hyperfine
     #tensor is a matrix)
     'value_type': validate_str,
     #Type of weighting to be used, currently accepted values: "harmonic" (harmonic

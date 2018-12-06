@@ -30,6 +30,20 @@ def nq_entry():
     # Load parameters
     params = load_input_file(args.parameter_file, MuonHarmonicSchema)
 
+    if params['property'].strip().lower() != 'hyperfine':
+        raise ValueError("Invalid value entered for property ('{0}')".format(
+        params['property']))
+
+    if params['value_type'].strip().lower() != 'scalar' and \
+       params['value_type'].strip().lower() != 'vector' and \
+       params['value_type'].strip().lower() != 'matrix':
+        raise ValueError("Invalid value entered for value_type ('{0}')".format(
+        params['value_type']))
+
+    if params['weight'].strip().lower() != 'harmonic':
+        raise ValueError("Invalid value entered for weight ('{0}')".format(
+        params['weight']))
+
     if args.calculation_type == "muon_harmonic":
         muon_harmonic(params['cell_file'], params['muon_symbol'], params['grid_n'],
                     params['property'], params['value_type'], params['calculator'],

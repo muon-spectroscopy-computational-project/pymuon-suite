@@ -208,7 +208,7 @@ def vib_avg(cell_f, mu_sym, grid_n, property, value_type, weight_type,
         mu_index, iH_index, mu_mass = parse_castep_muon(cell, mu_sym,
                                                             ignore_ipsoH)
     else:
-        raise RuntimeError("Invalid calculator entered ('{0}').".format(calc))
+        raise ValueError("Invalid calculator entered ('{0}').".format(calc))
 
     if ase_phonons:
         #Calculate phonons using ASE
