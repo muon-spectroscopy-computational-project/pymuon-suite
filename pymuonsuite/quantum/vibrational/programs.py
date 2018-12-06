@@ -38,8 +38,8 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
 
-def muon_harmonic(cell_f, mu_sym, grid_n, property, calc='castep', pname=None,
-                ignore_ipsoH=False, solver=False, args_w=False,
+def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, calc='castep', 
+                pname=None, ignore_ipsoH=False, solver=False, args_w=False,
                 ase_phonons=False, dftb_phonons=False):
     """
     Given a file containing phonon modes of a muonated molecule, write
@@ -123,7 +123,12 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, calc='castep', pname=None,
         E_table = []
         hfine_table = ipso_hfine_table = np.zeros((np.size(R), grid_n))
         num_species = np.size(cell.get_array('castep_custom_species'))
-        grid_tensors = np.zeros((num_species, np.size(R), grid_n, 3, 3))
+        if value_type == 'scalar':
+            grid_tensors = np.zeros((num_species, np.size(R), grid_n, 1, 1))
+        elif value_type == 'vector':
+            grid_tensors = np.zeros((num_species, np.size(R), grid_n, 1, 3))
+        elif value_type == 'matrix':
+            grid_tensors = np.zeros((num_species, np.size(R), grid_n, 3, 3))
 
         # Parse tensors from appropriate files and energy from .castep files
         for i, Ri in enumerate(R):

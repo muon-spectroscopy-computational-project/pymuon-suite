@@ -12,10 +12,10 @@ import numpy as np
 
 def write_tensors(tensors, sname, symbols):
     """
-    Write out a set of 3x3 tensors for every atom in a system.
+    Write out a set of 2 dimensional tensors for every atom in a system.
 
     | Args:
-    |   tensors(Numpy float array, shape: (Atoms, 3, 3): A list of 3x3 tensors
+    |   tensors(Numpy float array, shape: (Atoms, :, :): A list of tensors
     |       for each atom.
     |   sname(str): Seedname for file (i.e. filename will be sname_tensors.dat).
     |   symbols(str array): List containing chemical symbol of each atom in
