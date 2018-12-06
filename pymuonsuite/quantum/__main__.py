@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 
 import argparse as ap
 
-from pymuonsuite.quantum.vibrational.programs import muon_harmonic
+from pymuonsuite.quantum.vibrational.programs import muon_harmonic, vib_avg
 from pymuonsuite.schemas import load_input_file, MuonHarmonicSchema
 
 
@@ -34,6 +34,12 @@ def nq_entry():
         muon_harmonic(params['cell_file'], params['muon_symbol'], params['grid_n'],
                     params['property'], params['value_type'], params['calculator'],
                     params['param_file'], params['ignore_ipsoH'],
+                    params['numerical_solver'], args.w, params['ase_phonons'],
+                    params['dftb_phonons'])
+    if args.calculation_type == "vib_avg":
+        vib_avg(params['cell_file'], params['muon_symbol'], params['grid_n'],
+                    params['property'], params['value_type'], params['weight'],
+                    params['calculator'], params['param_file'], params['ignore_ipsoH'],
                     params['numerical_solver'], args.w, params['ase_phonons'],
                     params['dftb_phonons'])
     else:

@@ -159,6 +159,9 @@ MuonHarmonicSchema = Schema({
     #Is value being calculated a matrix, vector, or scalar? (e.g. hyperfine
     #tensor is a matrix)
     'value_type': validate_str,
+    #Type of weighting to be used, currently accepted values: "harmonic" (harmonic
+    #oscillator wavefunction)
+    Optional('weight', default='harmonic'): validate_str,
     #Type of structure file being input. Valid values: 'castep'
     Optional('calculator', default='castep'): validate_str,
     #Path of parameter file which can be copied into folders with displaced cell
