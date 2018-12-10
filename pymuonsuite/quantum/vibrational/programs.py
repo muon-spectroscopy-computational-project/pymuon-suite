@@ -40,7 +40,7 @@ and try again.""")
 
 def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, weight_type,
                 pname=None, ignore_ipsoH=False, solver=False, args_w=False,
-                ase_phonons=False, dftb_phonons=False):
+                ase_phonons=False, dftb_phonons=True):
     """
     Given a file containing phonon modes of a muonated molecule, write
     out a set of structure files with the muon progressively displaced in
@@ -73,13 +73,12 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     cell = ase_io.read(cell_f)
     sname = seedname(cell_f)
     #Parse muon data
-    mu_index, iH_index, mu_mass = parse_castep_muon(cell, mu_sym,
-                                                            ignore_ipsoH)
+    mu_index, iH_index, mu_mass = parse_castep_muon(cell, mu_sym, ignore_ipsoH)
 
     if ase_phonons:
         #Calculate phonons using ASE
         masses = cell.get_masses()
-        masses[-1] = mu_mass/cnst.u
+        masses[mu_index] = mu_mass/cnst.u
         cell.set_masses(masses)
         evals, evecs = ase_phonon_calc(cell, dftb_phonons)
     else:
