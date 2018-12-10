@@ -47,7 +47,7 @@ def nq_entry():
     if args.calculation_type == "muon_harmonic":
         muon_harmonic(params['cell_file'], params['muon_symbol'], params['grid_n'],
                     params['property'], params['value_type'], params['weight'],
-                    params['calculator'], params['param_file'], params['ignore_ipsoH'],
+                    params['param_file'], params['ignore_ipsoH'],
                     params['numerical_solver'], args.w, params['ase_phonons'],
                     params['dftb_phonons'])
     else:

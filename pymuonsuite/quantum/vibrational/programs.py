@@ -39,8 +39,8 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 and try again.""")
 
 def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, weight_type,
-                calc='castep', pname=None, ignore_ipsoH=False, solver=False,
-                args_w=False, ase_phonons=False, dftb_phonons=False):
+                pname=None, ignore_ipsoH=False, solver=False, args_w=False,
+                ase_phonons=False, dftb_phonons=False):
     """
     Given a file containing phonon modes of a muonated molecule, write
     out a set of structure files with the muon progressively displaced in
@@ -55,7 +55,6 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     |   grid_n (int): Number of increments to make along each phonon axis
     |   property(str): Property to be calculated. Currently accepted values:
     |       "hyperfine" (hyperfine tensors),
-    |   calc (str): Calculator of input file (e.g. CASTEP for .cell files)
     |   pname (str): Path of param file which will be copied into folders
     |       along with displaced cell files for convenience
     |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
@@ -73,12 +72,9 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     """
     cell = ase_io.read(cell_f)
     sname = seedname(cell_f)
-    #Parse muon data using appropriate parser for calculator
-    if (calc.strip().lower() in 'castep'):
-        mu_index, iH_index, mu_mass = parse_castep_muon(cell, mu_sym,
+    #Parse muon data
+    mu_index, iH_index, mu_mass = parse_castep_muon(cell, mu_sym,
                                                             ignore_ipsoH)
-    else:
-        raise ValueError("Invalid calculator entered ('{0}').".format(calc))
 
     if ase_phonons:
         #Calculate phonons using ASE
