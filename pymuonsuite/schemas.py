@@ -162,8 +162,6 @@ MuonHarmonicSchema = Schema({
     #Type of weighting to be used, currently accepted values: "harmonic" (harmonic
     #oscillator wavefunction)
     Optional('weight', default='harmonic'): validate_str,
-    #Type of structure file being input. Valid values: 'castep'
-    Optional('calculator', default='castep'): validate_str,
     #Path of parameter file which can be copied into folders with displaced cell
     #files for convenience
     Optional('param_file', default=None): validate_str,
