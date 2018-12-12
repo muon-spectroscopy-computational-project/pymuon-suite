@@ -73,7 +73,9 @@ def parse_castep_muon(cell, mu_sym, ignore_ipsoH):
     |   mu_mass (float): Mass of muon in kg
     """
     # Get muon mass
-    mu_mass = float(cell.calc.cell.species_mass.value.split()[2])
+    for i, item in enumerate(cell.calc.cell.species_mass.value.split()):
+        if item == mu_sym:
+            mu_mass = float(cell.calc.cell.species_mass.value.split()[i+1])
     mu_mass = mu_mass*cnst.u  # Convert to kg
     # Find muon index in structure array
     sel = AtomSelection.from_array(
