@@ -14,7 +14,7 @@ from ase import Atoms
 
 
 def calc_wavefunction(R, grid_n, num_solve = False, atom_mass = None,
-                      E_table = None, write_table = True, sname = ''):
+                      E_table = None, write_table = True, filename = ''):
     """
     Calculate harmonic oscillator wavefunction
 
@@ -29,7 +29,7 @@ def calc_wavefunction(R, grid_n, num_solve = False, atom_mass = None,
     |       num_solve
     |   write_table: Write out table of probability densities in format:
     |       Displacement | Prob. Density
-    |   sname (str): Seedname of file to write to, required for write_table
+    |   filename (str): Filename of file to write to, required for write_table
     |
     | Returns:
     |   r2psi2 (Numpy float, shape:(size(R), grid_n)): Probability density of
@@ -62,7 +62,7 @@ def calc_wavefunction(R, grid_n, num_solve = False, atom_mass = None,
     if write_table:
         psi_table = np.concatenate(
             (R_axes, psi**2), axis=0)
-        np.savetxt(sname + '_psi.dat', psi_table.T)
+        np.savetxt(filename, psi_table.T)
     # And average
     r2psi2 = R_axes**2*np.abs(psi)**2
 

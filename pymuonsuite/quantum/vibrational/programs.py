@@ -38,7 +38,7 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
 
-def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, weight_type,
+def vib_avg_muon(cell_f, mu_sym, grid_n, property, value_type, weight_type,
                 pname=None, ignore_ipsoH=False, solver=False, args_w=False,
                 ase_phonons=False, dftb_phonons=True):
     """
@@ -116,7 +116,6 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, weight_type,
 
     else:
         E_table = []
-        hfine_table = ipso_hfine_table = np.zeros((np.size(R), grid_n))
         num_species = np.size(cell.get_array('castep_custom_species'))
         if value_type == 'scalar':
             grid_tensors = np.zeros((num_species, np.size(R), grid_n, 1, 1))
@@ -134,8 +133,6 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, weight_type,
                     tensor_file = os.path.join(dirname,
                         '{0}_{1}_{2}/{0}_{1}_{2}.magres'.format(sname, i+1, j))
                     tensors = (parse_hyperfine_magres(tensor_file)).get_array('hyperfine')
-                else:
-                    raise ValueError("Invalid value for property")
                 for k, tensor in enumerate(tensors):
                     grid_tensors[k][i][j][:][:] = tensor
                 castf = os.path.join(dirname,
@@ -151,8 +148,6 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, weight_type,
         #Calculate vibrational average of property and write it out
         if weight_type == 'harmonic':
             weighting = calc_wavefunction(R, grid_n, write_table = True, sname = sname)
-        else:
-            raise ValueError("Invalid value for weight")
         tens_avg = weighted_tens_avg(grid_tensors, weighting)
         write_tensors(tens_avg, sname, symbols)
         calc_harm_potential(R, grid_n, mu_mass, mu_evals, E_table, sname)
@@ -163,5 +158,138 @@ def muon_harmonic(cell_f, mu_sym, grid_n, property, value_type, weight_type,
             if not ignore_ipsoH:
                 hfine_report(R, grid_n, grid_tensors[iH_index], tens_avg[iH_index],
                 weighting, sname, "{0} {1} (ipso)".format(symbols[iH_index], iH_index))
+
+    return
+
+def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
+                pname=None, ignore_ipsoH=False, solver=False, args_w=False,
+                ase_phonons=False, dftb_phonons=True):
+    """
+    Given a file containing phonon modes of a muonated molecule, write
+    out a set of structure files with the muon progressively displaced in
+    grid_n increments along each axis of the phonon modes, creating a grid.
+    Alternatively, read in coupling values calculated at each point of a grid
+    created using this function's write mode and average them to give an estimate
+    of the actual coupling values accounting for nuclear quantum effects.
+
+    | Args:
+    |   cell_f (str): Path to structure file (e.g. .cell file for CASTEP)
+    |   mu_sym (str): Symbol used to represent muon in structure file
+    |   grid_n (int): Number of increments to make along each phonon axis
+    |   property(str): Property to be calculated. Currently accepted values:
+    |       "hyperfine" (hyperfine tensors),
+    |   pname (str): Path of param file which will be copied into folders
+    |       along with displaced cell files for convenience
+    |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
+    |   solver (bool): If true, use qlab (only if installed) to numerically
+    |       calculate the harmonic wavefunction
+    |   args_w (bool): Write files if true, parse if false
+    |   ase_phonons(bool): If true, use ASE to calculate phonon modes. ASE will
+    |       use the calculator of the input cell, e.g. CASTEP for .cell files. Set
+    |       dftb_phonons to True in order to use dftb+ as the calculator instead.
+    |       If false, will read in CASTEP phonons.
+    |   dftb_phonons(bool): Use dftb+ with ASE to calculate phonons if true.
+    |       Requires ase_phonons set to true.
+    |
+    | Returns: Nothing
+    """
+    cell = ase_io.read(cell_f)
+    sname = seedname(cell_f)
+    num_atoms = np.size(cell)
+    #Parse muon data
+    mu_index, iH_index, mu_mass = parse_castep_muon(cell, mu_sym, ignore_ipsoH)
+    masses = cell.get_masses()
+    masses[mu_index] = mu_mass/cnst.u
+    cell.set_masses(masses)
+
+    if ase_phonons:
+        #Calculate phonons using ASE
+        evals, evecs = ase_phonon_calc(cell, dftb_phonons)
+    else:
+        # Parse CASTEP phonon data into casteppy object
+        pd = PhononData(sname)
+        # Convert frequencies back to cm-1
+        pd.convert_e_units('1/cm')
+        # Get phonon frequencies+modes
+        evals = pd.freqs
+        evecs = pd.eigenvecs
+
+    maj_evecs_index = np.zeros((num_atoms, 3))
+    maj_evals = np.zeros((num_atoms, 3))
+    R = np.zeros((num_atoms, 3))
+    maj_evecs = np.zeros((num_atoms, 3, 3))
+    maj_evecs_ortho = np.zeros((num_atoms, 3, 3))
+
+    for index in range(num_atoms):
+        # Get major phonon modes
+        maj_evecs_index[index], maj_evecs[index], maj_evecs_ortho[index] = get_major_emodes(evecs[0], index)
+        # Get major phonon frequencies and convert to radians/second
+        maj_evals[index] = np.array(evals[0][maj_evecs_index[index].astype(int)]*1e2*cnst.c*np.pi*2)
+        # Displacements in Angstrom
+        R[index] = np.sqrt(cnst.hbar/(maj_evals[index]*masses[index]*cnst.u))*1e10
+
+    # Write cells with displaced muon
+    if args_w:
+        for i in range(num_atoms):
+            try:
+                os.stat('{0}_{1}'.format(sname, i+1))
+            except:
+                os.mkdir('{0}_{1}'.format(sname, i+1))
+            for j, Rj in enumerate(R[i]):
+                #cell.info['name'] = sname + '_' + str(i+1) + '_' + str(j+1)
+                cell.info['name'] = "{0}".format(j+1)
+                dirname = '{0}_{1}/{2}'.format(sname, i+1, j+1)
+                lg = create_displaced_cells(cell, i, grid_n, 3*maj_evecs[i][j]*Rj)
+                collection = AtomsCollection(lg)
+                for atom in collection:
+                    atom.set_calculator(cell.calc)
+                collection.save_tree(dirname, "cell")
+                #Copy parameter file if specified
+                if pname:
+                    for k in range(grid_n):
+                        shutil.copy(pname, os.path.join(dirname,
+                             '{0}_{1}/{0}_{1}.param'.format(j+1, k)))
+
+    else:
+        E_table = np.zeros((np.size(R[0]), grid_n))
+        if value_type == 'scalar':
+            grid_tensors = np.zeros((num_atoms, np.size(R[0]), grid_n, 1, 1))
+        elif value_type == 'vector':
+            grid_tensors = np.zeros((num_atoms, np.size(R[0]), grid_n, 1, 3))
+        elif value_type == 'matrix':
+            grid_tensors = np.zeros((num_atoms, np.size(R[0]), grid_n, 3, 3))
+
+        # Parse tensors from appropriate files and energy from .castep files
+        for i in range(np.size(cell)):
+            dirname = '{0}_{1}'.format(sname, i+1)
+            for j in range(np.size(R[0])):
+                for k in range(grid_n):
+                    if property == 'hyperfine':
+                        tensor_file = os.path.join(dirname,
+                            '{0}/{0}_{1}/{0}_{1}.magres'.format(j+1, k))
+                        tensors = (parse_hyperfine_magres(tensor_file)).get_array('hyperfine')
+                    for l, tensor in enumerate(tensors):
+                        grid_tensors[l][j][k][:][:] = tensor
+                    castf = os.path.join(dirname,
+                        '{0}/{0}_{1}/{0}_{1}.castep'.format(j+1, k))
+                    E_table[j][k] = parse_final_energy(castf)
+
+            symbols = cell.get_array('castep_custom_species')
+
+            #Calculate vibrational average of property and write it out
+            if weight_type == 'harmonic':
+                weighting = calc_wavefunction(R[i], grid_n, write_table = True,
+                    filename = dirname+"/{0}_{1}_psi.dat".format(sname, i+1))
+            tens_avg = weighted_tens_avg(grid_tensors, weighting)
+            write_tensors(tens_avg, dirname+"/{0}_{1}_tensors.dat".format(sname, i+1), symbols)
+            calc_harm_potential(R[i], grid_n, mu_mass, maj_evals[i], E_table,
+                dirname+"/{0}_{1}_V.dat".format(sname, i+1))
+
+            if property == 'hyperfine':
+                hfine_report(R[i], grid_n, grid_tensors[mu_index],
+                    tens_avg[mu_index], weighting, sname, mu_sym)
+                if not ignore_ipsoH:
+                    hfine_report(R[i], grid_n, grid_tensors[iH_index], tens_avg[iH_index],
+                        weighting, sname, "{0} {1} (ipso)".format(symbols[iH_index], iH_index))
 
     return

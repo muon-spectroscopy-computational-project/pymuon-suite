@@ -61,7 +61,7 @@ def ase_phonon_calc(cell, dftb_phonons):
 
     return evals, evecs
 
-def calc_harm_potential(R, grid_n, mass, freqs, E_table, sname):
+def calc_harm_potential(R, grid_n, mass, freqs, E_table, filename):
     """
     Calculate the harmonic potential at all displacements on the grid for an
     atom and write out to file in a format that can be plotted.
@@ -75,8 +75,7 @@ def calc_harm_potential(R, grid_n, mass, freqs, E_table, sname):
     |       oscillator along each axis
     |   E_table(Numpy float array, shape:(np.size(R), grid_n)): Table of CASTEP
     |       final system energies.
-    |   sname(str): Seedname to be used for filename (i.e. filename will be
-    |       sname_V.dat
+    |   filename(str): Filename to be used for file
     |
     | Returns: Nothing
     """
@@ -92,7 +91,7 @@ def calc_harm_potential(R, grid_n, mass, freqs, E_table, sname):
         E_table -= (E_table[:, E_table.shape[1]//2] +
                     E_table[:, E_table.shape[1]//2-1])[:, None]/2.0
     all_table = np.concatenate((R_axes, harm_V, E_table), axis=0)
-    np.savetxt(sname + '_V.dat', all_table.T)
+    np.savetxt(filename, all_table.T)
 
 def get_major_emodes(evecs, i):
     """Find the normalized phonon modes of the atom at index i
