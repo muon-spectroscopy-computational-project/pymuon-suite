@@ -42,10 +42,10 @@ def vib_avg_muon(cell_f, mu_sym, grid_n, property, value_type, weight_type,
                 pname=None, ignore_ipsoH=False, solver=False, args_w=False,
                 ase_phonons=False, dftb_phonons=True):
     """
-    Given a file containing phonon modes of a muonated molecule, write
-    out a set of structure files with the muon progressively displaced in
+    (Write mode) Given a file containing phonon modes of a muonated molecule,
+    write out a set of structure files with the muon progressively displaced in
     grid_n increments along each axis of the phonon modes, creating a grid.
-    Alternatively, read in coupling values calculated at each point of a grid
+    (Read mode) Read in coupling values calculated at each point of a grid
     created using this function's write mode and average them to give an estimate
     of the actual coupling values accounting for nuclear quantum effects.
 
@@ -55,6 +55,10 @@ def vib_avg_muon(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     |   grid_n (int): Number of increments to make along each phonon axis
     |   property(str): Property to be calculated. Currently accepted values:
     |       "hyperfine" (hyperfine tensors),
+    |   value_type(str): Is value being calculated a 'matrix', 'vector', or
+    |       'scalar'? (e.g. hyperfine tensor is a matrix)
+    |   weight_type(str): Type of weighting to be used, currently accepted
+    |       values: "harmonic" (harmonic oscillator wavefunction)
     |   pname (str): Path of param file which will be copied into folders
     |       along with displaced cell files for convenience
     |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
@@ -103,6 +107,7 @@ def vib_avg_muon(cell_f, mu_sym, grid_n, property, value_type, weight_type,
         for i, Ri in enumerate(R):
             cell.info['name'] = sname + '_' + str(i+1)
             dirname = '{0}_{1}'.format(sname, i+1)
+            #Create linear space generator and save displaced cell files
             lg = create_displaced_cells(cell, mu_index, grid_n, 3*mu_evecs[i]*Ri)
             collection = AtomsCollection(lg)
             for atom in collection:
@@ -165,12 +170,14 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
                 pname=None, ignore_ipsoH=False, solver=False, args_w=False,
                 ase_phonons=False, dftb_phonons=True):
     """
-    Given a file containing phonon modes of a muonated molecule, write
-    out a set of structure files with the muon progressively displaced in
-    grid_n increments along each axis of the phonon modes, creating a grid.
-    Alternatively, read in coupling values calculated at each point of a grid
+    (Write mode) Given a file containing phonon modes of a molecule, write
+    out a set of structure files, one for each major mode of each atom,
+    with the atoms progressively displaced in grid_n increments along each axis
+    of their major phonon modes, creating a grid of displacements for each atom.
+    (Read mode) Read in coupling values calculated at each point of a grid
     created using this function's write mode and average them to give an estimate
-    of the actual coupling values accounting for nuclear quantum effects.
+    of the actual coupling values accounting for nuclear quantum effects for each
+    atom displaced.
 
     | Args:
     |   cell_f (str): Path to structure file (e.g. .cell file for CASTEP)
@@ -178,6 +185,10 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     |   grid_n (int): Number of increments to make along each phonon axis
     |   property(str): Property to be calculated. Currently accepted values:
     |       "hyperfine" (hyperfine tensors),
+    |   value_type(str): Is value being calculated a 'matrix', 'vector', or
+    |       'scalar'? (e.g. hyperfine tensor is a matrix)
+    |   weight_type(str): Type of weighting to be used, currently accepted
+    |       values: "harmonic" (harmonic oscillator wavefunction)
     |   pname (str): Path of param file which will be copied into folders
     |       along with displaced cell files for convenience
     |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
@@ -236,9 +247,9 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
             except:
                 os.mkdir('{0}_{1}'.format(sname, i+1))
             for j, Rj in enumerate(R[i]):
-                #cell.info['name'] = sname + '_' + str(i+1) + '_' + str(j+1)
                 cell.info['name'] = "{0}".format(j+1)
                 dirname = '{0}_{1}/{2}'.format(sname, i+1, j+1)
+                #Create linear space generator and save displaced cell files
                 lg = create_displaced_cells(cell, i, grid_n, 3*maj_evecs[i][j]*Rj)
                 collection = AtomsCollection(lg)
                 for atom in collection:
