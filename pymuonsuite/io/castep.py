@@ -58,6 +58,35 @@ def save_muonconf_castep(a, folder, params):
     yaml.safe_dump(castep_params, open(parameter_file, 'w'),
                    default_flow_style=False)
 
+def parse_castep_masses(cell):
+    """Parse CASTEP custom species masses, returning an array of all atom masses
+    in .cell file with corrected custom masses.
+
+    | Args:
+    |   cell(ASE Atoms object): Atoms object containing relevant .cell file
+    | Returns:
+    |   masses(Numpy float array, shape(no. of atoms)): Correct masses of all
+    |       atoms in cell file.
+    """
+    species_masses = cell.calc.cell.species_mass.value.split()
+    custom_masses = {}
+    #If no units given in species mass block
+    if len(species_masses)%2 == 0:
+        for i in range(0, len(species_masses), 2):
+            custom_masses[species_masses[i]] = float(species_masses[i+1])
+    #If units given in species mass block
+    else:
+        for i in range(1, len(species_masses), 2):
+            custom_masses[species_masses[i]] = float(species_masses[i+1])
+
+    masses = cell.get_masses()
+    symbols = cell.get_array("castep_custom_species")
+    for i, symbol1 in enumerate(symbols):
+        for symbol2 in custom_masses:
+            if symbol1 == symbol2:
+                masses[i] = custom_masses[symbol2]
+
+    return masses
 
 def parse_castep_muon(cell, mu_sym, ignore_ipsoH):
     """Parse muon data from CASTEP cell file, returning

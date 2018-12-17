@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 
 import numpy as np
 
-def hfine_report(R, grid_n, tensors, hfine_tens_avg, r2psi2, sname, symbol):
+def hfine_report(R, grid_n, tensors, hfine_tens_avg, r2psi2, filename, symbol):
     """Write a report on an atom's hyperfine coupling constant and its
     hyperfine tensor dipolar components based on a vibrational averaging
     calculation.
@@ -24,7 +24,7 @@ def hfine_report(R, grid_n, tensors, hfine_tens_avg, r2psi2, sname, symbol):
     |   hfine_tens_avg(float): Average tensor of desired atom over grid
     |   r2psi2 (Numpy float, shape:(size(R), grid_n)): Probability density of
     |       harmonic oscillator at each displacement
-    |   sname(str): Root of filename (i.e. output will be <sname>_report.txt)
+    |   filename(str): Filename to be used for file
     |   symbol(str): Symbol of atom
     |
     | Returns: Nothing
@@ -34,7 +34,7 @@ def hfine_report(R, grid_n, tensors, hfine_tens_avg, r2psi2, sname, symbol):
         for j, tensor in enumerate(axis):
             hfine_table[i][j] = np.trace(tensor)/3.0
 
-    ofile = open(sname + '_report.txt', 'a')
+    ofile = open(filename, 'a')
 
     hfine_avg = np.sum(r2psi2*hfine_table)/np.sum(r2psi2)
     ofile.write('Predicted hyperfine coupling on labeled atom ({1}): {0} MHz\n'.format(

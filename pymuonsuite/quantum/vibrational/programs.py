@@ -18,7 +18,8 @@ from ase import io as ase_io
 from soprano.collection import AtomsCollection
 from soprano.utils import seedname
 
-from pymuonsuite.io.castep import parse_castep_muon, parse_final_energy
+from pymuonsuite.io.castep import parse_castep_muon, parse_castep_masses
+from pymuonsuite.io.castep import parse_final_energy
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.io.output import write_tensors
 from pymuonsuite.quantum.vibrational.grid import calc_wavefunction, weighted_tens_avg
@@ -209,8 +210,7 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     num_atoms = np.size(cell)
     #Parse muon data
     mu_index, iH_index, mu_mass = parse_castep_muon(cell, mu_sym, ignore_ipsoH)
-    masses = cell.get_masses()
-    masses[mu_index] = mu_mass/cnst.u
+    masses = parse_castep_masses(cell)
     cell.set_masses(masses)
 
     if ase_phonons:
@@ -293,14 +293,16 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
                     filename = dirname+"/{0}_{1}_psi.dat".format(sname, i+1))
             tens_avg = weighted_tens_avg(grid_tensors, weighting)
             write_tensors(tens_avg, dirname+"/{0}_{1}_tensors.dat".format(sname, i+1), symbols)
-            calc_harm_potential(R[i], grid_n, mu_mass, maj_evals[i], E_table,
+            calc_harm_potential(R[i], grid_n, masses[i], maj_evals[i], E_table,
                 dirname+"/{0}_{1}_V.dat".format(sname, i+1))
 
             if property == 'hyperfine':
                 hfine_report(R[i], grid_n, grid_tensors[mu_index],
-                    tens_avg[mu_index], weighting, sname, mu_sym)
+                    tens_avg[mu_index], weighting,
+                    dirname+"/{0}_{1}_report.dat".format(sname, i+1), mu_sym)
                 if not ignore_ipsoH:
                     hfine_report(R[i], grid_n, grid_tensors[iH_index], tens_avg[iH_index],
-                        weighting, sname, "{0} {1} (ipso)".format(symbols[iH_index], iH_index))
+                        weighting, dirname+"/{0}_{1}_report.dat".format(sname, i+1),
+                        "{0} {1} (ipso)".format(symbols[iH_index], iH_index))
 
     return
