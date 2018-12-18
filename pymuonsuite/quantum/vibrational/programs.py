@@ -16,6 +16,7 @@ import scipy.constants as cnst
 from ase import Atoms
 from ase import io as ase_io
 from soprano.collection import AtomsCollection
+from soprano.selection import AtomSelection
 from soprano.utils import seedname
 
 from pymuonsuite.io.castep import parse_castep_muon, parse_castep_masses
@@ -208,10 +209,19 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     cell = ase_io.read(cell_f)
     sname = seedname(cell_f)
     num_atoms = np.size(cell)
-    #Parse muon data
-    mu_index, iH_index, mu_mass = parse_castep_muon(cell, mu_sym, ignore_ipsoH)
     masses = parse_castep_masses(cell)
     cell.set_masses(masses)
+    #Parse muon data
+    sel = AtomSelection.from_array(
+        cell, 'castep_custom_species', mu_sym)
+    mu_indices = sel.indices
+    # Find ipso hydrogen location(s)
+    if not ignore_ipsoH:
+        iH_indices = np.zeros(np.size(mu_indices), int)
+        for i, index in enumerate(iH_indices):
+            index = find_ipso_hydrogen(mu_indices[i], cell, mu_sym)
+    else:
+        iH_indices = None
 
     if ase_phonons:
         #Calculate phonons using ASE
@@ -297,12 +307,12 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
                 dirname+"/{0}_{1}_V.dat".format(sname, i+1))
 
             if property == 'hyperfine':
-                hfine_report(R[i], grid_n, grid_tensors[mu_index],
-                    tens_avg[mu_index], weighting,
-                    dirname+"/{0}_{1}_report.dat".format(sname, i+1), mu_sym)
-                if not ignore_ipsoH:
-                    hfine_report(R[i], grid_n, grid_tensors[iH_index], tens_avg[iH_index],
-                        weighting, dirname+"/{0}_{1}_report.dat".format(sname, i+1),
-                        "{0} {1} (ipso)".format(symbols[iH_index], iH_index))
+                muon_ipso_dict = {}
+                for index in mu_indices:
+                    muon_ipso_dict[index] = symbols[index]
+                for index in iH_indices:
+                    muon_ipso_dict[index] = symbols[index]
+                hfine_report(R[i], grid_n, grid_tensors, tens_avg, weighting,
+                dirname+"/{0}_{1}_report.dat".format(sname, i+1), muon_ipso_dict)
 
     return
