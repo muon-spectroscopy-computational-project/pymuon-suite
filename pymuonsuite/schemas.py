@@ -50,6 +50,10 @@ def validate_int3(value):
     v = np.array(value)
     return v.shape == (3,) and v.dtype == int
 
+def validate_int_array(value):
+    v = np.array(value)
+    return v.dtype == int
+
 
 def validate_float3(value):
     v = np.array(value)
@@ -151,6 +155,9 @@ MuonHarmonicSchema = Schema({
     'cell_file': validate_str,
     #Symbol used to represent muon
     'muon_symbol': validate_str,
+    #Array of indices of atoms to be vibrated, counting from 1. E.g. for first 3
+    #atoms in cell file enter [1, 2, 3]. Enter [-1] to select all atoms.
+    'atom_indices': validate_int_array,
     #Number of grid points(displacements of muon) to use
     'grid_n': int,
     #Property to be calculated, currently accepted values: 'hyperfine' (hyperfine

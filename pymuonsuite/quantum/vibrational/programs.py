@@ -168,9 +168,9 @@ def vib_avg_muon(cell_f, mu_sym, grid_n, property, value_type, weight_type,
 
     return
 
-def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
-                pname=None, ignore_ipsoH=False, solver=False, args_w=False,
-                ase_phonons=False, dftb_phonons=True):
+def vib_avg_all(cell_f, mu_sym, grid_n, atoms_ind, property, value_type,
+                weight_type, pname=None, ignore_ipsoH=False, solver=False,
+                args_w=False, ase_phonons=False, dftb_phonons=True):
     """
     (Write mode) Given a file containing phonon modes of a molecule, write
     out a set of structure files, one for each major mode of each atom,
@@ -185,6 +185,9 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     |   cell_f (str): Path to structure file (e.g. .cell file for CASTEP)
     |   mu_sym (str): Symbol used to represent muon in structure file
     |   grid_n (int): Number of increments to make along each phonon axis
+    |   atoms_ind(int array): Array of indices of atoms to be vibrated, counting
+    |       from 1. E.g. for first 3 atoms in cell file enter [1, 2, 3].
+    |       Enter [-1] to select all atoms.
     |   property(str): Property to be calculated. Currently accepted values:
     |       "hyperfine" (hyperfine tensors),
     |   value_type(str): Is value being calculated a 'matrix', 'vector', or
@@ -206,9 +209,14 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     |
     | Returns: Nothing
     """
+    #Select all atoms if -1 input
+    if atoms_ind[0] == -1:
+        atoms_ind = np.arange(1, 50, 1, int)
+
+    #Parse cell data
     cell = ase_io.read(cell_f)
     sname = seedname(cell_f)
-    num_atoms = np.size(cell)
+    num_atoms = np.size(atoms_ind)
     masses = parse_castep_masses(cell)
     cell.set_masses(masses)
     #Parse muon data
@@ -218,8 +226,8 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     # Find ipso hydrogen location(s)
     if not ignore_ipsoH:
         iH_indices = np.zeros(np.size(mu_indices), int)
-        for i, index in enumerate(iH_indices):
-            index = find_ipso_hydrogen(mu_indices[i], cell, mu_sym)
+        for i in range(np.size(iH_indices)):
+            iH_indices[i] = find_ipso_hydrogen(mu_indices[i], cell, mu_sym)
     else:
         iH_indices = None
 
@@ -241,26 +249,26 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
     maj_evecs = np.zeros((num_atoms, 3, 3))
     maj_evecs_ortho = np.zeros((num_atoms, 3, 3))
 
-    for index in range(num_atoms):
+    for i, atom_ind in enumerate(atoms_ind):
         # Get major phonon modes
-        maj_evecs_index[index], maj_evecs[index], maj_evecs_ortho[index] = get_major_emodes(evecs[0], index)
+        maj_evecs_index[i], maj_evecs[i], maj_evecs_ortho[i] = get_major_emodes(evecs[0], atom_ind-1)
         # Get major phonon frequencies and convert to radians/second
-        maj_evals[index] = np.array(evals[0][maj_evecs_index[index].astype(int)]*1e2*cnst.c*np.pi*2)
+        maj_evals[i] = np.array(evals[0][maj_evecs_index[i].astype(int)]*1e2*cnst.c*np.pi*2)
         # Displacements in Angstrom
-        R[index] = np.sqrt(cnst.hbar/(maj_evals[index]*masses[index]*cnst.u))*1e10
+        R[i] = np.sqrt(cnst.hbar/(maj_evals[i]*masses[atom_ind-1]*cnst.u))*1e10
 
     # Write cells with displaced muon
     if args_w:
-        for i in range(num_atoms):
+        for i, atom_ind in enumerate(atoms_ind):
             try:
-                os.stat('{0}_{1}'.format(sname, i+1))
+                os.stat('{0}_{1}'.format(sname, atom_ind))
             except:
-                os.mkdir('{0}_{1}'.format(sname, i+1))
+                os.mkdir('{0}_{1}'.format(sname, atom_ind))
             for j, Rj in enumerate(R[i]):
                 cell.info['name'] = "{0}".format(j+1)
-                dirname = '{0}_{1}/{2}'.format(sname, i+1, j+1)
+                dirname = '{0}_{1}/{2}'.format(sname, atom_ind, j+1)
                 #Create linear space generator and save displaced cell files
-                lg = create_displaced_cells(cell, i, grid_n, 3*maj_evecs[i][j]*Rj)
+                lg = create_displaced_cells(cell, atom_ind-1, grid_n, 3*maj_evecs[i][j]*Rj)
                 collection = AtomsCollection(lg)
                 for atom in collection:
                     atom.set_calculator(cell.calc)
@@ -272,18 +280,18 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
                              '{0}_{1}/{0}_{1}.param'.format(j+1, k)))
 
     else:
-        E_table = np.zeros((np.size(R[0]), grid_n))
         if value_type == 'scalar':
-            grid_tensors = np.zeros((num_atoms, np.size(R[0]), grid_n, 1, 1))
+            grid_tensors = np.zeros((np.size(cell), np.size(R[0]), grid_n, 1, 1))
         elif value_type == 'vector':
-            grid_tensors = np.zeros((num_atoms, np.size(R[0]), grid_n, 1, 3))
+            grid_tensors = np.zeros((np.size(cell), np.size(R[0]), grid_n, 1, 3))
         elif value_type == 'matrix':
-            grid_tensors = np.zeros((num_atoms, np.size(R[0]), grid_n, 3, 3))
+            grid_tensors = np.zeros((np.size(cell), np.size(R[0]), grid_n, 3, 3))
 
         # Parse tensors from appropriate files and energy from .castep files
-        for i in range(np.size(cell)):
-            dirname = '{0}_{1}'.format(sname, i+1)
-            for j in range(np.size(R[0])):
+        for i, atom_ind in enumerate(atoms_ind):
+            E_table = np.zeros((np.size(R[i]), grid_n))
+            dirname = '{0}_{1}'.format(sname, atom_ind)
+            for j in range(np.size(R[i])):
                 for k in range(grid_n):
                     if property == 'hyperfine':
                         tensor_file = os.path.join(dirname,
@@ -300,11 +308,11 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
             #Calculate vibrational average of property and write it out
             if weight_type == 'harmonic':
                 weighting = calc_wavefunction(R[i], grid_n, write_table = True,
-                    filename = dirname+"/{0}_{1}_psi.dat".format(sname, i+1))
+                    filename = dirname+"/{0}_{1}_psi.dat".format(sname, atom_ind))
             tens_avg = weighted_tens_avg(grid_tensors, weighting)
-            write_tensors(tens_avg, dirname+"/{0}_{1}_tensors.dat".format(sname, i+1), symbols)
-            calc_harm_potential(R[i], grid_n, masses[i], maj_evals[i], E_table,
-                dirname+"/{0}_{1}_V.dat".format(sname, i+1))
+            write_tensors(tens_avg, dirname+"/{0}_{1}_tensors.dat".format(sname, atom_ind), symbols)
+            calc_harm_potential(R[i], grid_n, masses[atom_ind-1], maj_evals[i], E_table,
+                dirname+"/{0}_{1}_V.dat".format(sname, atom_ind))
 
             if property == 'hyperfine':
                 muon_ipso_dict = {}
@@ -313,6 +321,6 @@ def vib_avg_all(cell_f, mu_sym, grid_n, property, value_type, weight_type,
                 for index in iH_indices:
                     muon_ipso_dict[index] = symbols[index]
                 hfine_report(R[i], grid_n, grid_tensors, tens_avg, weighting,
-                dirname+"/{0}_{1}_report.dat".format(sname, i+1), muon_ipso_dict)
+                dirname+"/{0}_{1}_report.dat".format(sname, atom_ind), muon_ipso_dict)
 
     return

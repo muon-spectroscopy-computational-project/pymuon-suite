@@ -30,6 +30,7 @@ def nq_entry():
     # Load parameters
     params = load_input_file(args.parameter_file, MuonHarmonicSchema)
 
+    # Check that input is valid
     if params['property'].strip().lower() != 'hyperfine':
         raise ValueError("Invalid value entered for property ('{0}')".format(
         params['property']))
@@ -46,14 +47,14 @@ def nq_entry():
 
     if args.calculation_type == "vib_avg_muon":
         vib_avg_muon(params['cell_file'], params['muon_symbol'], params['grid_n'],
-                    params['property'], params['value_type'], params['weight'],
-                    params['param_file'], params['ignore_ipsoH'],
+                    params['property'], params['value_type'],
+                    params['weight'], params['param_file'], params['ignore_ipsoH'],
                     params['numerical_solver'], args.w, params['ase_phonons'],
                     params['dftb_phonons'])
     elif args.calculation_type == "vib_avg_all":
         vib_avg_all(params['cell_file'], params['muon_symbol'], params['grid_n'],
-                    params['property'], params['value_type'], params['weight'],
-                    params['param_file'], params['ignore_ipsoH'],
+                    params['atom_indices'], params['property'], params['value_type'],
+                    params['weight'], params['param_file'], params['ignore_ipsoH'],
                     params['numerical_solver'], args.w, params['ase_phonons'],
                     params['dftb_phonons'])
     else:
