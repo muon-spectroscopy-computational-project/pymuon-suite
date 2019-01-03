@@ -10,7 +10,7 @@ from __future__ import unicode_literals
 
 import argparse as ap
 
-from pymuonsuite.quantum.vibrational.programs import vib_avg_muon, vib_avg_all
+from pymuonsuite.quantum.vibrational.programs import vib_avg
 from pymuonsuite.schemas import load_input_file, MuonHarmonicSchema
 
 
@@ -18,8 +18,8 @@ def nq_entry():
     parser = ap.ArgumentParser()
     parser.add_argument('calculation_type', type=str,
                         help="""Type of calculation to be performed, currently supports:
-                'muon_harmonic': Nuclear quantum effects of muon simulated
-                by treating muon as a particle in a quantum harmonic oscillator""")
+                'vib_avg': Nuclear quantum effects of atoms simulated
+                by treating atoms as a particles in a quantum harmonic oscillator""")
     parser.add_argument('parameter_file', type=str,
                         help="YAML file containing relevant input parameters")
     parser.add_argument('-w',   action='store_true', default=False,
@@ -45,14 +45,8 @@ def nq_entry():
         raise ValueError("Invalid value entered for weight ('{0}')".format(
         params['weight']))
 
-    if args.calculation_type == "vib_avg_muon":
-        vib_avg_muon(params['cell_file'], params['muon_symbol'], params['grid_n'],
-                    params['property'], params['value_type'],
-                    params['weight'], params['param_file'], params['ignore_ipsoH'],
-                    params['numerical_solver'], args.w, params['ase_phonons'],
-                    params['dftb_phonons'])
-    elif args.calculation_type == "vib_avg_all":
-        vib_avg_all(params['cell_file'], params['muon_symbol'], params['grid_n'],
+    if args.calculation_type == "vib_avg":
+        vib_avg(params['cell_file'], params['muon_symbol'], params['grid_n'],
                     params['atom_indices'], params['property'], params['value_type'],
                     params['weight'], params['param_file'], params['ignore_ipsoH'],
                     params['numerical_solver'], args.w, params['ase_phonons'],
