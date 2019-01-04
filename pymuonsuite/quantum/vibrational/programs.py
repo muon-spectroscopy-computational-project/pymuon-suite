@@ -41,8 +41,8 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 and try again.""")
 
 def vib_avg(cell_f, mu_sym, grid_n, atoms_ind, property, value_type,
-                weight_type, pname=None, ignore_ipsoH=False, solver=False,
-                args_w=False, ase_phonons=False, dftb_phonons=True):
+                weight_type, pname=None, solver=False, args_w=False,
+                ase_phonons=False, dftb_phonons=True):
     """
     (Write mode) Given a file containing phonon modes of a molecule, write
     out a set of structure files, one for each major mode of each atom,
@@ -68,7 +68,6 @@ def vib_avg(cell_f, mu_sym, grid_n, atoms_ind, property, value_type,
     |       values: "harmonic" (harmonic oscillator wavefunction)
     |   pname (str): Path of param file which will be copied into folders
     |       along with displaced cell files for convenience
-    |   ignore_ipsoH (bool): If true, ignore ipso hydrogen calculations
     |   solver (bool): If true, use qlab (only if installed) to numerically
     |       calculate the harmonic wavefunction
     |   args_w (bool): Write files if true, parse if false
@@ -95,13 +94,6 @@ def vib_avg(cell_f, mu_sym, grid_n, atoms_ind, property, value_type,
     sel = AtomSelection.from_array(
         cell, 'castep_custom_species', mu_sym)
     mu_indices = sel.indices
-    # Find ipso hydrogen location(s)
-    if not ignore_ipsoH:
-        iH_indices = np.zeros(np.size(mu_indices), int)
-        for i in range(np.size(iH_indices)):
-            iH_indices[i] = find_ipso_hydrogen(mu_indices[i], cell, mu_sym)
-    else:
-        iH_indices = None
 
     if ase_phonons:
         #Calculate phonons using ASE
@@ -187,6 +179,11 @@ def vib_avg(cell_f, mu_sym, grid_n, atoms_ind, property, value_type,
                 dirname+"/{0}_{1}_V.dat".format(sname, atom_ind))
 
             if property == 'hyperfine':
+                #Find ipso hydrogens
+                iH_indices = np.zeros(np.size(mu_indices), int)
+                for i in range(np.size(iH_indices)):
+                    iH_indices[i] = find_ipso_hydrogen(mu_indices[i], cell, mu_sym)
+                #Calculate and write out hfcc for muons and ipso hydrogens
                 muon_ipso_dict = {}
                 for index in mu_indices:
                     muon_ipso_dict[index] = symbols[index]

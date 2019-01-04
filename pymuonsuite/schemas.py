@@ -172,8 +172,6 @@ MuonHarmonicSchema = Schema({
     #Path of parameter file which can be copied into folders with displaced cell
     #files for convenience
     Optional('param_file', default=None): validate_str,
-    #Ignore ipso hydrogen if true
-    Optional('ignore_ipsoH', default=False): bool,
     #Solve the Schroedinger equation numerically on the three axes
     Optional('numerical_solver', default=False): bool,
     #If True, use ASE to calculate phonon modes. ASE will use the calculator
