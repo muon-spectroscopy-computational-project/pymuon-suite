@@ -31,19 +31,19 @@ def nq_entry():
     params = load_input_file(args.parameter_file, MuonHarmonicSchema)
 
     # Check that input is valid
-    if params['property'].strip().lower() != 'hyperfine':
-        raise ValueError("Invalid value entered for property ('{0}')".format(
-        params['property']))
+    if params['property'] != 'hyperfine':
+        raise ValueError("""Invalid value entered for weight ('{0}'). Remember
+        that this is case sensitive.""".format(params['property']))
 
-    if params['value_type'].strip().lower() != 'scalar' and \
-       params['value_type'].strip().lower() != 'vector' and \
-       params['value_type'].strip().lower() != 'matrix':
-        raise ValueError("Invalid value entered for value_type ('{0}')".format(
-        params['value_type']))
+    if params['value_type'] != 'scalar' and \
+       params['value_type'] != 'vector' and \
+       params['value_type'] != 'matrix':
+        raise ValueError("""Invalid value entered for weight ('{0}'). Remember
+        that this is case sensitive.""".format(params['value_type']))
 
-    if params['weight'].strip().lower() != 'harmonic':
-        raise ValueError("Invalid value entered for weight ('{0}')".format(
-        params['weight']))
+    if params['weight'] != 'harmonic':
+        raise ValueError("""Invalid value entered for weight ('{0}'). Remember
+        that this is case sensitive.""".format(params['weight']))
 
     if args.calculation_type == "vib_avg":
         vib_avg(params['cell_file'], params['muon_symbol'], params['grid_n'],
