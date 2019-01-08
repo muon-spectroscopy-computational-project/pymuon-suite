@@ -50,6 +50,10 @@ def validate_int3(value):
     v = np.array(value)
     return v.shape == (3,) and v.dtype == int
 
+def validate_int_array(value):
+    v = np.array(value)
+    return v.dtype == int
+
 
 def validate_float3(value):
     v = np.array(value)
@@ -146,27 +150,37 @@ MuAirssSchema = Schema({
 })
 
 # Parameter file schema and defaults
-PhononHfccSchema = Schema({
+MuonHarmonicSchema = Schema({
     #File containing structural info about molecule/crystal
     'cell_file': validate_str,
     #Symbol used to represent muon
     'muon_symbol': validate_str,
-    #Number of grid points(displacements of muon) to use
+    #Array of indices of atoms to be vibrated, counting from 1. E.g. for first 3
+    #atoms in cell file enter [1, 2, 3]. Enter [-1] to select all atoms.
+    'atom_indices': validate_int_array,
+    #Number of grid points(displacements of muon) to use on each phonon mode
     'grid_n': int,
-    #Type of structure file being input. Valid values: 'castep'
-    Optional('calculator', default='castep'): validate_str,
+    #Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
+    #coupling tensors)
+    'property': validate_str,
+    #Is value being calculated a 'matrix', 'vector', or 'scalar'? (e.g. hyperfine
+    #tensor is a matrix)
+    'value_type': validate_str,
+    #Type of weighting to be used, currently accepted values: "harmonic" (harmonic
+    #oscillator wavefunction)
+    Optional('weight', default='harmonic'): validate_str,
     #Path of parameter file which can be copied into folders with displaced cell
     #files for convenience
     Optional('param_file', default=None): validate_str,
-    #Ignore ipso hydrogen if true
-    Optional('ignore_ipsoH', default=False): bool,
-    #Save all hyperfine tensors if true
-    Optional('save_tensors', default=False): bool,
     #Solve the Schroedinger equation numerically on the three axes
     Optional('numerical_solver', default=False): bool,
-    #If True, use dftb+ to calculate phonon modes. Otherwise read in CASTEP
-    #phonons. Dftb+ is less accurate but much quicker.
-    Optional('dftb_phonons', default=False): bool
+    #If True, use ASE to calculate phonon modes. ASE will use the calculator
+    #of the input cell, e.g. CASTEP for .cell files. Set dftb_phonons to True
+    #in order to use dftb+ as the calculator instead.
+    Optional('ase_phonons', default=False): bool,
+    #If True, use dftb+ to calculate phonon modes. Must have ase_phonons set to
+    #True for this to do anything.
+    Optional('dftb_phonons', default=True): bool
 })
 
 # Parameter file schema and defaults

@@ -10,15 +10,16 @@ from __future__ import unicode_literals
 
 import argparse as ap
 
-from pymuonsuite.quantum.phonons.phonons import phonon_hfcc
-from pymuonsuite.schemas import load_input_file, PhononHfccSchema
+from pymuonsuite.quantum.vibrational.programs import vib_avg
+from pymuonsuite.schemas import load_input_file, MuonHarmonicSchema
 
 
 def nq_entry():
     parser = ap.ArgumentParser()
     parser.add_argument('calculation_type', type=str,
                         help="""Type of calculation to be performed, currently supports:
-                'phonon_hfcc': Nuclear quantum effects simulated by phonons""")
+                'vib_avg': Nuclear quantum effects of atoms simulated
+                by treating atoms as a particles in a quantum harmonic oscillator""")
     parser.add_argument('parameter_file', type=str,
                         help="YAML file containing relevant input parameters")
     parser.add_argument('-w',   action='store_true', default=False,
@@ -27,12 +28,28 @@ def nq_entry():
     args = parser.parse_args()
 
     # Load parameters
-    params = load_input_file(args.parameter_file, PhononHfccSchema)
+    params = load_input_file(args.parameter_file, MuonHarmonicSchema)
 
-    if args.calculation_type == "phonon_hfcc":
-        phonon_hfcc(params['cell_file'], params['muon_symbol'], params['grid_n'],
-                    params['calculator'], params['param_file'], params['ignore_ipsoH'],
-                    params['save_tensors'], params['numerical_solver'], args.w,
+    # Check that input is valid
+    if params['property'] != 'hyperfine':
+        raise ValueError("""Invalid value entered for weight ('{0}'). Remember
+        that this is case sensitive.""".format(params['property']))
+
+    if params['value_type'] != 'scalar' and \
+       params['value_type'] != 'vector' and \
+       params['value_type'] != 'matrix':
+        raise ValueError("""Invalid value entered for weight ('{0}'). Remember
+        that this is case sensitive.""".format(params['value_type']))
+
+    if params['weight'] != 'harmonic':
+        raise ValueError("""Invalid value entered for weight ('{0}'). Remember
+        that this is case sensitive.""".format(params['weight']))
+
+    if args.calculation_type == "vib_avg":
+        vib_avg(params['cell_file'], params['muon_symbol'], params['grid_n'],
+                    params['atom_indices'], params['property'], params['value_type'],
+                    params['weight'], params['param_file'],
+                    params['numerical_solver'], args.w, params['ase_phonons'],
                     params['dftb_phonons'])
     else:
         raise RuntimeError("""Invalid calculation type entered, please use

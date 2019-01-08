@@ -6,7 +6,35 @@ from __future__ import unicode_literals
 
 import shutil
 import numpy as np
+from ase import Atoms
+from soprano.collection.generate import linspaceGen
 from soprano.utils import minimum_periodic
+
+def create_displaced_cells(cell, a_i, grid_n, disp):
+    """Create a range ASE Atoms objects with the displacement of atom at index
+    a_i varying between -disp and +disp with grid_n increments
+
+    | Args:
+    |   cell (ASE Atoms object): Object containing atom to be displaced
+    |   a_i (int): Index of atom to be displaced
+    |   grid_n (int): Number of increments/objects to create
+    |   disp (float): Maximum displacement from original position
+    |
+    | Returns:
+    |   lg(Soprano linspaceGen object): Generator of displaced cells
+    """
+    pos = cell.get_positions()
+    cell_L = cell.copy()
+    pos_L = pos.copy()
+    pos_L[a_i] -= disp
+    cell_L.set_positions(pos_L)
+    cell_R = cell.copy()
+    pos_R = pos.copy()
+    pos_R[a_i] += disp
+    cell_R.set_positions(pos_R)
+    lg = linspaceGen(
+        cell_L, cell_R, steps=grid_n, periodic=True)
+    return lg
 
 def find_ipso_hydrogen(a_i, cell, symbol):
     """Find closest hydrogen to atom at index a_i in cell
