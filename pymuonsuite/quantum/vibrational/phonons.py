@@ -116,8 +116,4 @@ def get_major_emodes(evecs, i):
     major_evecs = evecs[major_evecs_i, i]
     major_evecs_ortho = np.linalg.qr(major_evecs.T)[0].T
 
-    # Normalize major modes
-    major_evecs = major_evecs/np.linalg.norm(major_evecs, axis=-1, keepdims=True)
-    major_evecs = np.real(major_evecs)
-
     return major_evecs_i, major_evecs, major_evecs_ortho
