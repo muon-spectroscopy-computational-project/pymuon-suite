@@ -31,6 +31,11 @@ def nq_entry():
     params = load_input_file(args.parameter_file, MuonHarmonicSchema)
 
     # Check that input is valid
+    if params['method'] != 'wavefunction' and \
+       params['method'] != 'thermal':
+        raise ValueError("""Invalid value entered for method ('{0}'). Remember
+        that this is case sensitive.""".format(params['method']))
+
     if params['property'] != 'hyperfine':
         raise ValueError("""Invalid value entered for weight ('{0}'). Remember
         that this is case sensitive.""".format(params['property']))
@@ -45,12 +50,14 @@ def nq_entry():
         raise ValueError("""Invalid value entered for weight ('{0}'). Remember
         that this is case sensitive.""".format(params['weight']))
 
+    # Call functions
     if args.calculation_type == "vib_avg":
-        vib_avg(params['cell_file'], params['muon_symbol'], params['grid_n'],
-                    params['atom_indices'], params['property'], params['value_type'],
-                    params['weight'], params['param_file'],
+        vib_avg(params['cell_file'], params['method'], params['muon_symbol'],
+                    params['grid_n'], params['property'], params['value_type'],
+                    params['atom_indices'], params['weight'], params['param_file'],
                     params['numerical_solver'], args.w, params['ase_phonons'],
                     params['dftb_phonons'])
+
     else:
         raise RuntimeError("""Invalid calculation type entered, please use
                               python -h flag to see currently supported types""")
