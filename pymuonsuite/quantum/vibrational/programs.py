@@ -28,7 +28,7 @@ from pymuonsuite.quantum.vibrational.grid import calc_wavefunction, weighted_ten
 from pymuonsuite.quantum.vibrational.output import hfine_report
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc, calc_harm_potential
 from pymuonsuite.quantum.vibrational.phonons import get_major_emodes
-from pymuonsuite.utils import create_displaced_cells, find_ipso_hydrogen
+from pymuonsuite.utils import find_ipso_hydrogen
 try:
     from casteppy.data.phonon import PhononData
 except ImportError:
@@ -81,23 +81,33 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
     |
     | Returns: Nothing
     """
-    #Select all atoms if -1 input
+    # Select all atoms if -1 input
     if atoms_ind[0] == -1:
         atoms_ind = np.arange(1, 50, 1, int)
+    # Ensure only one loop in case thermal lines method selected
+    if method == 'thermal':
+        atoms_ind = np.array([0])
+    num_sel_atoms = np.size(atoms_ind) #Number of atoms selected
+    # Set total number of grid points
+    if method == 'wavefunction':
+        total_grid_n = 3*grid_n
+    elif method == 'thermal':
+        total_grid_n = 2*grid_n
 
-    #Parse cell data
+    # Parse cell data
     cell = ase_io.read(cell_f)
     sname = seedname(cell_f)
-    num_atoms = np.size(atoms_ind)
+    num_atoms = np.size(cell)
+    # Set correct custom species masses in cell
     masses = parse_castep_masses(cell)
     cell.set_masses(masses)
-    #Parse muon data
+    # Parse muon data
     sel = AtomSelection.from_array(
         cell, 'castep_custom_species', mu_sym)
     mu_indices = sel.indices
 
     if ase_phonons:
-        #Calculate phonons using ASE
+        # Calculate phonons using ASE
         evals, evecs = ase_phonon_calc(cell, dftb_phonons)
     else:
         # Parse CASTEP phonon data into casteppy object
@@ -111,51 +121,39 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
     # Convert frequencies to radians/second
     evals = evals*1e2*cnst.c*np.pi*2
 
+    # Calculate displacements for wavefunction sampling method
     if method == 'wavefunction':
-        maj_evecs_index = np.zeros((num_atoms, 3))
-        maj_evals = np.zeros((num_atoms, 3))
-        R = np.zeros((num_atoms, 3))
-        maj_evecs = np.zeros((num_atoms, 3, 3))
-        maj_evecs_ortho = np.zeros((num_atoms, 3, 3))
+        maj_evecs_index = np.zeros((num_sel_atoms, 3))
+        maj_evecs = np.zeros((num_sel_atoms, 3, 3))
+        maj_evecs_ortho = np.zeros((num_sel_atoms, 3, 3))
+        maj_evals = np.zeros((num_sel_atoms, 3))
+        R = np.zeros((num_sel_atoms, 3))
 
         for i, atom_ind in enumerate(atoms_ind):
             # Get major phonon modes
             maj_evecs_index[i], maj_evecs[i], maj_evecs_ortho[i] = get_major_emodes(evecs[0], atom_ind-1)
             # Get major phonon frequencies
             maj_evals[i] = np.array(evals[0][maj_evecs_index[i].astype(int)])
-            # Displacements in Angstrom
+            # Displacement factors in Angstrom
             R[i] = np.sqrt(cnst.hbar/(maj_evals[i]*masses[atom_ind-1]*cnst.u))*1e10
 
     # Write cells with displaced atoms
     if args_w:
+        # Calculate appropriate atomic displacements for every grid point
+        displacements = np.zeros((num_sel_atoms, total_grid_n, num_atoms, 3))
         if method == 'wavefunction':
-            for i, atom_ind in enumerate(atoms_ind):
-                try:
-                    os.stat('{0}_{1}'.format(sname, atom_ind))
-                except:
-                    os.mkdir('{0}_{1}'.format(sname, atom_ind))
-                for j, Rj in enumerate(R[i]):
-                    cell.info['name'] = "{0}".format(j+1)
-                    dirname = '{0}_{1}/{2}'.format(sname, atom_ind, j+1)
-                    #Create linear space generator and save displaced cell files
-                    lg = create_displaced_cells(cell, atom_ind-1, grid_n, 3*maj_evecs[i][j]*Rj)
-                    collection = AtomsCollection(lg)
-                    for atom in collection:
-                        atom.set_calculator(cell.calc)
-                    collection.save_tree(dirname, "cell")
-                    #Copy parameter file if specified
-                    if pname:
-                        for k in range(grid_n):
-                            shutil.copy(pname, os.path.join(dirname,
-                                 '{0}_{1}/{0}_{1}.param'.format(j+1, k)))
+            for axis in range(np.size(R[i])):
+                max_disp = 3*maj_evecs[i][axis]*R[i][axis]
+                for n, t in enumerate(np.linspace(-1, 1, grid_n)):
+                    displacements[i][n+grid_n*axis][atom_ind-1] = t*max_disp
 
         elif method == 'thermal':
             therm_line = np.zeros(np.size(evals[0]))
             coefficients = np.zeros(np.size(evals[0]))
             # Calculate normal mode coordinates
-            for i in range(np.size(therm_line)):
+            for i in range(3, np.size(therm_line)):
                 therm_line[i] = np.sqrt(1/(2*evals[0][i]))
-            for iteration in range(grid_n):
+            for point in range(grid_n):
                 # Generate thermal line with random coefficients
                 for i in range(np.size(coefficients)):
                     coefficients[i] = random.choice([-1, 1])
@@ -163,36 +161,37 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
                 # Generate inverse of the above thermal line
                 therm_line_inv = therm_line*-1
 
-                # Create folder to store displaced cell files
-                dirname = '{0}_lines'.format(sname)
-                try:
-                    os.stat(dirname)
-                except:
-                    os.mkdir(dirname)
-                # Set up displaced cells
-                cell_thermal = cell.copy()
-                cell_thermal_inv = cell.copy()
-                pos = cell.get_positions()
-                pos_therm = pos.copy()
-                pos_therm_inv = pos.copy()
+                for atom in range(num_atoms):
+                    for mode in range(3, np.size(therm_line)):
+                        displacements[0][point][atom] += therm_line[mode]*evecs[0][mode][atom].real*1e10
+                        displacements[0][point+grid_n][atom] += therm_line_inv[mode]*evecs[0][mode][atom].real*1e10
 
-                for i in range(np.size(cell)):
-                    for j in range(3, np.size(evals[0])):
-                        pos_therm[i] += therm_line[j]*evecs[0][j][i].real*1e10
-                        pos_therm_inv[i] += therm_line_inv[j]*evecs[0][j][i].real*1e10
+        for i, atom_ind in enumerate(atoms_ind):
+            # Create folder for cell files
+            if method == 'wavefunction':
+                dirname = '{0}_{1}_wvfn'.format(sname, atom_ind)
+            elif method == 'thermal':
+                dirname = '{0}_thermal'.format(sname, atom_ind)
+            try:
+                os.stat(dirname)
+            except:
+                os.mkdir(dirname)
+            for point in range(total_grid_n):
+                # Generate displaced cell
+                disp_pos = cell.get_positions()
+                disp_cell = cell.copy()
+                disp_pos += displacements[i][point]
+                disp_cell.set_positions(disp_pos)
+                disp_cell.set_calculator(cell.calc)
 
-                cell_thermal.set_positions(pos_therm)
-                cell_thermal_inv.set_positions(pos_therm_inv)
-                cell_thermal.set_calculator(cell.calc)
-                cell_thermal_inv.set_calculator(cell.calc)
-                ase_io.write(dirname+"/{0}_thermal_{1}.cell".format(sname, iteration), cell_thermal)
-                ase_io.write(dirname+"/{0}_thermal_inv_{1}.cell".format(sname, iteration), cell_thermal_inv)
+                # Write displaced cell
+                ase_io.write(os.path.join(dirname,"{0}_{1}.cell".format(sname, point)),
+                                disp_cell)
 
+                # Copy param files
                 if pname:
                     shutil.copy(pname, os.path.join(dirname,
-                         "{0}_thermal_{1}.param".format(sname, iteration)))
-                    shutil.copy(pname, os.path.join(dirname,
-                         "{0}_thermal_inv_{1}.param".format(sname, iteration)))
+                        '{0}_{1}.param'.format(sname, point)))
 
     else:
         if method == 'wavefunction':
