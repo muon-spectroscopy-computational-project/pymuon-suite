@@ -104,7 +104,6 @@ def get_major_emodes(evecs, i):
     | Returns:
     |   major_evecs_i (int[3]): Indices of atom's phonon eigenvectors in evecs
     |   major_evecs (float[3, 3]): Normalized eigenvectors of atom's phonon modes
-    |   major_evecs_ortho (float[3, 3]): Orthogonalised phonon modes
     """
     # First, find the eigenmodes whose amplitude is greater for ion i
     evecs_amp = np.linalg.norm(evecs, axis=-1)
@@ -114,6 +113,5 @@ def get_major_emodes(evecs, i):
     # How many?
     major_evecs_i = evecs_order[-3:]
     major_evecs = evecs[major_evecs_i, i]
-    major_evecs_ortho = np.linalg.qr(major_evecs.T)[0].T
 
-    return major_evecs_i, major_evecs, major_evecs_ortho
+    return major_evecs_i, major_evecs

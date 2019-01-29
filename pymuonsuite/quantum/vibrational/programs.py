@@ -106,6 +106,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
         cell, 'castep_custom_species', mu_sym)
     mu_indices = sel.indices
 
+    # Get phonons
     if ase_phonons:
         # Calculate phonons using ASE
         evals, evecs = ase_phonon_calc(cell, dftb_phonons)
@@ -125,13 +126,12 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
     if method == 'wavefunction':
         maj_evecs_index = np.zeros((num_sel_atoms, 3))
         maj_evecs = np.zeros((num_sel_atoms, 3, 3))
-        maj_evecs_ortho = np.zeros((num_sel_atoms, 3, 3))
         maj_evals = np.zeros((num_sel_atoms, 3))
         R = np.zeros((num_sel_atoms, 3))
 
         for i, atom_ind in enumerate(atoms_ind):
             # Get major phonon modes
-            maj_evecs_index[i], maj_evecs[i], maj_evecs_ortho[i] = get_major_emodes(evecs[0], atom_ind-1)
+            maj_evecs_index[i], maj_evecs[i] = get_major_emodes(evecs[0], atom_ind-1)
             # Get major phonon frequencies
             maj_evals[i] = np.array(evals[0][maj_evecs_index[i].astype(int)])
             # Displacement factors in Angstrom
