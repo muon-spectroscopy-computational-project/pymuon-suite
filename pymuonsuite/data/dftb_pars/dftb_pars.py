@@ -120,4 +120,4 @@ class DFTBArgs(object):
     @staticmethod
     def print_refmsg():
         """Print message with licensing and reference information"""
-        print(references_msg)
+        print(_references_msg)
