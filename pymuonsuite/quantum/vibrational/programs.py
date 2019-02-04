@@ -42,7 +42,7 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 and try again.""")
 
 def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
-                weight_type='harmonic', pname=None, solver=False, args_w=False,
+                weight_type='harmonic', pname=None, args_w=False,
                 ase_phonons=False, dftb_phonons=True):
     """
     (Write mode) Given a file containing phonon modes of a molecule, write
@@ -69,8 +69,6 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
     |       values: "harmonic" (harmonic oscillator wavefunction)
     |   pname (str): Path of param file which will be copied into folders
     |       along with displaced cell files for convenience
-    |   solver (bool): If true, use qlab (only if installed) to numerically
-    |       calculate the harmonic wavefunction
     |   args_w (bool): Write files if true, parse if false
     |   ase_phonons(bool): If true, use ASE to calculate phonon modes. ASE will
     |       use the calculator of the input cell, e.g. CASTEP for .cell files. Set
@@ -98,6 +96,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
     cell = ase_io.read(cell_f)
     sname = seedname(cell_f)
     num_atoms = np.size(cell)
+    symbols = cell.get_array('castep_custom_species')
     # Set correct custom species masses in cell
     masses = parse_castep_masses(cell)
     cell.set_masses(masses)
@@ -142,10 +141,11 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
         # Calculate appropriate atomic displacements for every grid point
         displacements = np.zeros((num_sel_atoms, total_grid_n, num_atoms, 3))
         if method == 'wavefunction':
-            for axis in range(np.size(R[i])):
-                max_disp = 3*maj_evecs[i][axis]*R[i][axis]
-                for n, t in enumerate(np.linspace(-1, 1, grid_n)):
-                    displacements[i][n+grid_n*axis][atom_ind-1] = t*max_disp
+            for i, atom_ind in enumerate(atoms_ind):
+                for axis in range(np.size(R[i])):
+                    max_disp = 3*maj_evecs[i][axis]*R[i][axis]
+                    for n, t in enumerate(np.linspace(-1, 1, grid_n)):
+                        displacements[i][n+grid_n*axis][atom_ind-1] = t*max_disp
 
         elif method == 'thermal':
             therm_line = np.zeros(np.size(evals[0]))
@@ -171,7 +171,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
             if method == 'wavefunction':
                 dirname = '{0}_{1}_wvfn'.format(sname, atom_ind)
             elif method == 'thermal':
-                dirname = '{0}_thermal'.format(sname, atom_ind)
+                dirname = '{0}_thermal'.format(sname)
             try:
                 os.stat(dirname)
             except:
@@ -185,7 +185,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
                 disp_cell.set_calculator(cell.calc)
 
                 # Write displaced cell
-                ase_io.write(os.path.join(dirname,"{0}_{1}.cell".format(sname, point)),
+                ase_io.write(os.path.join(dirname,'{0}_{1}.cell'.format(sname, point)),
                                 disp_cell)
 
                 # Copy param files
@@ -194,6 +194,69 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
                         '{0}_{1}.param'.format(sname, point)))
 
     else:
+        # Create appropriately sized container for reading in tensors
+        if value_type == 'scalar':
+            grid_tensors = np.zeros((total_grid_n, num_atoms, 1, 1))
+        elif value_type == 'vector':
+            grid_tensors = np.zeros((total_grid_n, num_atoms, 1, 3))
+        elif value_type == 'matrix':
+            grid_tensors = np.zeros((total_grid_n, num_atoms, 3, 3))
+
+        for i, atom_ind in enumerate(atoms_ind):
+            if method == 'wavefunction':
+                dirname = '{0}_{1}_wvfn'.format(sname, atom_ind)
+            elif method == 'thermal':
+                dirname = '{0}_thermal'.format(sname)
+
+            # Parse tensors from each grid point
+            for point in range(total_grid_n):
+                if property == 'hyperfine':
+                    tensor_file = os.path.join(dirname,
+                                    '{0}_{1}.magres'.format(sname, point))
+                    magres = parse_hyperfine_magres(tensor_file)
+                    grid_tensors[point] = magres.get_array('hyperfine')
+
+            # Compute weights for each grid point
+            if method == 'wavefunction':
+                if weight_type == 'harmonic':
+                    weighting = calc_wavefunction(R[i], grid_n, write_table = True,
+                     filename = dirname+"/{0}_{1}_psi.dat".format(sname, atom_ind))
+            elif method == 'thermal':
+                weighting = np.ones((total_grid_n)) #(uniform weighting)
+
+            # Compute average tensors
+            tens_avg = weighted_tens_avg(grid_tensors, weighting)
+
+            # Write averaged tensors
+            outfile = "{0}_{1}_tensors.dat".format(sname, atom_ind)
+            write_tensors(tens_avg, outfile, symbols)
+
+            if method == 'wavefunction':
+                #Write harmonic potential report
+                E_table = np.zeros((np.size(R[i]), grid_n))
+                for j in range(np.size(E_table, 0)):
+                    for k in range(np.size(E_table, 1)):
+                        castf = os.path.join(dirname, "{0}_{1}.castep".format(sname, k+j*grid_n))
+                        E_table[j][k] = parse_final_energy(castf)
+                calc_harm_potential(R[i], grid_n, masses[atom_ind-1], maj_evals[i],
+                     E_table, dirname+"/{0}_{1}_V.dat".format(sname, atom_ind))
+
+                if property == 'hyperfine':
+                    #Find ipso hydrogens
+                    iH_indices = np.zeros(np.size(mu_indices), int)
+                    for i in range(np.size(iH_indices)):
+                        iH_indices[i] = find_ipso_hydrogen(mu_indices[i], cell, mu_sym)
+                    #Calculate and write out hfcc for muons and ipso hydrogens
+                    muon_ipso_dict = {}
+                    for index in mu_indices:
+                        muon_ipso_dict[index] = symbols[index]
+                    for index in iH_indices:
+                        muon_ipso_dict[index] = symbols[index]
+                    hfine_report(R[i], total_grid_n, grid_tensors, tens_avg, weighting,
+                    "{0}_{1}_report.dat".format(sname, atom_ind), muon_ipso_dict)
+
+        exit()
+
         if method == 'wavefunction':
             if value_type == 'scalar':
                 grid_tensors = np.zeros((np.size(cell), np.size(R[0]), grid_n, 1, 1))

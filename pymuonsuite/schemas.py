@@ -175,8 +175,6 @@ MuonHarmonicSchema = Schema({
     #Path of parameter file which can be copied into folders with displaced cell
     #files for convenience
     Optional('param_file', default=None): validate_str,
-    #Solve the Schroedinger equation numerically on the three axes
-    Optional('numerical_solver', default=False): bool,
     #If True, use ASE to calculate phonon modes. ASE will use the calculator
     #of the input cell, e.g. CASTEP for .cell files. Set dftb_phonons to True
     #in order to use dftb+ as the calculator instead.
