@@ -166,8 +166,8 @@ MuonHarmonicSchema = Schema({
     #Is value being calculated a 'matrix', 'vector', or 'scalar'? (e.g. hyperfine
     #tensor is a matrix)
     'value_type': validate_str,
-    #Array of indices of atoms to be vibrated, counting from 1. E.g. for first 3
-    #atoms in cell file enter [1, 2, 3]. Enter [-1] to select all atoms.
+    #Array of indices of atoms to be vibrated, counting from 0. E.g. for first 3
+    #atoms in cell file enter [0, 1, 2]. Enter [-1] to select all atoms.
     Optional('atom_indices', default=[]): validate_int_array,
     #Type of weighting to be used, currently accepted values: "harmonic" (harmonic
     #oscillator wavefunction)

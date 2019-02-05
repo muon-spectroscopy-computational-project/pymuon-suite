@@ -59,7 +59,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
     |   mu_sym (str): Symbol used to represent muon in structure file
     |   grid_n (int): Number of increments to make along each phonon axis
     |   atoms_ind(int array): Array of indices of atoms to be vibrated, counting
-    |       from 1. E.g. for first 3 atoms in cell file enter [1, 2, 3].
+    |       from 0. E.g. for first 3 atoms in cell file enter [0, 1, 2].
     |       Enter [-1] to select all atoms.
     |   property(str): Property to be calculated. Currently accepted values:
     |       "hyperfine" (hyperfine tensors),
@@ -79,18 +79,6 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
     |
     | Returns: Nothing
     """
-    # Select all atoms if -1 input
-    if atoms_ind[0] == -1:
-        atoms_ind = np.arange(1, 50, 1, int)
-    # Ensure only one loop in case thermal lines method selected
-    if method == 'thermal':
-        atoms_ind = np.array([0])
-    num_sel_atoms = np.size(atoms_ind) #Number of atoms selected
-    # Set total number of grid points
-    if method == 'wavefunction':
-        total_grid_n = 3*grid_n
-    elif method == 'thermal':
-        total_grid_n = 2*grid_n
 
     # Parse cell data
     cell = ase_io.read(cell_f)
@@ -104,6 +92,19 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
     sel = AtomSelection.from_array(
         cell, 'castep_custom_species', mu_sym)
     mu_indices = sel.indices
+
+    # Select all atoms if -1 input
+    if atoms_ind[0] == -1:
+        atoms_ind = np.arange(0, num_atoms, 1, int)
+    # Ensure only one loop in case thermal lines method selected
+    if method == 'thermal':
+        atoms_ind = np.array([0])
+    num_sel_atoms = np.size(atoms_ind) #Number of atoms selected
+    # Set total number of grid points
+    if method == 'wavefunction':
+        total_grid_n = 3*grid_n
+    elif method == 'thermal':
+        total_grid_n = 2*grid_n
 
     # Get phonons
     if ase_phonons:
@@ -130,11 +131,11 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
 
         for i, atom_ind in enumerate(atoms_ind):
             # Get major phonon modes
-            maj_evecs_index[i], maj_evecs[i] = get_major_emodes(evecs[0], atom_ind-1)
+            maj_evecs_index[i], maj_evecs[i] = get_major_emodes(evecs[0], atom_ind)
             # Get major phonon frequencies
             maj_evals[i] = np.array(evals[0][maj_evecs_index[i].astype(int)])
             # Displacement factors in Angstrom
-            R[i] = np.sqrt(cnst.hbar/(maj_evals[i]*masses[atom_ind-1]*cnst.u))*1e10
+            R[i] = np.sqrt(cnst.hbar/(maj_evals[i]*masses[atom_ind]*cnst.u))*1e10
 
     # Write cells with displaced atoms
     if args_w:
@@ -145,7 +146,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
                 for axis in range(np.size(R[i])):
                     max_disp = 3*maj_evecs[i][axis]*R[i][axis]
                     for n, t in enumerate(np.linspace(-1, 1, grid_n)):
-                        displacements[i][n+grid_n*axis][atom_ind-1] = t*max_disp
+                        displacements[i][n+grid_n*axis][atom_ind] = t*max_disp
 
         elif method == 'thermal':
             therm_line = np.zeros(np.size(evals[0]))
@@ -193,6 +194,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
                     shutil.copy(pname, os.path.join(dirname,
                         '{0}_{1}.param'.format(sname, point)))
 
+    # Read in and average tensors
     else:
         # Create appropriately sized container for reading in tensors
         if value_type == 'scalar':
@@ -238,7 +240,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[],
                     for k in range(np.size(E_table, 1)):
                         castf = os.path.join(dirname, "{0}_{1}.castep".format(sname, k+j*grid_n))
                         E_table[j][k] = parse_final_energy(castf)
-                calc_harm_potential(R[i], grid_n, masses[atom_ind-1], maj_evals[i],
+                calc_harm_potential(R[i], grid_n, masses[atom_ind], maj_evals[i],
                      E_table, dirname+"/{0}_{1}_V.dat".format(sname, atom_ind))
 
                 if property == 'hyperfine':
