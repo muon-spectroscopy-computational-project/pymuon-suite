@@ -151,7 +151,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             for i in range(np.size(norm_coords)):
                 norm_coords[i] = np.sqrt(1/(2*evals[0][i+3]))
             for point in range(grid_n):
-                point_displacements = tl_disp_generator(norm_coords, evecs[0], num_atoms)
+                point_displacements = tl_disp_generator(norm_coords, evecs[0][3:], num_atoms)
                 displacements[0][point] = point_displacements
                 displacements[0][point + grid_n] = -point_displacements
 

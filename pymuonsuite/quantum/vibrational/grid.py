@@ -54,15 +54,32 @@ def calc_wavefunction(R, grid_n, write_table = True, filename = ''):
     return prob_dens
 
 def tl_disp_generator(norm_coords, evecs, num_atoms):
+    """
+    Calculate a set of displacements of atoms in a system by generating a set of
+    random thermal lines at T=0.
+
+    | Args:
+    |   norm_coords(Numpy float array(:)): Array containing the normal mode
+    |       coordinates of each real mode of the system.
+    |   evecs(Numpy float array(size(norm_coords), num_atoms)): Array containing
+    |       the eigenvectors of all real phonon modes for each atom in the
+    |       system in the format evecs[modes][atoms].
+    |   num_atoms(int): Number of atoms in the system.
+    |
+    | Returns:
+    |   displacements(Numpy float array(num_atoms, 3)): Array containing the
+    |       appropriate displacements of atoms for a randomly generated thermal
+    |       line.
+    """
     displacements = np.zeros((num_atoms, 3))
     coefficients = np.zeros(np.size(norm_coords))
     for i in range(np.size(coefficients)):
         coefficients[i] = random.choice([-1, 1])
-    therm_line = norm_coords*coefficients
+    norm_coords = norm_coords*coefficients
 
     for atom in range(num_atoms):
         for mode in range(np.size(norm_coords)):
-            displacements[atom] += therm_line[mode]*evecs[mode][atom].real*1e10
+            displacements[atom] += norm_coords[mode]*evecs[mode][atom].real*1e10
 
     return displacements
 
