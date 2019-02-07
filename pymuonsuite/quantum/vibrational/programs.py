@@ -22,6 +22,7 @@ from soprano.utils import seedname
 from pymuonsuite.io.castep import parse_castep_masses, parse_final_energy
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.io.output import write_tensors
+from pymuonsuite.quantum.vibrational.grid import create_displaced_cell
 from pymuonsuite.quantum.vibrational.grid import calc_wavefunction, weighted_tens_avg
 from pymuonsuite.quantum.vibrational.grid import wf_disp_generator, tl_disp_generator
 from pymuonsuite.quantum.vibrational.output import hfine_report
@@ -166,17 +167,11 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             except:
                 os.mkdir(dirname)
             for point in range(total_grid_n):
-                # Generate displaced cell
-                disp_pos = cell.get_positions()
-                disp_cell = cell.copy()
-                disp_pos += displacements[i][point]
-                disp_cell.set_positions(disp_pos)
-                disp_cell.set_calculator(cell.calc)
-
+                #Generate displaced cell
+                disp_cell = create_displaced_cell(cell, displacements[i][point])
                 # Write displaced cell
                 ase_io.write(os.path.join(dirname,'{0}_{1}.cell'.format(sname, point)),
                                 disp_cell)
-
                 # Copy param files
                 if pname:
                     shutil.copy(pname, os.path.join(dirname,

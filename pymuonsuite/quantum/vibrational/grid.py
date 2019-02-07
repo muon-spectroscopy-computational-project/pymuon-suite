@@ -158,3 +158,12 @@ def wf_disp_generator(disp_factor, maj_evecs, grid_n):
             displacements[n + mode*grid_n] = t*max_disp[mode]
 
     return displacements
+
+def create_displaced_cell(cell, displacements):
+    disp_pos = cell.get_positions()
+    disp_cell = cell.copy()
+    disp_pos += displacements
+    disp_cell.set_positions(disp_pos)
+    disp_cell.set_calculator(cell.calc)
+
+    return disp_cell
