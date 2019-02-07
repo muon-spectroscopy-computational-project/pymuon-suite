@@ -88,36 +88,6 @@ def parse_castep_masses(cell):
 
     return masses
 
-def parse_castep_muon(cell, mu_sym, ignore_ipsoH):
-    """Parse muon data from CASTEP cell file, returning
-       the muon and ipso hydrogen index and muon mass.
-
-    | Args:
-    |   cell (ASE atoms object): ASE Atoms object containing CASTEP cell data
-    |   mu_sym (str): Symbol used to represent muon
-    |   ignore_ipsoH (bool): If true, do not find ipso hydrogen index
-    | Returns:
-    |   mu_index (int): Index of muon in cell file
-    |   ipso_H_index (int): Index of ipso hydrogen in cell file
-    |   mu_mass (float): Mass of muon in kg
-    """
-    # Get muon mass
-    for i, item in enumerate(cell.calc.cell.species_mass.value.split()):
-        if item == mu_sym:
-            mu_mass = float(cell.calc.cell.species_mass.value.split()[i+1])
-    mu_mass = mu_mass*cnst.u  # Convert to kg
-    # Find muon index in structure array
-    sel = AtomSelection.from_array(
-        cell, 'castep_custom_species', mu_sym)
-    mu_index = sel.indices[0]
-    # Find ipso hydrogen location
-    if not ignore_ipsoH:
-        ipso_H_index = find_ipso_hydrogen(mu_index, cell, mu_sym)
-    else:
-        ipso_H_index = None
-
-    return mu_index, ipso_H_index, mu_mass
-
 def parse_castep_ppots(cfile):
 
     clines = open(cfile).readlines()

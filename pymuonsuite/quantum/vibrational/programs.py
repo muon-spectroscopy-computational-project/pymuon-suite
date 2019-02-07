@@ -19,7 +19,7 @@ from soprano.collection import AtomsCollection
 from soprano.selection import AtomSelection
 from soprano.utils import seedname
 
-from pymuonsuite.io.castep import parse_castep_muon, parse_castep_masses
+from pymuonsuite.io.castep import parse_castep_masses
 from pymuonsuite.io.castep import parse_final_energy
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.io.output import write_tensors
