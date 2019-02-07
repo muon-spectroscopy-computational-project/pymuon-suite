@@ -160,6 +160,18 @@ def wf_disp_generator(disp_factor, maj_evecs, grid_n):
     return displacements
 
 def create_displaced_cell(cell, displacements):
+    """
+    Take a set of atomic displacements and a cell and return an ASE Atoms object
+    with atoms displaced appropriately.
+
+    | Args:
+    |   cell(ASE Atoms object): Cell containing original atomic positions.
+    |   displacements(Numpy float array(num_atoms, 3)): Array containing a
+    |       displacement vector for each atom in the system.
+    |
+    | Returns:
+    |   disp_cell(ASE Atoms object): Cell containing displaced atomic positions.
+    """
     disp_pos = cell.get_positions()
     disp_cell = cell.copy()
     disp_pos += displacements

@@ -96,7 +96,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
     # Select all atoms if -1 input
     if atoms_ind[0] == -1:
         atoms_ind = np.arange(0, num_atoms, 1, int)
-    # Ensure only one loop in case thermal lines method selected
+    # Thermal method requires atoms_ind = [0]
     if method == 'thermal':
         atoms_ind = np.array([0])
     num_sel_atoms = np.size(atoms_ind) #Number of atoms selected
@@ -122,7 +122,8 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
     # Convert frequencies to radians/second
     evals = evals*1e2*cnst.c*np.pi*2
 
-    # Calculate displacement factors R for wavefunction sampling method
+    # Find 3 major modes for each atom selected and use them to calculate
+    # displacement factors R for the wavefunction method
     if method == 'wavefunction':
         maj_evecs_index = np.zeros((num_sel_atoms, 3))
         maj_evecs = np.zeros((num_sel_atoms, 3, 3))
@@ -140,6 +141,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
     # Write mode: write cells with atoms displaced
     if args_w:
         displacements = np.zeros((num_sel_atoms, total_grid_n, num_atoms, 3))
+        
         if method == 'wavefunction':
             # For each atom selected, generate the set of displacements
             for i, atom_ind in enumerate(atoms_ind):
