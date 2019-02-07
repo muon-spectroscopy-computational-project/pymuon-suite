@@ -19,8 +19,7 @@ from soprano.collection import AtomsCollection
 from soprano.selection import AtomSelection
 from soprano.utils import seedname
 
-from pymuonsuite.io.castep import parse_castep_masses
-from pymuonsuite.io.castep import parse_final_energy
+from pymuonsuite.io.castep import parse_castep_masses, parse_final_energy
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.io.output import write_tensors
 from pymuonsuite.quantum.vibrational.grid import calc_wavefunction, weighted_tens_avg
@@ -122,7 +121,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
     # Convert frequencies to radians/second
     evals = evals*1e2*cnst.c*np.pi*2
 
-    # Calculate displacements for wavefunction sampling method
+    # Calculate displacement factors R for wavefunction sampling method
     if method == 'wavefunction':
         maj_evecs_index = np.zeros((num_sel_atoms, 3))
         maj_evecs = np.zeros((num_sel_atoms, 3, 3))
