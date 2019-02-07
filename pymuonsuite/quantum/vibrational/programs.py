@@ -10,7 +10,6 @@ from __future__ import unicode_literals
 
 import os
 import shutil
-import random
 
 import numpy as np
 import scipy.constants as cnst
@@ -25,6 +24,7 @@ from pymuonsuite.io.castep import parse_final_energy
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.io.output import write_tensors
 from pymuonsuite.quantum.vibrational.grid import calc_wavefunction, weighted_tens_avg
+from pymuonsuite.quantum.vibrational.grid import wf_disp_generator, tl_disp_generator
 from pymuonsuite.quantum.vibrational.output import hfine_report
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc, calc_harm_potential
 from pymuonsuite.quantum.vibrational.phonons import get_major_emodes
@@ -137,36 +137,25 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             # Displacement factors in Angstrom
             R[i] = np.sqrt(cnst.hbar/(maj_evals[i]*masses[atom_ind]*cnst.u))*1e10
 
-    # Write cells with displaced atoms
+    # Write mode: write cells with atoms displaced
     if args_w:
-        # Calculate appropriate atomic displacements for every grid point
         displacements = np.zeros((num_sel_atoms, total_grid_n, num_atoms, 3))
         if method == 'wavefunction':
+            # For each atom selected, generate the set of displacements
             for i, atom_ind in enumerate(atoms_ind):
-                for axis in range(np.size(R[i])):
-                    max_disp = 3*maj_evecs[i][axis]*R[i][axis]
-                    for n, t in enumerate(np.linspace(-1, 1, grid_n)):
-                        displacements[i][n+grid_n*axis][atom_ind] = t*max_disp
+                displacements[i, :, atom_ind] = wf_disp_generator(R[i], maj_evecs[i], grid_n)
 
         elif method == 'thermal':
-            therm_line = np.zeros(np.size(evals[0]))
-            coefficients = np.zeros(np.size(evals[0]))
+            norm_coords = np.zeros(np.size(evals[0]) - 3)
             # Calculate normal mode coordinates
-            for i in range(3, np.size(therm_line)):
-                therm_line[i] = np.sqrt(1/(2*evals[0][i]))
+            for i in range(np.size(norm_coords)):
+                norm_coords[i] = np.sqrt(1/(2*evals[0][i+3]))
             for point in range(grid_n):
-                # Generate thermal line with random coefficients
-                for i in range(np.size(coefficients)):
-                    coefficients[i] = random.choice([-1, 1])
-                therm_line = therm_line*coefficients
-                # Generate inverse of the above thermal line
-                therm_line_inv = therm_line*-1
+                point_displacements = tl_disp_generator(norm_coords, evecs[0], num_atoms)
+                displacements[0][point] = point_displacements
+                displacements[0][point + grid_n] = -point_displacements
 
-                for atom in range(num_atoms):
-                    for mode in range(3, np.size(therm_line)):
-                        displacements[0][point][atom] += therm_line[mode]*evecs[0][mode][atom].real*1e10
-                        displacements[0][point+grid_n][atom] += therm_line_inv[mode]*evecs[0][mode][atom].real*1e10
-
+        # Create and write displaced cell files
         for i, atom_ind in enumerate(atoms_ind):
             # Create folder for cell files
             if method == 'wavefunction':
@@ -194,7 +183,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
                     shutil.copy(pname, os.path.join(dirname,
                         '{0}_{1}.param'.format(sname, point)))
 
-    # Read in and average tensors
+    # Read mode: Read in and average tensors
     else:
         # Create appropriately sized container for reading in tensors
         if value_type == 'scalar':
