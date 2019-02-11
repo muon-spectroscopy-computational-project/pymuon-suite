@@ -154,6 +154,31 @@ def weighted_tens_avg(tensors, weight):
         tens_avg[i] = np.sum(tensors[:, i], axis=0)/np.sum(weight)
     return tens_avg
 
+def weighted_tens_avg(tensors, weight):
+    """
+    Given a set of tensors resulting from the sampling of a property over a
+    set of different displacements, calculate a weighted average of the tensors
+    for each atom using a given weight for each displacement.
+
+    | Args:
+    |   tensors(Numpy float array, shape:(N,No. of atoms,x,y)): For each grid
+    |       point, a set of 3x3 tensors for each atom.
+    |   weight(Numpy float array, shape:(N)): A weighting for each point
+    |       on the grid.
+    |
+    | Returns:
+    |   tens_avg(Numpy float array, shape:(Atoms,x,y)): The averaged tensor for
+    |       each atom.
+    """
+    num_atoms = np.size(tensors, 1)
+    x = np.size(tensors, 2)
+    y = np.size(tensors, 3)
+    tens_avg = np.zeros((num_atoms, x, y))
+    tensors = tensors*weight[:, None, None, None]
+    for i in range(num_atoms):
+        tens_avg[i] = np.sum(tensors[:, i], axis=0)/np.sum(weight)
+    return tens_avg
+
 def wf_disp_generator(disp_factor, maj_evecs, grid_n):
     """
     Generate a set of displacements of an atom for the wavefunction sampling
