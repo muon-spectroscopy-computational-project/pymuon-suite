@@ -25,8 +25,8 @@ from pymuonsuite.io.output import write_tensors
 from pymuonsuite.quantum.vibrational.grid import create_displaced_cell
 from pymuonsuite.quantum.vibrational.grid import calc_wavefunction, weighted_tens_avg
 from pymuonsuite.quantum.vibrational.grid import wf_disp_generator, tl_disp_generator
-from pymuonsuite.quantum.vibrational.output import hfine_report
-from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc, calc_harm_potential
+from pymuonsuite.quantum.vibrational.reports import harm_potential_report, hfine_report
+from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.phonons import get_major_emodes
 from pymuonsuite.utils import find_ipso_hydrogen
 try:
@@ -209,7 +209,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             if method == 'wavefunction':
                 if weight_type == 'harmonic':
                     weighting = calc_wavefunction(R[i], grid_n, write_table = True,
-                     filename = dirname+"/{0}_{1}_psi.dat".format(sname, atom_ind))
+                     filename = "{0}_{1}_psi.dat".format(sname, atom_ind))
             elif method == 'thermal':
                 weighting = np.ones((total_grid_n)) #(uniform weighting)
 
@@ -227,8 +227,8 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
                     for k in range(np.size(E_table, 1)):
                         castf = os.path.join(dirname, "{0}_{1}.castep".format(sname, k+j*grid_n))
                         E_table[j][k] = parse_final_energy(castf)
-                calc_harm_potential(R[i], grid_n, masses[atom_ind], maj_evals[i],
-                     E_table, dirname+"/{0}_{1}_V.dat".format(sname, atom_ind))
+                harm_potential_report(R[i], grid_n, masses[atom_ind], maj_evals[i],
+                     E_table, "{0}_{1}_V.dat".format(sname, atom_ind))
 
                 if property == 'hyperfine':
                     #Find ipso hydrogens
