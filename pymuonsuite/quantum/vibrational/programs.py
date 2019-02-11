@@ -45,35 +45,37 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
                 weight_type='harmonic', pname=None, args_w=False,
                 ase_phonons=False, dftb_phonons=True):
     """
-    (Write mode) Given a file containing phonon modes of a molecule, write
-    out a set of structure files, one for each major mode of each atom,
-    with the atoms progressively displaced in grid_n increments along each axis
-    of their major phonon modes, creating a grid of displacements for each atom.
-    (Read mode) Read in coupling values calculated at each point of a grid
-    created using this function's write mode and average them to give an estimate
-    of the actual coupling values accounting for nuclear quantum effects for each
-    atom displaced.
+    (Write mode) Given the structure and phonon modes of a molecule, write
+    out a set of structure files with the atoms displaced according to the
+    selected vibrational averaging method.
+    (Read mode) Read in tensors calculated for each displaced structure
+    created with the write mode. Perform a weighted average on these tensors
+    appropriate to the mode and weighting selected. Return the vibrationally
+    averaged property tensors in a file.
 
     | Args:
     |   cell_f (str): Path to structure file (e.g. .cell file for CASTEP)
+    |   method (str): Method used to calculate thermal average. Currently
+    |       accepted valus: 'wavefunction' (wavefunction sampling), 'thermal'
+    |       (thermal lines)
     |   mu_sym (str): Symbol used to represent muon in structure file
     |   grid_n (int): Number of increments to make along each phonon axis
-    |   atoms_ind(int array): Array of indices of atoms to be vibrated, counting
-    |       from 0. E.g. for first 3 atoms in cell file enter [0, 1, 2].
-    |       Enter [-1] to select all atoms.
     |   property(str): Property to be calculated. Currently accepted values:
-    |       "hyperfine" (hyperfine tensors),
-    |   value_type(str): Is value being calculated a 'matrix', 'vector', or
-    |       'scalar'? (e.g. hyperfine tensor is a matrix)
+    |       "hyperfine"
+    |   atoms_ind(int array): Array of indices of atoms to be displaced,
+    |       counting from 0. E.g. for first 3 atoms in cell file enter [0,1,2].
+    |       Enter [-1] to select all atoms.
+    |   value_type(str): Is tensor being averaged a 'matrix', 'vector', or
+    |       'scalar'? (e.g. the hyperfine coupling tensor is a matrix)
     |   weight_type(str): Type of weighting to be used, currently accepted
     |       values: "harmonic" (harmonic oscillator wavefunction)
     |   pname (str): Path of param file which will be copied into folders
     |       along with displaced cell files for convenience
-    |   args_w (bool): Write files if true, parse if false
+    |   args_w (bool): Write mode if true, read mode if false
     |   ase_phonons(bool): If true, use ASE to calculate phonon modes. ASE will
-    |       use the calculator of the input cell, e.g. CASTEP for .cell files. Set
-    |       dftb_phonons to True in order to use dftb+ as the calculator instead.
-    |       If false, will read in CASTEP phonons.
+    |       use the calculator of the input structure file, e.g. CASTEP for
+    |       .cell files. Set dftb_phonons to True in order to use dftb+ as the
+    |       calculator instead. If false, will read in CASTEP phonons.
     |   dftb_phonons(bool): Use dftb+ with ASE to calculate phonons if true.
     |       Requires ase_phonons set to true.
     |
@@ -141,7 +143,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
     # Write mode: write cells with atoms displaced
     if args_w:
         displacements = np.zeros((num_sel_atoms, total_grid_n, num_atoms, 3))
-        
+
         if method == 'wavefunction':
             # For each atom selected, generate the set of displacements
             for i, atom_ind in enumerate(atoms_ind):

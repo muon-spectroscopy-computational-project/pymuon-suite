@@ -28,7 +28,7 @@ def calc_wavefunction(R, grid_n, write_table = True, filename = ''):
     |   filename (str): Filename of file to write to, required for write_table
     |
     | Returns:
-    |   prob_dens (Numpy float, shape:(grid_n*3)): Probability density of
+    |   prob_dens (Numpy float array, shape:(grid_n*3)): Probability density of
     |       harmonic oscillator at each displacement
     """
     R_axes = np.array([np.linspace(-3*Ri, 3*Ri, grid_n)
@@ -53,6 +53,27 @@ def calc_wavefunction(R, grid_n, write_table = True, filename = ''):
             prob_dens[j + i*grid_n] = point
 
     return prob_dens
+
+def create_displaced_cell(cell, displacements):
+    """
+    Take a set of atomic displacements and a cell and return an ASE Atoms object
+    with atoms displaced appropriately.
+
+    | Args:
+    |   cell(ASE Atoms object): Cell containing original atomic positions.
+    |   displacements(Numpy float array(num_atoms, 3)): Array containing a
+    |       displacement vector for each atom in the system.
+    |
+    | Returns:
+    |   disp_cell(ASE Atoms object): Cell containing displaced atomic positions.
+    """
+    disp_pos = cell.get_positions()
+    disp_cell = cell.copy()
+    disp_pos += displacements
+    disp_cell.set_positions(disp_pos)
+    disp_cell.set_calculator(cell.calc)
+
+    return disp_cell
 
 def displaced_cell_range(cell, a_i, grid_n, disp):
     """Return a generator of ASE Atoms objects with the displacement of the atom
@@ -158,24 +179,3 @@ def wf_disp_generator(disp_factor, maj_evecs, grid_n):
             displacements[n + mode*grid_n] = t*max_disp[mode]
 
     return displacements
-
-def create_displaced_cell(cell, displacements):
-    """
-    Take a set of atomic displacements and a cell and return an ASE Atoms object
-    with atoms displaced appropriately.
-
-    | Args:
-    |   cell(ASE Atoms object): Cell containing original atomic positions.
-    |   displacements(Numpy float array(num_atoms, 3)): Array containing a
-    |       displacement vector for each atom in the system.
-    |
-    | Returns:
-    |   disp_cell(ASE Atoms object): Cell containing displaced atomic positions.
-    """
-    disp_pos = cell.get_positions()
-    disp_cell = cell.copy()
-    disp_pos += displacements
-    disp_cell.set_positions(disp_pos)
-    disp_cell.set_calculator(cell.calc)
-
-    return disp_cell
