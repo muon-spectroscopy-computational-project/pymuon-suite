@@ -220,28 +220,29 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             outfile = "{0}_{1}_tensors.dat".format(sname, atom_ind)
             write_tensors(tens_avg, outfile, symbols)
 
-            if method == 'wavefunction':
-                #Write harmonic potential report
+            if property == 'hyperfine':
+                #Find ipso hydrogens
+                iH_indices = np.zeros(np.size(mu_indices), int)
+                for i in range(np.size(iH_indices)):
+                    iH_indices[i] = find_ipso_hydrogen(mu_indices[i], cell, mu_sym)
+                #Calculate and write out hfcc for muons and ipso hydrogens
+                muon_ipso_dict = {}
+                for index in mu_indices:
+                    muon_ipso_dict[index] = symbols[index]
+                for index in iH_indices:
+                    muon_ipso_dict[index] = symbols[index]
+                hfine_report(total_grid_n, grid_tensors, tens_avg, weighting,
+                "{0}_{1}_report.dat".format(sname, atom_ind), muon_ipso_dict)
+
+            if method == 'wavefunction' and weight_type == 'harmonic':
+                #Grab CASTEP final energies
                 E_table = np.zeros((np.size(R[i]), grid_n))
                 for j in range(np.size(E_table, 0)):
                     for k in range(np.size(E_table, 1)):
                         castf = os.path.join(dirname, "{0}_{1}.castep".format(sname, k+j*grid_n))
                         E_table[j][k] = parse_final_energy(castf)
+                #Write harmonic potential report
                 harm_potential_report(R[i], grid_n, masses[atom_ind], maj_evals[i],
                      E_table, "{0}_{1}_V.dat".format(sname, atom_ind))
-
-                if property == 'hyperfine':
-                    #Find ipso hydrogens
-                    iH_indices = np.zeros(np.size(mu_indices), int)
-                    for i in range(np.size(iH_indices)):
-                        iH_indices[i] = find_ipso_hydrogen(mu_indices[i], cell, mu_sym)
-                    #Calculate and write out hfcc for muons and ipso hydrogens
-                    muon_ipso_dict = {}
-                    for index in mu_indices:
-                        muon_ipso_dict[index] = symbols[index]
-                    for index in iH_indices:
-                        muon_ipso_dict[index] = symbols[index]
-                    hfine_report(R[i], total_grid_n, grid_tensors, tens_avg, weighting,
-                    "{0}_{1}_report.dat".format(sname, atom_ind), muon_ipso_dict)
 
     return

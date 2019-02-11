@@ -44,21 +44,18 @@ def harm_potential_report(R, grid_n, mass, freqs, E_table, filename):
     all_table = np.concatenate((R_axes, harm_V, E_table), axis=0)
     np.savetxt(filename, all_table.T)
 
-def hfine_report(R, total_grid_n, tensors, hfine_tens_avg, r2psi2, filename, atoms):
+def hfine_report(total_grid_n, tensors, hfine_tens_avg, weight, filename, atoms):
     """Write a report on a selection of atom's hyperfine coupling constants and
     their hyperfine tensor dipolar components based on a vibrational averaging
     calculation.
 
     | Args:
-    |   R(Numpy float array, shape:(axes)): Displacement amplitude along each
-    |       phonon axis
     |   total_grid_n(int): Total number of grid points
     |   tensors(Numpy float array, shape:(total_grid_n, num_atoms, 3, 3)):
     |       Array of hyperfine tensors for each atom at each grid point
     |   hfine_tens_avg(Numpy float array, shape:(num_atoms,3,3)): Average
     |       tensors of atoms over grid
-    |   r2psi2 (Numpy float, shape:(total_grid_n)): Probability density of
-    |       harmonic oscillator at each displacement
+    |   weight (Numpy float, shape:(total_grid_n)): Weighting of each grid point
     |   filename(str): Filename to be used for file
     |   atoms(dict, {index(int):symbol(str)}): Dictionary containing indices and
     |       symbols of atoms to write hyperfine coupling report about
@@ -71,7 +68,7 @@ def hfine_report(R, total_grid_n, tensors, hfine_tens_avg, r2psi2, filename, ato
         for i, tensor in enumerate(tensors[:][index]):
             hfine_table[i] = np.trace(tensor)/3.0
 
-        hfine_avg = np.sum(r2psi2*hfine_table)/np.sum(r2psi2)
+        hfine_avg = np.sum(weight*hfine_table)/np.sum(weight)
         ofile.write('Predicted hyperfine coupling on labeled atom ({1}): {0} MHz\n'.format(
             hfine_avg, atoms[index]))
 
