@@ -145,7 +145,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
         displacements = np.zeros((num_sel_atoms, total_grid_n, num_atoms, 3))
 
         if method == 'wavefunction':
-            # For each atom selected, generate the set of displacements
+            # For each atom selected, displace that atom but not the others
             for i, atom_ind in enumerate(atoms_ind):
                 displacements[i, :, atom_ind] = wf_disp_generator(R[i], maj_evecs[i], grid_n)
 
@@ -154,6 +154,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             # Calculate normal mode coordinates
             for i in range(np.size(norm_coords)):
                 norm_coords[i] = np.sqrt(1/(2*evals[0][i+3]))
+            # Calculate displacements at this quantum point and its inverse
             for point in range(grid_n):
                 point_displacements = tl_disp_generator(norm_coords, evecs[0][3:], num_atoms)
                 displacements[0][point] = point_displacements
@@ -171,7 +172,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             except:
                 os.mkdir(dirname)
             for point in range(total_grid_n):
-                #Generate displaced cell
+                # Generate displaced cell
                 disp_cell = create_displaced_cell(cell, displacements[i][point])
                 # Write displaced cell
                 ase_io.write(os.path.join(dirname,'{0}_{1}.cell'.format(sname, point)),
@@ -221,11 +222,11 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             write_tensors(tens_avg, outfile, symbols)
 
             if property == 'hyperfine':
-                #Find ipso hydrogens
+                # Find ipso hydrogens
                 iH_indices = np.zeros(np.size(mu_indices), int)
                 for i in range(np.size(iH_indices)):
                     iH_indices[i] = find_ipso_hydrogen(mu_indices[i], cell, mu_sym)
-                #Calculate and write out hfcc for muons and ipso hydrogens
+                # Calculate and write out hfcc for muons and ipso hydrogens
                 muon_ipso_dict = {}
                 for index in mu_indices:
                     muon_ipso_dict[index] = symbols[index]
@@ -235,13 +236,13 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
                 "{0}_{1}_report.dat".format(sname, atom_ind), muon_ipso_dict)
 
             if method == 'wavefunction' and weight_type == 'harmonic':
-                #Grab CASTEP final energies
+                # Grab CASTEP final energies
                 E_table = np.zeros((np.size(R[i]), grid_n))
                 for j in range(np.size(E_table, 0)):
                     for k in range(np.size(E_table, 1)):
                         castf = os.path.join(dirname, "{0}_{1}.castep".format(sname, k+j*grid_n))
                         E_table[j][k] = parse_final_energy(castf)
-                #Write harmonic potential report
+                # Write harmonic potential report
                 harm_potential_report(R[i], grid_n, masses[atom_ind], maj_evals[i],
                      E_table, "{0}_{1}_V.dat".format(sname, atom_ind))
 

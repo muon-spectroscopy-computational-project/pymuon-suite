@@ -48,8 +48,8 @@ def calc_wavefunction(R, grid_n, write_table = True, filename = ''):
 
     # Convert to portable output format
     prob_dens = np.zeros((grid_n*3))
-    for i, axis in enumerate(r2psi2):
-        for j, point in enumerate(axis):
+    for i, mode in enumerate(r2psi2):
+        for j, point in enumerate(mode):
             prob_dens[j + i*grid_n] = point
 
     return prob_dens
