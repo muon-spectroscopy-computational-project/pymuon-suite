@@ -150,10 +150,12 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
                 displacements[i, :, atom_ind] = wf_disp_generator(R[i], maj_evecs[i], grid_n)
 
         elif method == 'thermal':
-            norm_coords = np.zeros(np.size(evals[0]) - 3)
+            num_modes = np.size(evals[0]) - 3
+            norm_coords = np.zeros((num_atoms, num_modes))
             # Calculate normal mode coordinates
-            for i in range(np.size(norm_coords)):
-                norm_coords[i] = np.sqrt(1/(2*evals[0][i+3]))
+            for i in range(num_modes):
+                norm_coords[:, i] = np.sqrt(cnst.hbar/(2*evals[0][i+3]))
+            norm_coords /= np.sqrt(masses[:, None]*cnst.u)
             # Calculate displacements at this quantum point and its inverse
             for point in range(grid_n):
                 point_displacements = tl_disp_generator(norm_coords, evecs[0][3:], num_atoms)

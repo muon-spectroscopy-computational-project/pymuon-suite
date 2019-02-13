@@ -107,8 +107,8 @@ def tl_disp_generator(norm_coords, evecs, num_atoms):
     random thermal lines at T=0.
 
     | Args:
-    |   norm_coords(Numpy float array(:)): Array containing the normal mode
-    |       coordinates of each real mode of the system.
+    |   norm_coords(Numpy float array(num_atoms, num_modes)): Array containing
+    |       the normal mode coordinates of each real mode of the system.
     |   evecs(Numpy float array(size(norm_coords), num_atoms)): Array containing
     |       the eigenvectors of all real phonon modes for each atom in the
     |       system in the format evecs[modes][atoms].
@@ -120,14 +120,14 @@ def tl_disp_generator(norm_coords, evecs, num_atoms):
     |       line.
     """
     displacements = np.zeros((num_atoms, 3))
-    coefficients = np.zeros(np.size(norm_coords))
+    coefficients = np.zeros(np.size(norm_coords, 1))
     for i in range(np.size(coefficients)):
         coefficients[i] = random.choice([-1, 1])
     norm_coords = norm_coords*coefficients
 
     for atom in range(num_atoms):
-        for mode in range(np.size(norm_coords)):
-            displacements[atom] += norm_coords[mode]*evecs[mode][atom].real*1e10
+        for mode in range(np.size(norm_coords, 1)):
+            displacements[atom] += norm_coords[atom][mode]*evecs[mode][atom].real*1e10
 
     return displacements
 
