@@ -177,8 +177,8 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
                 # Generate displaced cell
                 disp_cell = create_displaced_cell(cell, displacements[i][point])
                 # Write displaced cell
-                ase_io.write(os.path.join(dirname,'{0}_{1}.cell'.format(sname, point)),
-                                disp_cell)
+                outfile=os.path.join(dirname,'{0}_{1}.cell'.format(sname,point))
+                ase_io.write(outfile, disp_cell)
                 # Copy param files
                 if pname:
                     shutil.copy(pname, os.path.join(dirname,
@@ -211,8 +211,8 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             # Compute weights for each grid point
             if method == 'wavefunction':
                 if weight_type == 'harmonic':
-                    weighting = calc_wavefunction(R[i], grid_n, write_table = True,
-                     filename = "{0}_{1}_psi.dat".format(sname, atom_ind))
+                    outfile = "{0}_{1}_psi.dat".format(sname, atom_ind)
+                    weighting = calc_wavefunction(R[i], grid_n, True, outfile)
             elif method == 'thermal':
                 weighting = np.ones((total_grid_n)) #(uniform weighting)
 
@@ -234,18 +234,21 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
                     muon_ipso_dict[index] = symbols[index]
                 for index in iH_indices:
                     muon_ipso_dict[index] = symbols[index]
+                outfile = "{0}_{1}_report.dat".format(sname, atom_ind)
                 hfine_report(total_grid_n, grid_tensors, tens_avg, weighting,
-                "{0}_{1}_report.dat".format(sname, atom_ind), muon_ipso_dict)
+                    outfile, muon_ipso_dict)
 
             if method == 'wavefunction' and weight_type == 'harmonic':
                 # Grab CASTEP final energies
                 E_table = np.zeros((np.size(R[i]), grid_n))
                 for j in range(np.size(E_table, 0)):
                     for k in range(np.size(E_table, 1)):
-                        castf = os.path.join(dirname, "{0}_{1}.castep".format(sname, k+j*grid_n))
+                        castf = os.path.join(dirname,
+                            "{0}_{1}.castep".format(sname, k+j*grid_n))
                         E_table[j][k] = parse_final_energy(castf)
                 # Write harmonic potential report
-                harm_potential_report(R[i], grid_n, masses[atom_ind], maj_evals[i],
-                     E_table, "{0}_{1}_V.dat".format(sname, atom_ind))
+                outfile = "{0}_{1}_V.dat".format(sname, atom_ind)
+                harm_potential_report(R[i], grid_n, masses[atom_ind],
+                    maj_evals[i], E_table, outfile)
 
     return
