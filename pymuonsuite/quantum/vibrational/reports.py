@@ -64,10 +64,7 @@ def hfine_report(total_grid_n, tensors, hfine_tens_avg, weight, filename, atoms)
     """
     ofile = open(filename, 'w')
     for index in atoms:
-        hfine_table = np.zeros((total_grid_n))
-        for i, tensor in enumerate(tensors[:][index]):
-            hfine_table[i] = np.trace(tensor)/3.0
-
+        hfine_table = np.trace(tensors[:, index], axis1=1, axis2=2)/3
         hfine_avg = np.sum(weight*hfine_table)/np.sum(weight)
         ofile.write('Predicted hyperfine coupling on labeled atom ({1}): {0} MHz\n'.format(
             hfine_avg, atoms[index]))
