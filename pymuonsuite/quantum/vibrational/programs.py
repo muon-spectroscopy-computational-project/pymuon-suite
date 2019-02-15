@@ -15,7 +15,6 @@ import numpy as np
 import scipy.constants as cnst
 from ase import Atoms
 from ase import io as ase_io
-from soprano.collection import AtomsCollection
 from soprano.selection import AtomSelection
 from soprano.utils import seedname
 
@@ -86,13 +85,20 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
     cell = ase_io.read(cell_f)
     sname = seedname(cell_f)
     num_atoms = np.size(cell)
-    symbols = cell.get_array('castep_custom_species')
+    try:
+        symbols = cell.get_array('castep_custom_species')
+        masses = parse_castep_masses(cell)
+        sel = AtomSelection.from_array(
+            cell, 'castep_custom_species', mu_sym)
+    except:
+        #In case no custom species used
+        symbols = cell.get_chemical_symbols()
+        masses = cell.get_masses()
+        sel = AtomSelection.from_array(
+            cell, 'positions', mu_sym)
     # Set correct custom species masses in cell
-    masses = parse_castep_masses(cell)
     cell.set_masses(masses)
     # Parse muon data
-    sel = AtomSelection.from_array(
-        cell, 'castep_custom_species', mu_sym)
     mu_indices = sel.indices
 
     # Select all atoms if -1 input
