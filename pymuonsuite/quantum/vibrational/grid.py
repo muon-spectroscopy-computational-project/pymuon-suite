@@ -133,29 +133,6 @@ def tl_disp_generator(norm_coords, evecs, num_atoms):
 
 def weighted_tens_avg(tensors, weight):
     """
-    Given a set of 3x3 tensors resulting from the sampling of a property on an
-    N point grid for a set of atoms, calculate a weighted average of the tensors
-    for each atom using a given weight for each grid point.
-
-    | Args:
-    |   tensors(Numpy float array, shape:(N,Atoms,3,3)): For each grid point,
-    |       a set of 3x3 tensors for each atom.
-    |   weight(Numpy float array, shape:(N)): A weighting for each point
-    |       on the grid.
-    |
-    | Returns:
-    |   tens_avg(Numpy float array, shape:(Atoms,3,3)): The averaged tensor for
-    |       each atom.
-    """
-    num_atoms = np.size(tensors, 1)
-    tens_avg = np.zeros((num_atoms, 3, 3))
-    tensors = tensors*weight[:, None, None, None]
-    for i in range(num_atoms):
-        tens_avg[i] = np.sum(tensors[:, i], axis=0)/np.sum(weight)
-    return tens_avg
-
-def weighted_tens_avg(tensors, weight):
-    """
     Given a set of tensors resulting from the sampling of a property over a
     set of different displacements, calculate a weighted average of the tensors
     for each atom using a given weight for each displacement.
