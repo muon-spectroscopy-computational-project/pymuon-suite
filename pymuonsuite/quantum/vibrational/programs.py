@@ -217,7 +217,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             # Compute weights for each grid point
             if method == 'wavefunction':
                 if weight_type == 'harmonic':
-                    outfile = "{0}_{1}_psi.dat".format(sname, atom_ind)
+                    outfile = dirname + "_psi.dat"
                     weighting = calc_wavefunction(R[i], grid_n, True, outfile)
             elif method == 'thermal':
                 weighting = np.ones((total_grid_n)) #(uniform weighting)
@@ -226,7 +226,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
             tens_avg = weighted_tens_avg(grid_tensors, weighting)
 
             # Write averaged tensors
-            outfile = "{0}_{1}_tensors.dat".format(sname, atom_ind)
+            outfile = dirname + "_tensors.dat"
             write_tensors(tens_avg, outfile, symbols)
 
             if property == 'hyperfine':
@@ -240,7 +240,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
                     muon_ipso_dict[index] = symbols[index]
                 for index in iH_indices:
                     muon_ipso_dict[index] = symbols[index]
-                outfile = "{0}_{1}_report.dat".format(sname, atom_ind)
+                outfile = dirname + "_report.dat"
                 hfine_report(total_grid_n, grid_tensors, tens_avg, weighting,
                     outfile, muon_ipso_dict)
 
@@ -253,7 +253,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
                             "{0}_{1}.castep".format(sname, k+j*grid_n))
                         E_table[j][k] = parse_final_energy(castf)
                 # Write harmonic potential report
-                outfile = "{0}_{1}_V.dat".format(sname, atom_ind)
+                outfile = dirname + "_V.dat"
                 harm_potential_report(R[i], grid_n, masses[atom_ind],
                     maj_evals[i], E_table, outfile)
 
