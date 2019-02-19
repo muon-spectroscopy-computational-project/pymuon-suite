@@ -135,11 +135,13 @@ def weighted_tens_avg(tensors, weight):
     """
     Given a set of tensors resulting from the sampling of a property over a
     set of different displacements, calculate a weighted average of the tensors
-    for each atom using a given weight for each displacement.
+    for each atom or the whole system, using a given weight for each
+    displacement.
 
     | Args:
     |   tensors(Numpy float array, shape:(N,No. of atoms,x,y)): For each grid
-    |       point, a set of 3x3 tensors for each atom.
+    |       point, a set of x by y tensors for each atom or the whole system.
+    |       "No. of atoms" should be 1 in the latter case.
     |   weight(Numpy float array, shape:(N)): A weighting for each point
     |       on the grid.
     |

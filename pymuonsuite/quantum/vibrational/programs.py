@@ -19,6 +19,7 @@ from soprano.selection import AtomSelection
 from soprano.utils import seedname
 
 from pymuonsuite.io.castep import parse_castep_masses, parse_final_energy
+from pymuonsuite.io.castep import parse_castep_bands
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.io.output import write_tensors
 from pymuonsuite.quantum.vibrational.grid import create_displaced_cell
@@ -40,7 +41,7 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
 
-def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
+def vib_avg(cell_f, method, mu_sym, grid_n, property, atoms_ind=[0],
                 weight_type='harmonic', pname=None, args_w=False,
                 ase_phonons=False, dftb_phonons=True):
     """
@@ -60,12 +61,10 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
     |   mu_sym (str): Symbol used to represent muon in structure file
     |   grid_n (int): Number of increments to make along each phonon axis
     |   property(str): Property to be calculated. Currently accepted values:
-    |       "hyperfine"
+    |       "hyperfine", "bandstructure"
     |   atoms_ind(int array): Array of indices of atoms to be displaced,
     |       counting from 0. E.g. for first 3 atoms in cell file enter [0,1,2].
     |       Enter [-1] to select all atoms.
-    |   value_type(str): Is tensor being averaged a 'matrix', 'vector', or
-    |       'scalar'? (e.g. the hyperfine coupling tensor is a matrix)
     |   weight_type(str): Type of weighting to be used, currently accepted
     |       values: "harmonic" (harmonic oscillator wavefunction)
     |   pname (str): Path of param file which will be copied into folders
@@ -88,18 +87,17 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
     try:
         symbols = cell.get_array('castep_custom_species')
         masses = parse_castep_masses(cell)
+        # Find muon locations
         sel = AtomSelection.from_array(
             cell, 'castep_custom_species', mu_sym)
+        mu_indices = sel.indices
+        # Set correct custom species masses in ASE cell
+        cell.set_masses(masses)
     except:
         #In case no custom species used
         symbols = cell.get_chemical_symbols()
         masses = cell.get_masses()
-        sel = AtomSelection.from_array(
-            cell, 'positions', mu_sym)
-    # Set correct custom species masses in cell
-    cell.set_masses(masses)
-    # Parse muon data
-    mu_indices = sel.indices
+        mu_indices = []
 
     # Select all atoms if -1 input
     if atoms_ind[0] == -1:
@@ -192,19 +190,20 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
 
     # Read mode: Read in and average tensors
     else:
-        # Create appropriately sized container for reading in tensors
-        if value_type == 'scalar':
-            grid_tensors = np.zeros((total_grid_n, num_atoms, 1, 1))
-        elif value_type == 'vector':
-            grid_tensors = np.zeros((total_grid_n, num_atoms, 1, 3))
-        elif value_type == 'matrix':
-            grid_tensors = np.zeros((total_grid_n, num_atoms, 3, 3))
-
         for i, atom_ind in enumerate(atoms_ind):
             if method == 'wavefunction':
                 dirname = '{0}_{1}_wvfn'.format(sname, atom_ind)
             elif method == 'thermal':
                 dirname = '{0}_thermal'.format(sname)
+
+            # Create appropriately sized container for reading in values
+            if property == 'hyperfine':
+                grid_tensors = np.zeros((total_grid_n, num_atoms, 3, 3))
+            elif property == 'bandstructure':
+                test_path = os.path.join(dirname, "{0}_0.bands".format(sname))
+                num_bs_kpt, num_bs_evals = parse_castep_bands(test_path, True)
+                grid_tensors = np.zeros((total_grid_n, 1, num_bs_kpt,
+                                            num_bs_evals))
 
             # Parse tensors from each grid point
             for point in range(total_grid_n):
@@ -213,6 +212,10 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, value_type, atoms_ind=[0],
                                     '{0}_{1}.magres'.format(sname, point))
                     magres = parse_hyperfine_magres(tensor_file)
                     grid_tensors[point] = magres.get_array('hyperfine')
+                elif property == 'bandstructure':
+                    tensor_file = os.path.join(dirname,
+                                    '{0}_{1}.bands'.format(sname, point))
+                    grid_tensors[point] = parse_castep_bands(tensor_file)
 
             # Compute weights for each grid point
             if method == 'wavefunction':

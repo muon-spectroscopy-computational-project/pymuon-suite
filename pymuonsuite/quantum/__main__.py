@@ -36,15 +36,10 @@ def nq_entry():
         raise ValueError("""Invalid value entered for method ('{0}'). Remember
         that this is case sensitive.""".format(params['method']))
 
-    if params['property'] != 'hyperfine':
+    if params['property'] != 'hyperfine' and \
+       params['property'] != 'bandstructure':
         raise ValueError("""Invalid value entered for weight ('{0}'). Remember
         that this is case sensitive.""".format(params['property']))
-
-    if params['value_type'] != 'scalar' and \
-       params['value_type'] != 'vector' and \
-       params['value_type'] != 'matrix':
-        raise ValueError("""Invalid value entered for weight ('{0}'). Remember
-        that this is case sensitive.""".format(params['value_type']))
 
     if params['weight'] != 'harmonic':
         raise ValueError("""Invalid value entered for weight ('{0}'). Remember
@@ -53,7 +48,7 @@ def nq_entry():
     # Call functions
     if args.calculation_type == "vib_avg":
         vib_avg(params['cell_file'], params['method'], params['muon_symbol'],
-                    params['grid_n'], params['property'], params['value_type'],
+                    params['grid_n'], params['property'],
                     params['atom_indices'], params['weight'], params['param_file'],
                     args.w, params['ase_phonons'],
                     params['dftb_phonons'])

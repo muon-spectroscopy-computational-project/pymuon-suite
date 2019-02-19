@@ -58,6 +58,36 @@ def save_muonconf_castep(a, folder, params):
     yaml.safe_dump(castep_params, open(parameter_file, 'w'),
                    default_flow_style=False)
 
+def parse_castep_bands(infile, header=False):
+    """Parse eigenvalues from a CASTEP .bands file. This only works with spin
+    components = 1.
+
+    | Args:
+    |   infile(str): Directory of bands file.
+    |   header(bool, default=False): If true, just return the number of k-points
+    |       and eigenvalues. Else, parse and return the band structure.
+    | Returns:
+    |   n_kpts(int), n_evals(int): Number of k-points and eigenvalues.
+    |   bands(Numpy float array, shape:(n_kpts, n_evals)): Energy eigenvalues of
+    |       band structure.
+    """
+    file = open(infile, "r")
+    lines = file.readlines()
+    n_kpts = int(lines[0].split()[-1])
+    n_evals = int(lines[3].split()[-1])
+    if header == True:
+        return n_kpts, n_evals
+    if int(lines[1].split()[-1]) != 1:
+        raise ValueError("""Either incorrect file format detected or greater
+                            than 1 spin component used (parse_castep_bands
+                            only works with 1 spin component.)""")
+    #Parse eigenvalues
+    bands = np.zeros((n_kpts, n_evals))
+    for kpt in range(n_kpts):
+        for eval in range(n_evals):
+            bands[kpt][eval] = float(lines[11+eval+kpt*(n_evals+2)].strip())
+    return bands
+
 def parse_castep_masses(cell):
     """Parse CASTEP custom species masses, returning an array of all atom masses
     in .cell file with corrected custom masses.

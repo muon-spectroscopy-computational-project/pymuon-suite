@@ -161,11 +161,8 @@ MuonHarmonicSchema = Schema({
     #Number of grid points(displacements of muon) to use on each phonon mode
     'grid_n': int,
     #Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
-    #coupling tensors)
+    #coupling tensors), 'bandstructure'
     'property': validate_str,
-    #Is value being calculated a 'matrix', 'vector', or 'scalar'? (e.g. hyperfine
-    #tensor is a matrix)
-    'value_type': validate_str,
     #Array of indices of atoms to be vibrated, counting from 0. E.g. for first 3
     #atoms in cell file enter [0, 1, 2]. Enter [-1] to select all atoms.
     Optional('atom_indices', default=[]): validate_int_array,
