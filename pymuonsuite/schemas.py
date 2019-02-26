@@ -172,13 +172,8 @@ MuonHarmonicSchema = Schema({
     #Path of parameter file which can be copied into folders with displaced cell
     #files for convenience
     Optional('param_file', default=None): validate_str,
-    #If True, use ASE to calculate phonon modes. ASE will use the calculator
-    #of the input cell, e.g. CASTEP for .cell files. Set dftb_phonons to True
-    #in order to use dftb+ as the calculator instead.
+    #If True, use ASE and DFTB+ to calculate phonon modes.
     Optional('ase_phonons', default=False): bool,
-    #If True, use dftb+ to calculate phonon modes. Must have ase_phonons set to
-    #True for this to do anything.
-    Optional('dftb_phonons', default=True): bool
 })
 
 # Parameter file schema and defaults

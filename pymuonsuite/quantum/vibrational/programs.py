@@ -70,12 +70,8 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, atoms_ind=[0],
     |   pname (str): Path of param file which will be copied into folders
     |       along with displaced cell files for convenience
     |   args_w (bool): Write mode if true, read mode if false
-    |   ase_phonons(bool): If true, use ASE to calculate phonon modes. ASE will
-    |       use the calculator of the input structure file, e.g. CASTEP for
-    |       .cell files. Set dftb_phonons to True in order to use dftb+ as the
-    |       calculator instead. If false, will read in CASTEP phonons.
-    |   dftb_phonons(bool): Use dftb+ with ASE to calculate phonons if true.
-    |       Requires ase_phonons set to true.
+    |   ase_phonons(bool): If true, use ASE and DFTB+ to calculate phonon modes.
+    |       If false, will read in CASTEP phonons.
     |
     | Returns: Nothing
     """
@@ -115,7 +111,8 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, atoms_ind=[0],
     # Get phonons
     if ase_phonons:
         # Calculate phonons using ASE
-        evals, evecs = ase_phonon_calc(cell, dftb_phonons)
+        evals, evecs = ase_phonon_calc(cell)
+        orthogonolize = True
     else:
         # Parse CASTEP phonon data into casteppy object
         pd = PhononData(sname)
@@ -124,6 +121,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, atoms_ind=[0],
         # Get phonon frequencies+modes
         evals = np.array(pd.freqs)
         evecs = np.array(pd.eigenvecs)
+        orthogonolize = False
 
     # Convert frequencies to radians/second
     evals = evals*1e2*cnst.c*np.pi*2
@@ -138,7 +136,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, atoms_ind=[0],
 
         for i, atom_ind in enumerate(atoms_ind):
             # Get major phonon modes
-            maj_evecs_index[i], maj_evecs[i] = get_major_emodes(evecs[0], atom_ind)
+            maj_evecs_index[i], maj_evecs[i] = get_major_emodes(evecs[0], atom_ind, orthogonolize)
             # Get major phonon frequencies
             maj_evals[i] = np.array(evals[0][maj_evecs_index[i].astype(int)])
             # Displacement factors in Angstrom
