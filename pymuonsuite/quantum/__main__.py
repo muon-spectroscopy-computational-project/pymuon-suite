@@ -48,7 +48,7 @@ def nq_entry():
     # Call functions
     if args.calculation_type == "vib_avg":
         vib_avg(params['cell_file'], params['method'], params['muon_symbol'],
-                    params['grid_n'], params['property'], params['atom_indices'],
+                    params['grid_n'], params['property'], params['selection'],
                     params['weight'], params['param_file'],
                     args.w, params['ase_phonons'])
 

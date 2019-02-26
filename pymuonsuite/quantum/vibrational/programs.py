@@ -41,7 +41,7 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
 
-def vib_avg(cell_f, method, mu_sym, grid_n, property, atoms_ind=[0],
+def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
                 weight_type='harmonic', pname=None, args_w=False,
                 ase_phonons=False, dftb_phonons=True):
     """
@@ -62,9 +62,9 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, atoms_ind=[0],
     |   grid_n (int): Number of increments to make along each phonon axis
     |   property(str): Property to be calculated. Currently accepted values:
     |       "hyperfine", "bandstructure"
-    |   atoms_ind(int array): Array of indices of atoms to be displaced,
-    |       counting from 0. E.g. for first 3 atoms in cell file enter [0,1,2].
-    |       Enter [-1] to select all atoms.
+    |   selection(int array): Array of muons to be displaced. Counting muons
+    |       from 0 in the order they are in in the cell file. E.g. to select
+    |       the 1st and 3rd muon in the atom positions list, enter [0, 2].
     |   weight_type(str): Type of weighting to be used, currently accepted
     |       values: "harmonic" (harmonic oscillator wavefunction)
     |   pname (str): Path of param file which will be copied into folders
@@ -86,22 +86,32 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, atoms_ind=[0],
         masses = parse_castep_masses(cell)
         cell.set_masses(masses)
         # Find muon locations
-        sel = AtomSelection.from_array(
-            cell, 'castep_custom_species', mu_sym)
-        mu_indices = sel.indices
+        mu_indices = AtomSelection.from_array(
+            cell, 'castep_custom_species', mu_sym).indices
     except:
-        #In case no custom species used
+        # In case no custom species used
+        print("WARNING: ASE has detected no custom species in the input file.")
         symbols = cell.get_chemical_symbols()
         masses = cell.get_masses()
-        mu_indices = []
+        mu_indices = [0]
 
-    # Select all atoms if -1 input
-    if atoms_ind[0] == -1:
-        atoms_ind = np.arange(0, num_atoms, 1, int)
-    # Thermal method requires atoms_ind = [0]
-    if method == 'thermal':
-        atoms_ind = np.array([0])
-    num_sel_atoms = np.size(atoms_ind) #Number of atoms selected
+    # Create array of selected muon indices
+    if method == 'wavefunction':
+        if selection[0] == -1:
+            atoms_ind = mu_indices
+        else:
+            atoms_ind = []
+            try:
+                for i in selection:
+                    atoms_ind.append(mu_indices[i])
+            except IndexError:
+                print("""IndexError: Muon selection '{0}' out of bounds
+                       with number of muons '{1}'""".format(i, len(mu_indices)))
+                exit()
+    else:
+        atoms_ind = [0]
+    num_sel_atoms = len(atoms_ind)
+
     # Set total number of grid points
     if method == 'wavefunction':
         total_grid_n = 3*grid_n
