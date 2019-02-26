@@ -98,19 +98,19 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
     # Create array of selected muon indices
     if method == 'wavefunction':
         if selection[0] == -1:
-            atoms_ind = mu_indices
+            mu_sel = mu_indices
         else:
-            atoms_ind = []
+            mu_sel = []
             try:
                 for i in selection:
-                    atoms_ind.append(mu_indices[i])
+                    mu_sel.append(mu_indices[i])
             except IndexError:
                 print("""IndexError: Muon selection '{0}' out of bounds
                        with number of muons '{1}'""".format(i, len(mu_indices)))
                 exit()
     else:
-        atoms_ind = [0]
-    num_sel_atoms = len(atoms_ind)
+        mu_sel = [0]
+    num_sel_mu = len(mu_sel)
 
     # Set total number of grid points
     if method == 'wavefunction':
@@ -122,7 +122,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
     if ase_phonons:
         # Calculate phonons using ASE
         evals, evecs = ase_phonon_calc(cell)
-        orthogonolize = True
+        orthogonalize = True
     else:
         # Parse CASTEP phonon data into casteppy object
         pd = PhononData(sname)
@@ -131,7 +131,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
         # Get phonon frequencies+modes
         evals = np.array(pd.freqs)
         evecs = np.array(pd.eigenvecs)
-        orthogonolize = False
+        orthogonalize = False
 
     # Convert frequencies to radians/second
     evals = evals*1e2*cnst.c*np.pi*2
@@ -139,28 +139,28 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
     # Find 3 major modes for each atom selected and use them to calculate
     # displacement factors R for the wavefunction method
     if method == 'wavefunction':
-        maj_evecs_index = np.zeros((num_sel_atoms, 3))
-        maj_evecs = np.zeros((num_sel_atoms, 3, 3))
-        maj_evals = np.zeros((num_sel_atoms, 3))
-        R = np.zeros((num_sel_atoms, 3))
+        maj_evecs_index = np.zeros((num_sel_mu, 3))
+        maj_evecs = np.zeros((num_sel_mu, 3, 3))
+        maj_evals = np.zeros((num_sel_mu, 3))
+        R = np.zeros((num_sel_mu, 3))
 
-        for i, atom_ind in enumerate(atoms_ind):
+        for i, mu_ind in enumerate(mu_sel):
             # Get major phonon modes
-            maj_evecs_index[i], maj_evecs[i] = get_major_emodes(evecs[0], atom_ind, orthogonolize)
+            maj_evecs_index[i], maj_evecs[i] = get_major_emodes(evecs[0], mu_ind, orthogonalize)
             # Get major phonon frequencies
             maj_evals[i] = np.array(evals[0][maj_evecs_index[i].astype(int)])
             # Displacement factors in Angstrom
-            R[i] = np.sqrt(cnst.hbar/(maj_evals[i]*masses[atom_ind]*cnst.u))*1e10
+            R[i] = np.sqrt(cnst.hbar/(maj_evals[i]*masses[mu_ind]*cnst.u))*1e10
 
     # Write mode: write cells with atoms displaced
     if args_w:
-        displacements = np.zeros((num_sel_atoms, total_grid_n, num_atoms, 3))
+        displacements = np.zeros((num_sel_mu, total_grid_n, num_atoms, 3))
 
         #Calculate displacements of muon along 3 major axes
         if method == 'wavefunction':
             # For each atom selected, displace that atom but not the others
-            for i, atom_ind in enumerate(atoms_ind):
-                displacements[i, :, atom_ind] = wf_disp_generator(R[i], maj_evecs[i], grid_n)
+            for i, mu_ind in enumerate(mu_sel):
+                displacements[i, :, mu_ind] = wf_disp_generator(R[i], maj_evecs[i], grid_n)
 
         # Calculate displacements for all atoms according to thermal lines
         elif method == 'thermal':
@@ -177,10 +177,10 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
                 displacements[0][point + grid_n] = -point_displacements
 
         # Create and write displaced cell files
-        for i, atom_ind in enumerate(atoms_ind):
+        for i, mu_ind in enumerate(mu_sel):
             # Create folder for cell files
             if method == 'wavefunction':
-                dirname = '{0}_{1}_wvfn'.format(sname, atom_ind)
+                dirname = '{0}_{1}_wvfn'.format(sname, mu_ind)
             elif method == 'thermal':
                 dirname = '{0}_thermal'.format(sname)
             try:
@@ -200,9 +200,9 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
 
     # Read mode: Read in and average tensors
     else:
-        for i, atom_ind in enumerate(atoms_ind):
+        for i, mu_ind in enumerate(mu_sel):
             if method == 'wavefunction':
-                dirname = '{0}_{1}_wvfn'.format(sname, atom_ind)
+                dirname = '{0}_{1}_wvfn'.format(sname, mu_ind)
             elif method == 'thermal':
                 dirname = '{0}_thermal'.format(sname)
 
@@ -267,7 +267,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
                         E_table[j][k] = parse_final_energy(castf)
                 # Write harmonic potential report
                 outfile = dirname + "_V.dat"
-                harm_potential_report(R[i], grid_n, masses[atom_ind],
+                harm_potential_report(R[i], grid_n, masses[mu_ind],
                     maj_evals[i], E_table, outfile)
 
     return
