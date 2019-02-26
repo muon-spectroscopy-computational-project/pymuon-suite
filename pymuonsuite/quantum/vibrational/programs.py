@@ -82,13 +82,13 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, atoms_ind=[0],
     num_atoms = np.size(cell)
     try:
         symbols = cell.get_array('castep_custom_species')
+        # Set correct custom species masses in ASE cell
         masses = parse_castep_masses(cell)
+        cell.set_masses(masses)
         # Find muon locations
         sel = AtomSelection.from_array(
             cell, 'castep_custom_species', mu_sym)
         mu_indices = sel.indices
-        # Set correct custom species masses in ASE cell
-        cell.set_masses(masses)
     except:
         #In case no custom species used
         symbols = cell.get_chemical_symbols()
@@ -146,11 +146,13 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, atoms_ind=[0],
     if args_w:
         displacements = np.zeros((num_sel_atoms, total_grid_n, num_atoms, 3))
 
+        #Calculate displacements of muon along 3 major axes
         if method == 'wavefunction':
             # For each atom selected, displace that atom but not the others
             for i, atom_ind in enumerate(atoms_ind):
                 displacements[i, :, atom_ind] = wf_disp_generator(R[i], maj_evecs[i], grid_n)
 
+        # Calculate displacements for all atoms according to thermal lines
         elif method == 'thermal':
             num_modes = np.size(evals[0]) - 3
             norm_coords = np.zeros((num_atoms, num_modes))
