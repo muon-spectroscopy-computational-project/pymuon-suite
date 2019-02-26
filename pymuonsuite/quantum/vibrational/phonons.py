@@ -99,4 +99,4 @@ def get_major_emodes(evecs, i, ortho=False):
                          np.dot(major_evecs[2], major_evecs[1])*major_evecs[1]
         major_evecs[2] = major_evecs[2]/np.linalg.norm(major_evecs[2])
 
-    return major_evecs_i, major_evecs
+    return major_evecs_i, major_evecs.real
