@@ -91,6 +91,7 @@ def get_major_emodes(evecs, i, ortho=False):
 
     if ortho == True:
         #Orthogonolize and normalize
+        major_evecs[0] = major_evecs[0]/np.linalg.norm(major_evecs[0])
         major_evecs[1] = major_evecs[1] - \
                            np.dot(major_evecs[0], major_evecs[1])*major_evecs[0]
         major_evecs[1] = major_evecs[1]/np.linalg.norm(major_evecs[1])
