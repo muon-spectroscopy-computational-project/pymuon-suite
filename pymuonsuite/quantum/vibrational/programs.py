@@ -59,7 +59,8 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
     |       accepted valus: 'wavefunction' (wavefunction sampling), 'thermal'
     |       (thermal lines)
     |   mu_sym (str): Symbol used to represent muon in structure file
-    |   grid_n (int): Number of increments to make along each phonon axis
+    |   grid_n (int): Number of increments to make along each phonon axis for
+    |       wavefunction method, or number of thermal lines to generate.
     |   property(str): Property to be calculated. Currently accepted values:
     |       "hyperfine", "bandstructure"
     |   selection(int array): Array of muons to be displaced. Counting muons
