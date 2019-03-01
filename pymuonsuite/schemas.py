@@ -158,7 +158,7 @@ MuonHarmonicSchema = Schema({
     'method': validate_str,
     #Symbol used to represent muon
     'muon_symbol': validate_str,
-    #Number of grid points(displacements of muon) to use on each phonon mode
+    #Number of grid points to use on each phonon mode or pairs of thermal lines
     'grid_n': int,
     #Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
     #coupling tensors), 'bandstructure'
