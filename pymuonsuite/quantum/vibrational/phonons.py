@@ -18,11 +18,13 @@ import scipy.constants as cnst
 
 from ase import Atoms
 from ase.calculators.dftb import Dftb
-from ase.dft import kpoints
+from ase.dft.kpoints import monkhorst_pack
 from ase.optimize import BFGS
 from ase.phonons import Phonons
 
-def ase_phonon_calc(cell, calc=None, fname='ase_phonons', ftol=0.01):
+
+def ase_phonon_calc(cell, calc=None, fname='ase_phonons', kpoints=[1, 1, 1],
+                    ftol=0.01):
     """Calculate phonon modes of a molecule using ASE and a given calculator.
     The system will be geometry optimized before calculating the modes. A
     report of the phonon modes will be written to a file and arrays of the
@@ -34,6 +36,8 @@ def ase_phonon_calc(cell, calc=None, fname='ase_phonons', ftol=0.01):
     |                           present, use the one from the cell)
     |   fname (str):            Name for the .dat file that will hold the 
     |                           phonon report (default is ase_phonons)
+    |   kpoints (np.ndarray):   Kpoint grid for phonon calculation (default is
+    |                           [1,1,1])
     |   ftol (float):           Tolerance for geometry optimisation (default
     |                           is 0.01 eV/Ang)
     | Returns:
@@ -54,7 +58,7 @@ def ase_phonon_calc(cell, calc=None, fname='ase_phonons', ftol=0.01):
     ph = Phonons(cell, calc)
     ph.run()
     ph.read(acoustic=True)
-    path = kpoints.monkhorst_pack((1,1,1))
+    path = monkhorst_pack(kpoints)
     evals, evecs = ph.band_structure(path, True)
 
     # eV to cm^-1
@@ -66,7 +70,9 @@ def ase_phonon_calc(cell, calc=None, fname='ase_phonons', ftol=0.01):
         print('Writing phonon report in location: ', filename)
         phonfile.write('Eigenvalues\n')
         for i, kpt in enumerate(evals):
-            phonfile.write('Mode Frequency(cm-1) k-point = {0}\n'.format(i))
+            phonfile.write('Mode Frequency(cm-1) k-point = '
+                           '{0}, [{1}]\n'.format(i, ','.join(map(str,
+                                                                 path[i]))))
             for j, value in enumerate(kpt):
                 phonfile.write('{0} \t{1}\n'.format(j, value))
         phonfile.write('Eigenvectors\n')
@@ -77,13 +83,14 @@ def ase_phonon_calc(cell, calc=None, fname='ase_phonons', ftol=0.01):
 
     return evals, evecs, cell
 
+
 def get_major_emodes(evecs, i, ortho=False):
     """Find the phonon modes of the atom at index i. Return orthogonalized and
     normalized modes if ortho == True.
 
     | Args:
     |   evecs (Numpy float array, shape: (num_modes, num_ions, 3)):
-    |                                   Eigenvectors of phonon modes of molecule
+    |                                   Eigenvectors of phonon modes of system
     |   i (int): Index of atom in position array
     |   ortho (bool): If true, orthogonalize and normalize major modes before
     |       returning.
@@ -105,11 +112,11 @@ def get_major_emodes(evecs, i, ortho=False):
         #Orthogonolize and normalize
         major_evecs[0] = major_evecs[0]/np.linalg.norm(major_evecs[0])
         major_evecs[1] = major_evecs[1] - \
-                           np.dot(major_evecs[0], major_evecs[1])*major_evecs[0]
+            np.dot(major_evecs[0], major_evecs[1])*major_evecs[0]
         major_evecs[1] = major_evecs[1]/np.linalg.norm(major_evecs[1])
         major_evecs[2] = major_evecs[2] - \
-                         np.dot(major_evecs[0], major_evecs[2])*major_evecs[0] - \
-                         np.dot(major_evecs[2], major_evecs[1])*major_evecs[1]
+            np.dot(major_evecs[0], major_evecs[2])*major_evecs[0] - \
+            np.dot(major_evecs[2], major_evecs[1])*major_evecs[1]
         major_evecs[2] = major_evecs[2]/np.linalg.norm(major_evecs[2])
 
     return major_evecs_i, major_evecs.real
