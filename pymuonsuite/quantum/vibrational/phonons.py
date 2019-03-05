@@ -22,7 +22,7 @@ from ase.dft import kpoints
 from ase.optimize import BFGS
 from ase.phonons import Phonons
 
-def ase_phonon_calc(cell, calc=None, ftol=0.01):
+def ase_phonon_calc(cell, calc=None, fname='ase_phonons', ftol=0.01):
     """Calculate phonon modes of a molecule using ASE and a given calculator.
     The system will be geometry optimized before calculating the modes. A
     report of the phonon modes will be written to a file and arrays of the
@@ -32,6 +32,8 @@ def ase_phonon_calc(cell, calc=None, ftol=0.01):
     |   cell (ase.Atoms):       Atoms object with to calculate modes for.
     |   calc (ase.Calculator):  Calculator for energies and forces (if not 
     |                           present, use the one from the cell)
+    |   fname (str):            Name for the .dat file that will hold the 
+    |                           phonon report (default is ase_phonons)
     |   ftol (float):           Tolerance for geometry optimisation (default
     |                           is 0.01 eV/Ang)
     | Returns:
@@ -59,19 +61,19 @@ def ase_phonon_calc(cell, calc=None, ftol=0.01):
     evals *= ((cnst.electron_volt/cnst.h)/cnst.c)/100.0
 
     # Write phonon report
-    filename = "ase_phonons.dat"
-    phonfile = open(filename, 'a')
-    print("Writing phonon report in location: ", filename)
-    phonfile.write("Eigenvalues\n")
-    for i, kpt in enumerate(evals):
-        phonfile.write("Mode Frequency(cm-1) k-point = {0}\n".format(i))
-        for j, value in enumerate(kpt):
-            phonfile.write("{0} \t{1}\n".format(j, value))
-    phonfile.write("Eigenvectors\n")
-    phonfile.write("Mode Ion Vector\n")
-    for i, mode in enumerate(evecs[0]):
-        for j, ion in enumerate(mode):
-            phonfile.write("{0} {1} \t{2}\n".format(i, j, ion))
+    filename = fname + '.dat'
+    with open(filename, 'w') as phonfile:
+        print('Writing phonon report in location: ', filename)
+        phonfile.write('Eigenvalues\n')
+        for i, kpt in enumerate(evals):
+            phonfile.write('Mode Frequency(cm-1) k-point = {0}\n'.format(i))
+            for j, value in enumerate(kpt):
+                phonfile.write('{0} \t{1}\n'.format(j, value))
+        phonfile.write('Eigenvectors\n')
+        phonfile.write('Mode Ion Vector\n')
+        for i, mode in enumerate(evecs[0]):
+            for j, ion in enumerate(mode):
+                phonfile.write("{0} {1} \t{2}\n".format(i, j, ion))
 
     return evals, evecs, cell
 
