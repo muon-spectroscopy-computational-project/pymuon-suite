@@ -14,6 +14,8 @@ import shutil
 
 import ase.io as ase_io
 import numpy as np
+import scipy.constants as cnst
+
 from ase import Atoms
 from ase.calculators.dftb import Dftb
 from ase.dft import kpoints
@@ -52,7 +54,9 @@ def ase_phonon_calc(cell, calc=None, ftol=0.01):
     ph.read(acoustic=True)
     path = kpoints.monkhorst_pack((1,1,1))
     evals, evecs = ph.band_structure(path, True)
-    evals *= 8065.5 #Convert from eV to cm-1
+
+    # eV to cm^-1
+    evals *= ((cnst.electron_volt/cnst.h)/cnst.c)/100.0
 
     # Write phonon report
     filename = "ase_phonons.dat"
