@@ -20,28 +20,34 @@ from ase.dft import kpoints
 from ase.optimize import BFGS
 from ase.phonons import Phonons
 
-def ase_phonon_calc(cell):
-    """Calculate phonon modes of a molecule using ASE and DFTB+. The system
-    will be geometry optimized using DFTB+ before calculating the modes. A
+def ase_phonon_calc(cell, calc=None, ftol=0.01):
+    """Calculate phonon modes of a molecule using ASE and a given calculator.
+    The system will be geometry optimized before calculating the modes. A
     report of the phonon modes will be written to a file and arrays of the
     eigenvectors and eigenvalues returned.
 
     | Args:
-    |   cell(ASE Atoms object): Atoms object with to calculate modes for.
+    |   cell (ase.Atoms):       Atoms object with to calculate modes for.
+    |   calc (ase.Calculator):  Calculator for energies and forces (if not 
+    |                           present, use the one from the cell)
+    |   ftol (float):           Tolerance for geometry optimisation (default
+    |                           is 0.01 eV/Ang)
     | Returns:
-    |   evals(float[k-points][modes]): Eigenvalues of phonon modes
-    |   evecs(float[k-points][modes][ions][3]): Eigenvectors of phonon modes
+    |   evals (float[k-points][modes]):          Eigenvalues of phonon modes
+    |   evecs (float[k-points][modes][ions][3]): Eigenvectors of phonon modes
+    |   cell (ase.Atoms):                        Optimised cell
     """
-    dftb_cell = copy.deepcopy(cell)
-    # Relax structure using DFTB+
-    calc = Dftb(kpts=[1,1,1])
-    dftb_cell.set_calculator(calc)
-    dyn = BFGS(dftb_cell, trajectory='geom_opt.traj')
-    dyn.run(fmax=0.01)
-    dftb_cell.set_positions((ase_io.read("geo_end.xyz")).get_positions())
+
+    if calc is None:
+        calc = cell.calc
+    cell = cell.copy()
+    calc.atoms = cell
+    cell.set_calculator(calc)
+    dyn = BFGS(cell, trajectory='geom_opt.traj')
+    dyn.run(fmax=ftol)
 
     # Calculate phonon modes
-    ph = Phonons(dftb_cell, calc)
+    ph = Phonons(cell, calc)
     ph.run()
     ph.read(acoustic=True)
     path = kpoints.monkhorst_pack((1,1,1))
@@ -63,7 +69,7 @@ def ase_phonon_calc(cell):
         for j, ion in enumerate(mode):
             phonfile.write("{0} {1} \t{2}\n".format(i, j, ion))
 
-    return evals, evecs
+    return evals, evecs, cell
 
 def get_major_emodes(evecs, i, ortho=False):
     """Find the phonon modes of the atom at index i. Return orthogonalized and
