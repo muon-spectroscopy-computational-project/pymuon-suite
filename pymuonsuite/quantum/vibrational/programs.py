@@ -41,9 +41,10 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
 
+
 def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
-                weight_type='harmonic', pname=None, args_w=False,
-                ase_phonons=False, dftb_phonons=True):
+            weight_type='harmonic', pname=None, args_w=False,
+            ase_phonons=False, dftb_phonons=True):
     """
     (Write mode) Given the structure and phonon modes of a molecule, write
     out a set of structure files with the atoms displaced according to the
@@ -123,7 +124,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
     if ase_phonons:
         # Calculate phonons using ASE
         evals, evecs = ase_phonon_calc(cell)
-        orthogonalize = True
+        ortho = True
     else:
         # Parse CASTEP phonon data into casteppy object
         pd = PhononData(sname)
@@ -132,7 +133,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
         # Get phonon frequencies+modes
         evals = np.array(pd.freqs)
         evecs = np.array(pd.eigenvecs)
-        orthogonalize = False
+        ortho = False
 
     # Convert frequencies to radians/second
     evals = evals*1e2*cnst.c*np.pi*2
@@ -140,6 +141,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
     # Find 3 major modes for each atom selected and use them to calculate
     # displacement factors R for the wavefunction method
     if method == 'wavefunction':
+        masses = cell.get_masses()
         maj_evecs_index = np.zeros((num_sel_mu, 3))
         maj_evecs = np.zeros((num_sel_mu, 3, 3))
         maj_evals = np.zeros((num_sel_mu, 3))
@@ -147,7 +149,9 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
 
         for i, mu_ind in enumerate(mu_sel):
             # Get major phonon modes
-            maj_evecs_index[i], maj_evecs[i] = get_major_emodes(evecs[0], mu_ind, orthogonalize)
+            maj_evecs_index[i], maj_evecs[i] = get_major_emodes(evecs[0], masses,
+                                                                mu_ind,
+                                                                ortho=ortho)
             # Get major phonon frequencies
             maj_evals[i] = np.array(evals[0][maj_evecs_index[i].astype(int)])
             # Displacement factors in Angstrom
@@ -157,11 +161,12 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
     if args_w:
         displacements = np.zeros((num_sel_mu, total_grid_n, num_atoms, 3))
 
-        #Calculate displacements of muon along 3 major axes
+        # Calculate displacements of muon along 3 major axes
         if method == 'wavefunction':
             # For each atom selected, displace that atom but not the others
             for i, mu_ind in enumerate(mu_sel):
-                displacements[i, :, mu_ind] = wf_disp_generator(R[i], maj_evecs[i], grid_n)
+                displacements[i, :, mu_ind] = wf_disp_generator(
+                    R[i], maj_evecs[i], grid_n)
 
         # Calculate displacements for all atoms according to thermal lines
         elif method == 'thermal':
@@ -173,7 +178,8 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
             norm_coords /= np.sqrt(masses[:, None]*cnst.u)
             # Calculate displacements at this quantum point and its inverse
             for point in range(grid_n):
-                point_displacements = tl_disp_generator(norm_coords, evecs[0][3:], num_atoms)
+                point_displacements = tl_disp_generator(
+                    norm_coords, evecs[0][3:], num_atoms)
                 displacements[0][point] = point_displacements
                 displacements[0][point + grid_n] = -point_displacements
 
@@ -190,14 +196,16 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
                 os.mkdir(dirname)
             for point in range(total_grid_n):
                 # Generate displaced cell
-                disp_cell = create_displaced_cell(cell, displacements[i][point])
+                disp_cell = create_displaced_cell(
+                    cell, displacements[i][point])
                 # Write displaced cell
-                outfile=os.path.join(dirname,'{0}_{1}.cell'.format(sname,point))
+                outfile = os.path.join(
+                    dirname, '{0}_{1}.cell'.format(sname, point))
                 ase_io.write(outfile, disp_cell)
                 # Copy param files
                 if pname:
                     shutil.copy(pname, os.path.join(dirname,
-                        '{0}_{1}.param'.format(sname, point)))
+                                                    '{0}_{1}.param'.format(sname, point)))
 
     # Read mode: Read in and average tensors
     else:
@@ -214,18 +222,18 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
                 test_path = os.path.join(dirname, "{0}_0.bands".format(sname))
                 num_bs_kpt, num_bs_evals = parse_castep_bands(test_path, True)
                 grid_tensors = np.zeros((total_grid_n, 1, num_bs_kpt,
-                                            num_bs_evals))
+                                         num_bs_evals))
 
             # Parse tensors from each grid point
             for point in range(total_grid_n):
                 if property == 'hyperfine':
                     tensor_file = os.path.join(dirname,
-                                    '{0}_{1}.magres'.format(sname, point))
+                                               '{0}_{1}.magres'.format(sname, point))
                     magres = parse_hyperfine_magres(tensor_file)
                     grid_tensors[point] = magres.get_array('hyperfine')
                 elif property == 'bandstructure':
                     tensor_file = os.path.join(dirname,
-                                    '{0}_{1}.bands'.format(sname, point))
+                                               '{0}_{1}.bands'.format(sname, point))
                     grid_tensors[point] = parse_castep_bands(tensor_file)
 
             # Compute weights for each grid point
@@ -234,7 +242,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
                     outfile = dirname + "_psi.dat"
                     weighting = calc_wavefunction(R[i], grid_n, True, outfile)
             elif method == 'thermal':
-                weighting = np.ones((total_grid_n)) #(uniform weighting)
+                weighting = np.ones((total_grid_n))  # (uniform weighting)
 
             # Compute average tensors
             tens_avg = weighted_tens_avg(grid_tensors, weighting)
@@ -247,7 +255,8 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
                 # Find ipso hydrogens
                 iH_indices = np.zeros(np.size(mu_indices), int)
                 for i in range(np.size(iH_indices)):
-                    iH_indices[i] = find_ipso_hydrogen(mu_indices[i], cell, mu_sym)
+                    iH_indices[i] = find_ipso_hydrogen(
+                        mu_indices[i], cell, mu_sym)
                 # Calculate and write out hfcc for muons and ipso hydrogens
                 muon_ipso_dict = {}
                 for index in mu_indices:
@@ -256,7 +265,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
                     muon_ipso_dict[index] = symbols[index]
                 outfile = dirname + "_report.dat"
                 hfine_report(total_grid_n, grid_tensors, tens_avg, weighting,
-                    outfile, muon_ipso_dict)
+                             outfile, muon_ipso_dict)
 
             if method == 'wavefunction' and weight_type == 'harmonic':
                 # Grab CASTEP final energies
@@ -264,11 +273,11 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
                 for j in range(np.size(E_table, 0)):
                     for k in range(np.size(E_table, 1)):
                         castf = os.path.join(dirname,
-                            "{0}_{1}.castep".format(sname, k+j*grid_n))
+                                             "{0}_{1}.castep".format(sname, k+j*grid_n))
                         E_table[j][k] = parse_final_energy(castf)
                 # Write harmonic potential report
                 outfile = dirname + "_V.dat"
                 harm_potential_report(R[i], grid_n, masses[mu_ind],
-                    maj_evals[i], E_table, outfile)
+                                      maj_evals[i], E_table, outfile)
 
     return
