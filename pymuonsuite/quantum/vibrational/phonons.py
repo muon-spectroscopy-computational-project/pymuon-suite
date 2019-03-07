@@ -106,7 +106,7 @@ def get_apr(evecs, masses):
 
 
 def get_major_emodes(evecs, masses, i, n=3, ortho=False):
-    """Find the phonon modes with highest Atomic Participation Ratio (APR) for
+    """Find the n phonon modes with highest Atomic Participation Ratio (APR) for
     the atom at index i. Return orthogonalized and normalized modes if 
     ortho == True.
 
