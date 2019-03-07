@@ -141,7 +141,6 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
     # Find 3 major modes for each atom selected and use them to calculate
     # displacement factors R for the wavefunction method
     if method == 'wavefunction':
-        masses = cell.get_masses()
         maj_evecs_index = np.zeros((num_sel_mu, 3))
         maj_evecs = np.zeros((num_sel_mu, 3, 3))
         maj_evals = np.zeros((num_sel_mu, 3))
@@ -240,7 +239,7 @@ def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
             if method == 'wavefunction':
                 if weight_type == 'harmonic':
                     outfile = dirname + "_psi.dat"
-                    weighting = calc_wavefunction(R[i], grid_n, True, outfile)
+                    weighting = calc_wavefunction(R[i], grid_n)
             elif method == 'thermal':
                 weighting = np.ones((total_grid_n))  # (uniform weighting)
 

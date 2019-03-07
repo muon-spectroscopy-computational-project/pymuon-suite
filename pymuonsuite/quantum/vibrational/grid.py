@@ -15,34 +15,28 @@ import scipy.constants as cnst
 from ase import Atoms
 from soprano.collection.generate import linspaceGen
 
-def calc_wavefunction(R, grid_n, write_table = True, filename = ''):
+
+def calc_wavefunction(sigmas, grid_n, sigmaN=3):
     """
     Calculate harmonic oscillator wavefunction
 
     | Args:
-    |   R(Numpy float array, shape:(axes)): Displacement amplitude along each
-    |       axis
+    |   sigmas(Numpy float array, shape:(axes)): Displacement amplitude along
+    |                                            each axis
     |   grid_n(int): Number of grid points along each axis
-    |   write_table: Write out table of probability densities in format:
-    |       Displacement | Prob. Density
-    |   filename (str): Filename of file to write to, required for write_table
-    |
+    |   sigmaN(int): Number of standard deviations to cover in range 
+    |                (default is 3)
     | Returns:
     |   prob_dens (Numpy float array, shape:(grid_n*3)): Probability density of
     |       harmonic oscillator at each displacement
     """
-    R_axes = np.array([np.linspace(-3*Ri, 3*Ri, grid_n)
+    R_axes = np.array([np.linspace(-sigmas*Ri, sigmas*Ri, grid_n)
                        for Ri in R])
 
     # Wavefunction
     psi_norm = (1.0/(np.prod(R)**2*np.pi**3))**0.25
     # And along the three axes
     psi = psi_norm*np.exp(-(R_axes/R[:, None])**2/2.0)
-    # Save the densities
-    if write_table:
-        psi_table = np.concatenate(
-            (R_axes, psi**2), axis=0)
-        np.savetxt(filename, psi_table.T)
     # And average
     r2psi2 = R_axes**2*np.abs(psi)**2
 
@@ -53,6 +47,7 @@ def calc_wavefunction(R, grid_n, write_table = True, filename = ''):
             prob_dens[j + i*grid_n] = point
 
     return prob_dens
+
 
 def create_displaced_cell(cell, displacements):
     """
@@ -74,6 +69,7 @@ def create_displaced_cell(cell, displacements):
     disp_cell.set_calculator(cell.calc)
 
     return disp_cell
+
 
 def displaced_cell_range(cell, a_i, grid_n, disp):
     """Return a generator of ASE Atoms objects with the displacement of the atom
@@ -101,6 +97,7 @@ def displaced_cell_range(cell, a_i, grid_n, disp):
         cell_L, cell_R, steps=grid_n, periodic=True)
     return lg
 
+
 def tl_disp_generator(norm_coords, evecs, num_atoms):
     """
     Calculate a set of displacements of atoms in a system by generating a set of
@@ -127,9 +124,11 @@ def tl_disp_generator(norm_coords, evecs, num_atoms):
 
     for atom in range(num_atoms):
         for mode in range(np.size(norm_coords, 1)):
-            displacements[atom] += norm_coords[atom][mode]*evecs[mode][atom].real*1e10
+            displacements[atom] += norm_coords[atom][mode] * \
+                evecs[mode][atom].real*1e10
 
     return displacements
+
 
 def weighted_tens_avg(tensors, weight):
     """
@@ -157,6 +156,7 @@ def weighted_tens_avg(tensors, weight):
     for i in range(num_atoms):
         tens_avg[i] = np.sum(tensors[:, i], axis=0)/np.sum(weight)
     return tens_avg
+
 
 def wf_disp_generator(disp_factor, maj_evecs, grid_n):
     """
