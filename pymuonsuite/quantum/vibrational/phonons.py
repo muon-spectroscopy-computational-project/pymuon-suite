@@ -84,39 +84,63 @@ def ase_phonon_calc(cell, calc=None, fname='ase_phonons', kpoints=[1, 1, 1],
     return evals, evecs, cell
 
 
-def get_major_emodes(evecs, i, ortho=False):
-    """Find the phonon modes of the atom at index i. Return orthogonalized and
-    normalized modes if ortho == True.
+def get_apr(evecs, masses):
+    """Compute Atomic Participation Ratios (APR) for all given phonon modes.
 
     | Args:
     |   evecs (Numpy float array, shape: (num_modes, num_ions, 3)):
     |                                   Eigenvectors of phonon modes of system
+    |   masses (Numpy float array, shape: (num_ions)):
+    |                                   Ionic masses
+    |
+    | Returns:
+    |   APR (Numpy float array, shape: (num_modes, num_ions)):
+    |                                   Matrix of Atomic Participation Ratios
+    """
+
+    evecs = np.array(evecs)
+    masses = np.array(masses)
+    Nk = evecs.shape[0]
+    ek2 = np.sum(evecs**2, axis=2)/masses[None, :]
+    return (ek2)/(Nk*np.sum(ek2**2, axis=1))[:, None]**0.5
+
+
+def get_major_emodes(evecs, masses, i, n=3, ortho=False):
+    """Find the phonon modes with highest Atomic Participation Ratio (APR) for
+    the atom at index i. Return orthogonalized and normalized modes if 
+    ortho == True.
+
+    | Args:
+    |   evecs (Numpy float array, shape: (num_modes, num_ions, 3)):
+    |                                   Eigenvectors of phonon modes of system
+    |   masses (Numpy float array, shape: (num_ions)):
+    |                                   Ionic masses
     |   i (int): Index of atom in position array
+    |   n (int): Number of eigenmodes to return (default is 3)
     |   ortho (bool): If true, orthogonalize and normalize major modes before
     |       returning.
     |
     | Returns:
-    |   major_evecs_i (int[3]): Indices of atom's phonon eigenvectors in evecs
-    |   major_evecs (float[3, 3]): Eigenvectors of atom's phonon modes
+    |   maj_evecs_i (int[3]): Indices of atom's phonon eigenvectors in evecs
+    |   maj_evecs (float[3, 3]): Eigenvectors of atom's phonon modes
     """
-    # First, find the eigenmodes whose amplitude is greater for ion i
-    evecs_amp = np.linalg.norm(evecs, axis=-1)
-    ipr = evecs_amp**4/np.sum(evecs_amp**2, axis=-1)[:, None]**2
-    evecs_order = np.argsort(ipr[:, i])
+    # First, find the atomic participation ratios for all atoms
+    apr = get_apr(evecs, masses)
+    evecs_order = np.argsort(apr[:, i])
 
     # How many?
-    major_evecs_i = evecs_order[-3:]
-    major_evecs = evecs[major_evecs_i, i]
+    maj_evecs_i = evecs_order[-n:]
+    maj_evecs = evecs[maj_evecs_i, i]
 
     if ortho == True:
         #Orthogonolize and normalize
-        major_evecs[0] = major_evecs[0]/np.linalg.norm(major_evecs[0])
-        major_evecs[1] = major_evecs[1] - \
-            np.dot(major_evecs[0], major_evecs[1])*major_evecs[0]
-        major_evecs[1] = major_evecs[1]/np.linalg.norm(major_evecs[1])
-        major_evecs[2] = major_evecs[2] - \
-            np.dot(major_evecs[0], major_evecs[2])*major_evecs[0] - \
-            np.dot(major_evecs[2], major_evecs[1])*major_evecs[1]
-        major_evecs[2] = major_evecs[2]/np.linalg.norm(major_evecs[2])
+        maj_evecs[0] = maj_evecs[0]/np.linalg.norm(maj_evecs[0])
+        maj_evecs[1] = (maj_evecs[1] -
+                        np.dot(maj_evecs[0], maj_evecs[1])*maj_evecs[0])
+        maj_evecs[1] = maj_evecs[1]/np.linalg.norm(maj_evecs[1])
+        maj_evecs[2] = (maj_evecs[2] -
+                        np.dot(maj_evecs[0], maj_evecs[2])*maj_evecs[0]
+                        - np.dot(maj_evecs[2], maj_evecs[1])*maj_evecs[1])
+        maj_evecs[2] = maj_evecs[2]/np.linalg.norm(maj_evecs[2])
 
-    return major_evecs_i, major_evecs.real
+    return maj_evecs_i, maj_evecs.real
