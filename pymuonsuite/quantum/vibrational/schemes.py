@@ -11,6 +11,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import pickle
 import numpy as np
 import scipy.constants as cnst
 from pymuonsuite.quantum.vibrational.phonons import get_major_emodes
@@ -85,6 +86,13 @@ class DisplacementScheme(object):
     @property
     def sigma_n(self):
         return self._sigma_n
+
+    def save(self, file):
+        pickle.dump(self, open(file, 'w'))
+
+    @staticmethod
+    def load(file):
+        return pickle.load(open(file))
 
     def recalc_displacements(self, n=20, sigma_n=3):
         raise NotImplementedError('DisplacementScheme has no implementation'
