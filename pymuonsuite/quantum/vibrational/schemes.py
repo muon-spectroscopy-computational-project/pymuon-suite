@@ -94,12 +94,18 @@ class DisplacementScheme(object):
     def load(file):
         return pickle.load(open(file))
 
-    def recalc_displacements(self, n=20, sigma_n=3):
+    def recalc_all(self, displ_args={}, weights_args={}):
+        self.recalc_displacements(**displ_args)
+        self.recalc_weights(**weights_args)
+
+        return self.displacements, self.weights
+
+    def recalc_displacements(self):
         raise NotImplementedError('DisplacementScheme has no implementation'
                                   ' of this method; use one of the derived '
                                   'classes.')
 
-    def recalc_weights(self, T=0):
+    def recalc_weights(self):
         raise NotImplementedError('DisplacementScheme has no implementation'
                                   ' of this method; use one of the derived '
                                   'classes.')
