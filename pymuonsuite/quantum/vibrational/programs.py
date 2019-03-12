@@ -41,7 +41,6 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 
 and try again.""")
 
-
 def vib_avg(cell_f, method, mu_sym, grid_n, property, selection=[0],
             weight_type='harmonic', pname=None, args_w=False,
             ase_phonons=False, dftb_phonons=True):

@@ -50,6 +50,7 @@ def validate_int3(value):
     v = np.array(value)
     return v.shape == (3,) and v.dtype == int
 
+
 def validate_int_array(value):
     v = np.array(value)
     return v.dtype == int
@@ -151,29 +152,33 @@ MuAirssSchema = Schema({
 
 # Parameter file schema and defaults
 MuonHarmonicSchema = Schema({
-    #File containing structural info about molecule/crystal
+    # File containing structural info about molecule/crystal
     'cell_file': validate_str,
-    #Method used to calculate thermal average, currently accepted values:
-    #'wavefunction', 'thermal'
-    'method': validate_str,
-    #Symbol used to represent muon
-    'muon_symbol': validate_str,
-    #Number of grid points to use on each phonon mode or pairs of thermal lines
-    'grid_n': int,
-    #Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
-    #coupling tensors), 'bandstructure'
-    'property': validate_str,
-    #Array of indices of atoms to be vibrated, counting from 0. E.g. for first 3
-    #atoms in cell file enter [0, 1, 2]. Enter [-1] to select all atoms.
-    Optional('selection', default=[0]): validate_int_array,
-    #Type of weighting to be used, currently accepted values: "harmonic" (harmonic
-    #oscillator wavefunction)
-    Optional('weight', default='harmonic'): validate_str,
-    #Path of parameter file which can be copied into folders with displaced cell
-    #files for convenience
+    # Method used to calculate thermal average
+    Optional('method', default='independent'): validate_all_of('independent', 'thermal'),
+    # Index of muon in cell
+    Optional('muon_index', default=-1): int,
+    # If using Castep custom species, custom species of muon (supersedes index)
+    Optional('muon_symbol', default='H:mu'): validate_str,
+    # Number of grid points to use on each phonon mode or pairs of thermal lines
+    Optional('grid_n', default=20): int,
+    # Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
+    # coupling tensors), 'bandstructure'
+    Optional('property', default='hyperfine'): validate_all_of('hyperfine', 'bandstructure'),
+    # Type of weighting to be used, currently accepted values: "harmonic" (harmonic
+    # oscillator wavefunction)
+    Optional('weight', default='harmonic'): validate_all_of('harmonic'),
+    # Path of parameter file which can be copied into folders with displaced cell
+    # files for convenience
     Optional('param_file', default=None): validate_str,
-    #If True, use ASE and DFTB+ to calculate phonon modes.
-    Optional('ase_phonons', default=False): bool,
+    # Source of phonon modes, currently accepted values: "castep", "asedftb+"
+    Optional('phonon_source', default='castep'): validate_all_of('castep', 'asedftbp'),
+    # If using castep, where to find the file
+    Optional('castep_phononf', default=None): validate_str,
+    # If using DFTB+ and ASE, which parametrization to use
+    Optional('asedftbp_pars', default='3ob-3-1'): validate_all_of('3ob-3-1', 'pbc-0-3'),
+    # If using DFTB+ and ASE, which kpoint grid to use
+    Optional('asedftbp_kpts', default=[1, 1, 1]): validate_int_array
 })
 
 # Parameter file schema and defaults

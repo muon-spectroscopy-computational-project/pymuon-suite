@@ -9,9 +9,32 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import argparse as ap
+try:
+    from casteppy.data.phonon import PhononData
+except ImportError:
+    raise ImportError("""
+Can't use castep phonon interface due to casteppy not being installed.
+Please download and install casteppy from Bitbucket:
+
+HTTPS:  https://bitbucket.org/casteppy/casteppy.git
+SSH:    git@bitbucket.org:casteppy/casteppy.git
+
+and try again.""")
 
 from pymuonsuite.quantum.vibrational.programs import vib_avg
 from pymuonsuite.schemas import load_input_file, MuonHarmonicSchema
+
+
+def read_castep_phonons(phonon_file):
+    # Parse CASTEP phonon data into casteppy object
+    pd = PhononData(sname)
+    # Convert frequencies back to cm-1
+    pd.convert_e_units('1/cm')
+    # Get phonon frequencies+modes
+    evals = np.array(pd.freqs)
+    evecs = np.array(pd.eigenvecs)
+
+    return evals, evecs
 
 
 def nq_entry():
@@ -30,27 +53,12 @@ def nq_entry():
     # Load parameters
     params = load_input_file(args.parameter_file, MuonHarmonicSchema)
 
-    # Check that input is valid
-    if params['method'] != 'wavefunction' and \
-       params['method'] != 'thermal':
-        raise ValueError("""Invalid value entered for method ('{0}'). Remember
-        that this is case sensitive.""".format(params['method']))
-
-    if params['property'] != 'hyperfine' and \
-       params['property'] != 'bandstructure':
-        raise ValueError("""Invalid value entered for weight ('{0}'). Remember
-        that this is case sensitive.""".format(params['property']))
-
-    if params['weight'] != 'harmonic':
-        raise ValueError("""Invalid value entered for weight ('{0}'). Remember
-        that this is case sensitive.""".format(params['weight']))
-
     # Call functions
     if args.calculation_type == "vib_avg":
         vib_avg(params['cell_file'], params['method'], params['muon_symbol'],
-                    params['grid_n'], params['property'], params['selection'],
-                    params['weight'], params['param_file'],
-                    args.w, params['ase_phonons'])
+                params['grid_n'], params['property'], params['selection'],
+                params['weight'], params['param_file'],
+                args.w, params['ase_phonons'])
 
     else:
         raise RuntimeError("""Invalid calculation type entered, please use

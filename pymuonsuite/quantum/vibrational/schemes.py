@@ -14,6 +14,7 @@ from __future__ import unicode_literals
 import pickle
 import numpy as np
 import scipy.constants as cnst
+from soprano.collection import AtomsCollection
 from pymuonsuite.quantum.vibrational.phonons import get_major_emodes
 
 # Cm^-1 to rad/s
