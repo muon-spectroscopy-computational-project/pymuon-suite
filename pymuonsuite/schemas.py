@@ -159,15 +159,18 @@ MuonHarmonicSchema = Schema({
     # Index of muon in cell
     Optional('muon_index', default=-1): int,
     # If using Castep custom species, custom species of muon (supersedes index)
-    Optional('muon_symbol', default='H:mu'): validate_str,
+    Optional('muon_symbol', default=None): validate_str,
     # Number of grid points to use on each phonon mode or pairs of thermal lines
     Optional('grid_n', default=20): int,
     # Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
     # coupling tensors), 'bandstructure'
     Optional('property', default='hyperfine'): validate_all_of('hyperfine', 'bandstructure'),
+    #
     # Type of weighting to be used, currently accepted values: "harmonic" (harmonic
     # oscillator wavefunction)
-    Optional('weight', default='harmonic'): validate_all_of('harmonic'),
+    # Optional('weight', default='harmonic'): validate_all_of('harmonic'),
+    # (commented out as not used yet)
+    #
     # Path of parameter file which can be copied into folders with displaced cell
     # files for convenience
     Optional('param_file', default=None): validate_str,
