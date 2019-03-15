@@ -157,11 +157,14 @@ MuonHarmonicSchema = Schema({
     # Method used to calculate thermal average
     Optional('method', default='independent'): validate_all_of('independent', 'thermal'),
     # Index of muon in cell
-    Optional('muon_index', default=-1): int,
-    # If using Castep custom species, custom species of muon (supersedes index)
-    Optional('muon_symbol', default=None): validate_str,
+    Optional('mu_index', default=-1): int,
+    # If using Castep custom species, custom species of muon (supersedes index 
+    # if present in cell)
+    Optional('mu_symbol', default='H:mu'): validate_str,
     # Number of grid points to use on each phonon mode or pairs of thermal lines
     Optional('grid_n', default=20): int,
+    # Number of sigmas to sample in the harmonic approximation
+    Optional('sigma_n', default=3): float,
     # Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
     # coupling tensors), 'bandstructure'
     Optional('property', default='hyperfine'): validate_all_of('hyperfine', 'bandstructure'),
@@ -176,8 +179,6 @@ MuonHarmonicSchema = Schema({
     Optional('param_file', default=None): validate_str,
     # Source of phonon modes, currently accepted values: "castep", "asedftb+"
     Optional('phonon_source', default='castep'): validate_all_of('castep', 'asedftbp'),
-    # If using castep, where to find the file
-    Optional('castep_phononf', default=None): validate_str,
     # If using DFTB+ and ASE, which parametrization to use
     Optional('asedftbp_pars', default='3ob-3-1'): validate_all_of('3ob-3-1', 'pbc-0-3'),
     # If using DFTB+ and ASE, which kpoint grid to use

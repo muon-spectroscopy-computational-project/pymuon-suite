@@ -24,7 +24,7 @@ from ase.phonons import Phonons
 
 
 def ase_phonon_calc(cell, calc=None, fname=None, kpoints=[1, 1, 1],
-                    ftol=0.01):
+                    ftol=0.01, force_clean=False):
     """Calculate phonon modes of a molecule using ASE and a given calculator.
     The system will be geometry optimized before calculating the modes. A
     report of the phonon modes will be written to a file and arrays of the
@@ -40,6 +40,8 @@ def ase_phonon_calc(cell, calc=None, fname=None, kpoints=[1, 1, 1],
     |                           [1,1,1])
     |   ftol (float):           Tolerance for geometry optimisation (default
     |                           is 0.01 eV/Ang)
+    |   force_clean (bool):     If True, force a deletion of all phonon files 
+    |                           and recalculate them
     | Returns:
     |   evals (float[k-points][modes]):          Eigenvalues of phonon modes
     |   evecs (float[k-points][modes][ions][3]): Eigenvectors of phonon modes
@@ -56,6 +58,8 @@ def ase_phonon_calc(cell, calc=None, fname=None, kpoints=[1, 1, 1],
 
     # Calculate phonon modes
     ph = Phonons(cell, calc)
+    if force_clean:
+        ph.clean()
     ph.run()
     ph.read(acoustic=True)
     path = monkhorst_pack(kpoints)

@@ -31,7 +31,7 @@ def save_muonconf_castep(a, folder, params):
     if isinstance(a.calc, Castep):
         ccalc = a.calc
     else:
-        ccalc = Castep(castep_command=params['castep_command'])
+        ccalc = Castep()
 
     ccalc.cell.kpoint_mp_grid.value = list_to_string(params['k_points_grid'])
     ccalc.cell.species_mass = mass_block.format(params['mu_symbol']
