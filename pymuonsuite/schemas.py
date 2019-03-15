@@ -105,7 +105,7 @@ MuAirssSchema = Schema({
     Optional('dftb_command', default='dftb+'):
     validate_str,
     # File path to the CASTEP parameter file.
-    Optional('castep_param', default=''):
+    Optional('castep_param', default=None):
     validate_str,
     # The parameter set to use for DFTB+.
     Optional('dftb_set', default='3ob-3-1'):
@@ -158,7 +158,7 @@ MuonHarmonicSchema = Schema({
     Optional('method', default='independent'): validate_all_of('independent', 'thermal'),
     # Index of muon in cell
     Optional('mu_index', default=-1): int,
-    # If using Castep custom species, custom species of muon (supersedes index 
+    # If using Castep custom species, custom species of muon (supersedes index
     # if present in cell)
     Optional('mu_symbol', default='H:mu'): validate_str,
     # Number of grid points to use on each phonon mode or pairs of thermal lines
@@ -167,22 +167,19 @@ MuonHarmonicSchema = Schema({
     Optional('sigma_n', default=3): float,
     # Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
     # coupling tensors), 'bandstructure'
-    Optional('property', default='hyperfine'): validate_all_of('hyperfine', 'bandstructure'),
-    #
-    # Type of weighting to be used, currently accepted values: "harmonic" (harmonic
-    # oscillator wavefunction)
-    # Optional('weight', default='harmonic'): validate_all_of('harmonic'),
-    # (commented out as not used yet)
-    #
-    # Path of parameter file which can be copied into folders with displaced cell
-    # files for convenience
-    Optional('param_file', default=None): validate_str,
+    Optional('avgprop', default='hyperfine'): validate_all_of('hyperfine', 'bandstructure'),
     # Source of phonon modes, currently accepted values: "castep", "asedftb+"
     Optional('phonon_source', default='castep'): validate_all_of('castep', 'asedftbp'),
     # If using DFTB+ and ASE, which parametrization to use
     Optional('asedftbp_pars', default='3ob-3-1'): validate_all_of('3ob-3-1', 'pbc-0-3'),
     # If using DFTB+ and ASE, which kpoint grid to use
-    Optional('asedftbp_kpts', default=[1, 1, 1]): validate_int_array
+    Optional('asedftbp_kpts', default=[1, 1, 1]): validate_int_array,
+    # Output parameters
+    # Path of parameter file which can be copied into folders with displaced cell
+    # files for convenience
+    Optional('castep_out_param', default=None): validate_str,
+    # k-point grid for output files, default is [1,1,1]
+    Optional('castep_out_kpts', default=[1, 1, 1]): validate_int3,
 })
 
 # Parameter file schema and defaults

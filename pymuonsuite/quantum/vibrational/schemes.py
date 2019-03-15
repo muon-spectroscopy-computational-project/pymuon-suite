@@ -21,6 +21,10 @@ from pymuonsuite.quantum.vibrational.phonons import get_major_emodes
 _wnum2om = 2*np.pi*1e2*cnst.c
 
 
+class PhononDisplacementError(Exception):
+    pass
+
+
 class DisplacementScheme(object):
 
     """DisplacementScheme
@@ -32,15 +36,25 @@ class DisplacementScheme(object):
     will use it as a template to implement the actual schemes.
     """
 
-    def __init__(self, evals, evecs, masses):
+    def __init__(self, evals, evecs, masses, cut_imaginary=True):
 
         evals = np.array(evals)
         evecs = np.array(evecs)
         masses = np.array(masses)
 
+        if (evals < 0).any():
+            if cut_imaginary:
+                print('Warning: removing imaginary frequency eigenmodes')
+                evals_i = np.where(evals > 0)[0]
+                evals = evals[evals_i]
+                evecs = evecs[evals_i]
+            else:
+                raise PhononDisplacementError('Imaginary frequency eigenmodes')
+
         self._evals = evals
         self._evecs = evecs
         self._masses = masses*cnst.u                        # amu to kg
+
         self._sigmas = (cnst.hbar/(_wnum2om*evals))**0.5
 
         self._n = 0               # Grid points
@@ -135,7 +149,7 @@ class IndependentDisplacements(DisplacementScheme):
 
         # Find the major eigenmodes for the atom of interest
         self._i = i
-        self._majev = get_major_emodes(evecs, masses, i, ortho=True)
+        self._majev = get_major_emodes(self._evecs, masses, i, ortho=True)
 
         self._T = 0
 

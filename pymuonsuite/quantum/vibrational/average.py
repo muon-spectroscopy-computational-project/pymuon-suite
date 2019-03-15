@@ -79,8 +79,8 @@ def compute_dftbp_phonons(atoms, param_set, kpts):
 
 def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
                                    mu_symbol='H:mu', grid_n=20, sigma_n=3,
-                                   property='hyperfine', param_file=None,
-                                   phonon_source='castep', **kwargs):
+                                   avgprop='hyperfine', phonon_source='castep',
+                                   **kwargs):
     """
     Write input files to compute a vibrational average for a quantity on a muon 
     in a given system.
@@ -98,8 +98,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     |                       differently to different schemes.
     |   sigma_n (int):      Number of sigmas of the harmonic wavefunction used
     |                       for sampling.
-    |   property (str):     Property to calculate and average. Default is 'hyperfine'.
-    |   param_file (str):   If present, copy this CASTEP .param file to all folders.
+    |   avgprop (str):      Property to calculate and average. Default is 'hyperfine'.
     |   phonon_source (str):Source of the phonon data. Can be 'castep' or 'asedftbp'.
     |                       Default is 'castep'.
     |   **kwargs:           Other arguments (such as specific arguments for the given 
@@ -130,7 +129,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         species = list(species)
         species[mu_index] = mu_symbol
         species = np.array(species)
-    
+
     cell.set_array('castep_custom_species', species)
 
     # Fetch masses
@@ -163,13 +162,11 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         displaced_cells.append(dcell)
 
     displaced_coll = AtomsCollection(displaced_cells)
-    displaced_coll.info['displacement_scheme'] = displsch 
-    displaced_coll.save_tree(sname + '_displaced', save_muonconf_castep, 
-    opt_args={'params': {}})
-
-    # print(cell.calc.cell)
-    # print(parse_castep_masses(cell))
-
-    # print(sname)
-    # print(species)
-    # print(cell.get_masses())
+    displaced_coll.info['displacement_scheme'] = displsch
+    displaced_coll.save_tree(sname + '_displaced', save_muonconf_castep,
+                             opt_args={'params': {
+                                 'castep_param': kwargs['castep_out_param'],
+                                 'mu_symbol': mu_symbol,
+                                 'k_points_grid': kwargs['castep_out_kpts']
+                             },
+                                 'task': avgprop})

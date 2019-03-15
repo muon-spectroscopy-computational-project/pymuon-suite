@@ -23,7 +23,7 @@ class CastepError(Exception):
     pass
 
 
-def save_muonconf_castep(a, folder, params):
+def save_muonconf_castep(a, folder, params, task='geometry'):
     # Muon mass and gyromagnetic ratio
     mass_block = 'AMU\n{0}       0.1138'
     gamma_block = 'radsectesla\n{0}        851586494.1'
@@ -46,17 +46,20 @@ def save_muonconf_castep(a, folder, params):
     io.write(os.path.join(folder, '{0}.cell'.format(name)), a)
     ccalc.atoms = a
 
-    if params['castep_param'] is not '':
+    if params['castep_param'] is not None:
         castep_params = yaml.load(open(params['castep_param'], 'r'))
     else:
         castep_params = {}
 
-    castep_params['task'] = "GeometryOptimization"
-
     # Parameters from .yaml will overwrite parameters from .param
-    castep_params['geom_max_iter'] = params['geom_steps']
-    castep_params['geom_force_tol'] = params['geom_force_tol']
-    castep_params['max_scf_cycles'] = params['max_scc_steps']
+    if task == 'geometry':
+        castep_params['task'] = "GeometryOptimization"
+        castep_params['geom_max_iter'] = params['geom_steps']
+        castep_params['geom_force_tol'] = params['geom_force_tol']
+        castep_params['max_scf_cycles'] = params['max_scc_steps']
+    elif task == 'hyperfine':
+        castep_params['task'] = "Magres"
+        castep_params['magres_task'] = "Hyperfine"
 
     parameter_file = os.path.join(folder, '{0}.param'.format(name))
     yaml.safe_dump(castep_params, open(parameter_file, 'w'),
