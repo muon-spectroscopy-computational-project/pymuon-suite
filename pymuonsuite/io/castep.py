@@ -19,6 +19,10 @@ from pymuonsuite.utils import list_to_string
 from pymuonsuite.utils import find_ipso_hydrogen
 
 
+class CastepError(Exception):
+    pass
+
+
 def save_muonconf_castep(a, folder, params):
     # Muon mass and gyromagnetic ratio
     mass_block = 'AMU\n{0}       0.1138'
@@ -58,6 +62,7 @@ def save_muonconf_castep(a, folder, params):
     yaml.safe_dump(castep_params, open(parameter_file, 'w'),
                    default_flow_style=False)
 
+
 def parse_castep_bands(infile, header=False):
     """Parse eigenvalues from a CASTEP .bands file. This only works with spin
     components = 1.
@@ -81,12 +86,13 @@ def parse_castep_bands(infile, header=False):
         raise ValueError("""Either incorrect file format detected or greater
                             than 1 spin component used (parse_castep_bands
                             only works with 1 spin component.)""")
-    #Parse eigenvalues
+    # Parse eigenvalues
     bands = np.zeros((n_kpts, n_evals))
     for kpt in range(n_kpts):
         for eval in range(n_evals):
             bands[kpt][eval] = float(lines[11+eval+kpt*(n_evals+2)].strip())
     return bands
+
 
 def parse_castep_masses(cell):
     """Parse CASTEP custom species masses, returning an array of all atom masses
@@ -98,25 +104,45 @@ def parse_castep_masses(cell):
     |   masses(Numpy float array, shape(no. of atoms)): Correct masses of all
     |       atoms in cell file.
     """
-    species_masses = cell.calc.cell.species_mass.value.split()
+    mass_block = cell.calc.cell.species_mass.value
+    if mass_block is None:
+        return cell.get_masses()
+    mass_tokens = [l.split() for l in mass_block.split('\n')]
     custom_masses = {}
-    #If no units given in species mass block
-    if len(species_masses)%2 == 0:
-        for i in range(0, len(species_masses), 2):
-            custom_masses[species_masses[i]] = float(species_masses[i+1])
-    #If units given in species mass block
-    else:
-        for i in range(1, len(species_masses), 2):
-            custom_masses[species_masses[i]] = float(species_masses[i+1])
+
+    units = {
+        'amu': 1,
+        'm_e': cnst.m_e/cnst.u,
+        'kg': 1.0/cnst.u,
+        'g': 1e-3/cnst.u
+    }
+
+    # Is the first line a unit?
+    u = 1
+    if len(mass_tokens) > 0 and len(mass_tokens[0]) == 1:
+        try:
+            u = units[mass_tokens[0][0]]
+        except KeyError:
+            raise CastepError('Invalid mass unit in species_mass block')
+
+        mass_tokens.pop(0)
+
+    for tk in mass_tokens:
+        try:
+            custom_masses[tk[0]] = float(tk[1])*u
+        except (ValueError, IndexError):
+            raise CastepError('Invalid line in species_mass block')
 
     masses = cell.get_masses()
-    symbols = cell.get_array("castep_custom_species")
-    for i, symbol1 in enumerate(symbols):
-        for symbol2 in custom_masses:
-            if symbol1 == symbol2:
-                masses[i] = custom_masses[symbol2]
+    elems = cell.get_chemical_symbols()
+    elems = cell.arrays.get('castep_custom_species', elems)
+
+    masses = [custom_masses.get(elems[i], m) for i, m in enumerate(masses)]
+
+    cell.set_masses(masses)
 
     return masses
+
 
 def parse_castep_ppots(cfile):
 
@@ -159,6 +185,7 @@ def parse_castep_ppots(cfile):
         ppot_blocks[el] = (q, rcmin)
 
     return ppot_blocks
+
 
 def parse_final_energy(infile):
     """
