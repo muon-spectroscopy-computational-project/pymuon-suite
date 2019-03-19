@@ -24,21 +24,27 @@ class CastepError(Exception):
     pass
 
 
-def castep_write_input(a, folder, name=None):
+def castep_write_input(a, folder, calc=None, name=None):
     """Writes input files for an Atoms object with a Castep
-    calculator attached.
+    calculator.
 
     | Args:
-    |   a (ase.Atoms):  Atoms object to write. Must have a Castep
-    |                   calculator attached to carry cell/param
-    |                   keywords.
-    |   folder (str):   Path to save the input files to.
-    |   name (str):     Seedname to save the files with. If not
-    |                   given, use the name of the folder.
+    |   a (ase.Atoms):          Atoms object to write. Can have a Castep
+    |                           calculator attached to carry cell/param
+    |                           keywords.
+    |   folder (str):           Path to save the input files to.
+    |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+    |                           present, the pre-existent one will
+    |                           be ignored.
+    |   name (str):             Seedname to save the files with. If not
+    |                           given, use the name of the folder.
     """
 
     if name is None:
         name = os.path.split(folder)[-1]  # Same as folder name
+
+    if calc is not None:
+        a.set_calculator(calc)
 
     if not isinstance(a.calc, Castep):
         a = a.copy()

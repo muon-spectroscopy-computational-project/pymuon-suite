@@ -14,22 +14,27 @@ from __future__ import unicode_literals
 import os
 import glob
 import shutil
+from copy import deepcopy
 
 import numpy as np
 import argparse as ap
+import scipy.constants as cnst
 from spglib import find_primitive
 
-from pymuonsuite.io.castep import save_muonconf_castep
-from pymuonsuite.io.dftb import save_muonconf_dftb
-from pymuonsuite.utils import make_3x3, safe_create_folder
-from pymuonsuite.data.dftb_pars.dftb_pars import get_license
-from pymuonsuite.schemas import load_input_file, MuAirssSchema
-
 from ase import Atoms, io
+from ase.io.castep import read_param
 from ase.build import make_supercell
+from ase.calculators.castep import Castep
 from soprano.utils import safe_input
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
+
+from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
+from pymuonsuite.data.dftb_pars.dftb_pars import get_license
+from pymuonsuite.schemas import load_input_file, MuAirssSchema
+from pymuonsuite.io.castep import (save_muonconf_castep, castep_write_input,
+                                   parse_castep_mass_block, parse_castep_gamma_block)
+from pymuonsuite.io.dftb import save_muonconf_dftb
 
 
 def find_primitive_structure(struct):
@@ -86,45 +91,10 @@ def generate_muairss_collection(struct, params):
     return AtomsCollection(collection)
 
 
-def save_muairss_collection(struct, params, batch_path=''):
-    """Generate input files for a single structure and configuration file"""
-
-    dc = generate_muairss_collection(struct, params)
-    # Just to keep track, add the parameters used to the collection
-    dc.info['muairss_params'] = dict(params)
-
-    # Output folder
-    out_path = os.path.join(batch_path, params['out_folder'])
-
-    if not safe_create_folder(out_path):
-        raise RuntimeError('Could not create folder {0}')
-
-    # Now save in the appropriate format
-    save_formats = {
-        'castep': save_muonconf_castep,
-        'dftb+': save_muonconf_dftb
-    }
-
-    # Which calculators?
-    calcs = [s.strip().lower() for s in params['calculator'].split(',')]
-    if 'all' in calcs:
-        calcs = save_formats.keys()
-
-    # Save LICENSE file for DFTB+ parameters
-    if 'dftb+' in calcs:
-        with open(os.path.join(out_path, 'dftb.LICENSE'), 'w') as f:
-            f.write(get_license())
-
-    for cname in calcs:
-        calc_path = os.path.join(out_path, cname)
-        dc.save_tree(calc_path, save_formats[cname], name_root=params['name'],
-                     opt_args={'params': params}, safety_check=2)
-
-
 def safe_create_folder(folder_name):
     while os.path.isdir(folder_name):
         ans = safe_input(('Folder {} exists, overwrite (y/N)? '
-                         ).format(folder_name))
+                          ).format(folder_name))
         if ans == 'y':
             shutil.rmtree(folder_name)
         else:
@@ -140,6 +110,104 @@ def parse_structure_name(file_name):
     name = os.path.basename(file_name)
     base = os.path.splitext(name)[0]
     return base
+
+
+def create_muairss_castep_calculator(params={}, calc=None):
+    """Create a calculator containing all the necessary parameters
+    for a geometry optimization."""
+
+    if calc is None:
+        calc = Castep()
+    else:
+        calc = deepcopy(calc)
+
+    musym = params.get('mu_symbol', 'H:mu')
+
+    # Start by ensuring that the muon mass and gyromagnetic ratios are included
+    mass_block = calc.cell.species_mass.value
+    if mass_block is None:
+        masses = {}
+    else:
+        masses = parse_castep_mass_block(mass_block)
+    # Assign the muon mass
+    masses[musym] = cnst.physical_constants['muon mass'][0]/cnst.u
+
+    mass_block = 'AMU\n'
+    for k, m in masses.items():
+        mass_block += '{0} {1}\n'.format(k, m)
+    calc.cell.species_mass = mass_block
+
+    gamma_block = calc.cell.species_gamma.value
+    if gamma_block is None:
+        gammas = {}
+    else:
+        gammas = parse_castep_gamma_block(gamma_block)
+    gammas[musym] = 851586494.1
+
+    gamma_block = 'RADSECTESLA\n'
+    for k, g in gammas.items():
+        gamma_block += '{0} {1}\n'.format(k, g)
+    calc.cell.species_gamma = gamma_block
+
+    # Now assign the k-points
+    calc.cell.kpoint_mp_grid = list_to_string(
+        params.get('k_points_grid', [1, 1, 1]))
+    calc.cell.fix_all_cell = True   # Necessary for older CASTEP versions
+
+    # Read the parameters
+    pfile = params.get('castep_param', None)
+    if pfile is not None:
+        calc.param = read_param(params['castep_param'])
+
+    calc.param.task = 'GeometryOptimization'
+    calc.param.geom_max_iter = params.get('geom_steps', 30)
+    calc.param.geom_force_tol = params.get('geom_force_tol', 0.05)
+    calc.param.max_scf_cycles = params.get('max_scc_steps', 30)
+
+    return calc
+
+
+def save_muairss_collection(struct, params, batch_path=''):
+    """Generate input files for a single structure and configuration file"""
+
+    dc = generate_muairss_collection(struct, params)
+    # Just to keep track, add the parameters used to the collection
+    dc.info['muairss_params'] = dict(params)
+
+    # Output folder
+    out_path = os.path.join(batch_path, params['out_folder'])
+
+    if not safe_create_folder(out_path):
+        raise RuntimeError('Could not create folder {0}')
+
+    # Now save in the appropriate format
+    save_formats = {
+        'castep': castep_write_input,
+        'dftb+': save_muonconf_dftb
+    }
+
+    # Which calculators?
+    calcs = [s.strip().lower() for s in params['calculator'].split(',')]
+    if 'all' in calcs:
+        calcs = save_formats.keys()
+
+    # Make the actual calculators
+    make_calcs = {
+        'castep': create_muairss_castep_calculator
+    }
+
+    calcs = {c: make_calcs[c](params=params, calc=struct.calc)
+             for c in calcs}
+
+    # Save LICENSE file for DFTB+ parameters
+    if 'dftb+' in calcs:
+        with open(os.path.join(out_path, 'dftb.LICENSE'), 'w') as f:
+            f.write(get_license())
+
+    for cname, calc in calcs.items():
+        calc_path = os.path.join(out_path, cname)
+        dc.save_tree(calc_path, save_formats[cname], name_root=params['name'],
+                     opt_args={'calc': calc}, safety_check=2)
 
 
 def save_muairss_batch(args, global_params):
