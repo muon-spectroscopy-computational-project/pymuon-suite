@@ -12,7 +12,11 @@ from __future__ import unicode_literals
 
 import os
 import numpy as np
+from copy import deepcopy
+
 from ase import io
+from ase.io.castep import read_param
+from ase.calculators.castep import Castep
 from ase.calculators.dftb import Dftb
 from soprano.utils import seedname
 from soprano.collection import AtomsCollection
@@ -29,7 +33,7 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 and try again.""")
 
 # Internal imports
-from pymuonsuite.io.castep import parse_castep_masses, save_muonconf_castep
+from pymuonsuite.io.castep import parse_castep_masses, castep_write_input, add_to_castep_block
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,)
 
@@ -75,6 +79,31 @@ def compute_dftbp_phonons(atoms, param_set, kpts):
     evals, evecs, atoms = ase_phonon_calc(atoms, force_clean=True)
 
     return evals[0], evecs[0], atoms
+
+
+def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None, param_file=None,
+                                   kpts=[1, 1, 1]):
+    """Create a calculator containing all the necessary parameters
+    for a hyperfine calculation."""
+
+    if not isinstance(calc, Castep):
+        calc = Castep()
+    else:
+        calc = deepcopy(calc)
+
+    gamma_block = calc.cell.species_gamma.value
+    calc.cell.species_gamma = add_to_castep_block(gamma_block, mu_symbol,
+                                                  851586494.1, 'gamma')
+
+    calc.cell.kpoint_mp_grid = kpts
+
+    if param_file is not None:
+        calc.param = read_param(param_file)
+
+    calc.param.task = 'Magres'
+    calc.param.magres_task = 'Hyperfine'
+
+    return calc
 
 
 def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
@@ -161,12 +190,14 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         dcell.info['name'] = sname + '_displaced_{0}'.format(i)
         displaced_cells.append(dcell)
 
+    # Get a calculator
+    if avgprop == 'hyperfine':
+        calc = create_hfine_castep_calculator(mu_symbol=mu_symbol,
+                                              calc=cell.calc,
+                                              param_file=kwargs['castep_out_param'],
+                                              kpts=kwargs['castep_out_kpts'])
+
     displaced_coll = AtomsCollection(displaced_cells)
     displaced_coll.info['displacement_scheme'] = displsch
-    displaced_coll.save_tree(sname + '_displaced', save_muonconf_castep,
-                             opt_args={'params': {
-                                 'castep_param': kwargs['castep_out_param'],
-                                 'mu_symbol': mu_symbol,
-                                 'k_points_grid': kwargs['castep_out_kpts']
-                             },
-                                 'task': avgprop})
+    displaced_coll.save_tree(sname + '_displaced', castep_write_input,
+                             opt_args={'calc': calc})
