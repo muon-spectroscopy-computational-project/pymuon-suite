@@ -11,6 +11,7 @@ import numpy as np
 import scipy.constants as cnst
 from ase import Atoms
 from ase import io
+from ase.io.castep import write_param
 from ase.calculators.castep import Castep
 from soprano.selection import AtomSelection
 
@@ -23,7 +24,33 @@ class CastepError(Exception):
     pass
 
 
-def save_muonconf_castep(a, folder, params, task='geometry'):
+def castep_write_input(a, folder, name=None):
+    """Writes input files for an Atoms object with a Castep 
+    calculator attached.
+
+    | Args:
+    |   a (ase.Atoms):  Atoms object to write. Must have a Castep
+    |                   calculator attached to carry cell/param
+    |                   keywords.
+    |   folder (str):   Path to save the input files to.
+    |   name (str):     Seedname to save the files with. If not 
+    |                   given, use the name of the folder.
+    """
+
+    if name is None:
+        name = os.path.split(folder)[-1]  # Same as folder name
+
+    if not isinstance(a.calc, Castep):
+        a = a.copy()
+        calc = Castep(atoms=a)
+        a.set_calculator(calc)
+
+    io.write(os.path.join(folder, name + '.cell'), a)
+    write_param(os.path.join(folder, name + '.param'),
+                a.calc.param, force_write=True)
+
+
+def save_muonconf_castep(a, folder, params):
     # Muon mass and gyromagnetic ratio
     mass_block = 'AMU\n{0}       0.1138'
     gamma_block = 'radsectesla\n{0}        851586494.1'
@@ -52,14 +79,10 @@ def save_muonconf_castep(a, folder, params, task='geometry'):
         castep_params = {}
 
     # Parameters from .yaml will overwrite parameters from .param
-    if task == 'geometry':
-        castep_params['task'] = "GeometryOptimization"
-        castep_params['geom_max_iter'] = params['geom_steps']
-        castep_params['geom_force_tol'] = params['geom_force_tol']
-        castep_params['max_scf_cycles'] = params['max_scc_steps']
-    elif task == 'hyperfine':
-        castep_params['task'] = "Magres"
-        castep_params['magres_task'] = "Hyperfine"
+    castep_params['task'] = "GeometryOptimization"
+    castep_params['geom_max_iter'] = params['geom_steps']
+    castep_params['geom_force_tol'] = params['geom_force_tol']
+    castep_params['max_scf_cycles'] = params['max_scc_steps']
 
     parameter_file = os.path.join(folder, '{0}.param'.format(name))
     yaml.safe_dump(castep_params, open(parameter_file, 'w'),
