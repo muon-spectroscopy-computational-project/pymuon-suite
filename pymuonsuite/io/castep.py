@@ -25,7 +25,7 @@ class CastepError(Exception):
 
 
 def castep_write_input(a, folder, name=None):
-    """Writes input files for an Atoms object with a Castep 
+    """Writes input files for an Atoms object with a Castep
     calculator attached.
 
     | Args:
@@ -33,7 +33,7 @@ def castep_write_input(a, folder, name=None):
     |                   calculator attached to carry cell/param
     |                   keywords.
     |   folder (str):   Path to save the input files to.
-    |   name (str):     Seedname to save the files with. If not 
+    |   name (str):     Seedname to save the files with. If not
     |                   given, use the name of the folder.
     """
 
@@ -120,19 +120,16 @@ def parse_castep_bands(infile, header=False):
     return bands
 
 
-def parse_castep_masses(cell):
-    """Parse CASTEP custom species masses, returning an array of all atom masses
-    in .cell file with corrected custom masses.
+def parse_castep_mass_block(mass_block):
+    """Parse CASTEP custom species masses, returning a dictionary of masses
+    by species, in amu.
 
     | Args:
-    |   cell(ASE Atoms object): Atoms object containing relevant .cell file
+    |   mass_block (str):   Content of a species_mass block
     | Returns:
-    |   masses(Numpy float array, shape(no. of atoms)): Correct masses of all
-    |       atoms in cell file.
+    |   masses (dict):      Dictionary of masses by species symbol
     """
-    mass_block = cell.calc.cell.species_mass.value
-    if mass_block is None:
-        return cell.get_masses()
+
     mass_tokens = [l.split() for l in mass_block.split('\n')]
     custom_masses = {}
 
@@ -159,6 +156,25 @@ def parse_castep_masses(cell):
         except (ValueError, IndexError):
             raise CastepError('Invalid line in species_mass block')
 
+    return custom_masses
+
+
+def parse_castep_masses(cell):
+    """Parse CASTEP custom species masses, returning an array of all atom masses
+    in .cell file with corrected custom masses.
+
+    | Args:
+    |   cell(ASE Atoms object): Atoms object containing relevant .cell file
+    | Returns:
+    |   masses(Numpy float array, shape(no. of atoms)): Correct masses of all
+    |       atoms in cell file.
+    """
+    mass_block = cell.calc.cell.species_mass.value
+    if mass_block is None:
+        return cell.get_masses()
+
+    custom_masses = parse_castep_mass_block(mass_block)
+
     masses = cell.get_masses()
     elems = cell.get_chemical_symbols()
     elems = cell.arrays.get('castep_custom_species', elems)
@@ -168,6 +184,44 @@ def parse_castep_masses(cell):
     cell.set_masses(masses)
 
     return masses
+
+
+def parse_castep_gamma_block(gamma_block):
+    """Parse CASTEP custom species gyromagnetic ratios, returning a 
+    dictionary of gyromagnetic ratios by species, in radsectesla.
+
+    | Args:
+    |   gamma_block (str):   Content of a species_gamma block
+    | Returns:
+    |   gammas (dict):      Dictionary of gyromagnetic ratios by species symbol
+    """
+
+    gamma_tokens = [l.split() for l in gamma_block.split('\n')]
+    custom_gammas = {}
+
+    units = {
+        'agr': cnst.e/cnst.m_e,
+        'radsectesla': 1,
+        'mhztesla': 0.5e-6/np.pi,
+    }
+
+    # Is the first line a unit?
+    u = 1
+    if len(gamma_tokens) > 0 and len(gamma_tokens[0]) == 1:
+        try:
+            u = units[gamma_tokens[0][0]]
+        except KeyError:
+            raise CastepError('Invalid gamma unit in species_gamma block')
+
+        gamma_tokens.pop(0)
+
+    for tk in gamma_tokens:
+        try:
+            custom_gammas[tk[0]] = float(tk[1])*u
+        except (ValueError, IndexError):
+            raise CastepError('Invalid line in species_gamma block')
+
+    return custom_gammas
 
 
 def parse_castep_ppots(cfile):

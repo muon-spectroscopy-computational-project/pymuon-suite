@@ -127,7 +127,7 @@ MuAirssSchema = Schema({
     # diagonal matrix will be generated with the integer repeated on the
     # diagonals. For a list of three numbers a diagonal matrix will be
     # generated where the digonal elements are set to the list. A matrix will
-    # be used direclty as is. Default is a 3x3 indentity matrix.
+    # be used directly as is. Default is a 3x3 indentity matrix.
     Optional('supercell', default=1):
     validate_supercell,
     # List of three integer k-points. Default is [1,1,1].
