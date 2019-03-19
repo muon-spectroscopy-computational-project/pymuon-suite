@@ -78,6 +78,9 @@ def load_input_file(fname, param_schema, merge=None):
         params = dict(merge)
         params.update(new_params)
 
+    if params is None:
+        params = {} # Fix in case the yaml file is empty
+
     try:
         params = param_schema.validate(params)
     except SchemaError as e:
