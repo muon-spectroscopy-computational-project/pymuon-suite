@@ -33,8 +33,7 @@ from soprano.collection.generate import defectGen
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
 from pymuonsuite.data.dftb_pars.dftb_pars import get_license, DFTBArgs
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
-from pymuonsuite.io.castep import (castep_write_input,
-                                   parse_castep_mass_block, parse_castep_gamma_block)
+from pymuonsuite.io.castep import (castep_write_input, add_to_castep_block)
 from pymuonsuite.io.dftb import dftb_write_input
 
 
@@ -127,29 +126,13 @@ def create_muairss_castep_calculator(a, params={}, calc=None):
 
     # Start by ensuring that the muon mass and gyromagnetic ratios are included
     mass_block = calc.cell.species_mass.value
-    if mass_block is None:
-        masses = {}
-    else:
-        masses = parse_castep_mass_block(mass_block)
-    # Assign the muon mass
-    masses[musym] = cnst.physical_constants['muon mass'][0]/cnst.u
-
-    mass_block = 'AMU\n'
-    for k, m in masses.items():
-        mass_block += '{0} {1}\n'.format(k, m)
-    calc.cell.species_mass = mass_block
+    calc.cell.species_mass = add_to_castep_block(mass_block, musym,
+                                                 cnst.physical_constants['muon mass'][0]/cnst.u,
+                                                 'mass')
 
     gamma_block = calc.cell.species_gamma.value
-    if gamma_block is None:
-        gammas = {}
-    else:
-        gammas = parse_castep_gamma_block(gamma_block)
-    gammas[musym] = 851586494.1
-
-    gamma_block = 'RADSECTESLA\n'
-    for k, g in gammas.items():
-        gamma_block += '{0} {1}\n'.format(k, g)
-    calc.cell.species_gamma = gamma_block
+    calc.cell.species_gamma = add_to_castep_block(gamma_block, musym,
+                                                  851586494.1, 'gamma')
 
     # Now assign the k-points
     calc.cell.kpoint_mp_grid = list_to_string(

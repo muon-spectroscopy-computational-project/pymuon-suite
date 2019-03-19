@@ -292,3 +292,28 @@ def parse_final_energy(infile):
                 raise RuntimeError(
                     "Corrupt .castep file found: {0}".format(infile))
     return E
+
+
+def add_to_castep_block(cblock, symbol, value, blocktype='mass'):
+    """Add a pair of the form:
+        symbol  value
+       to a given castep block cblock, given the type.
+    """
+
+    parser = {
+        'mass': parse_castep_mass_block,
+        'gamma': parse_castep_gamma_block
+    }[blocktype]
+
+    if cblock is None:
+        values = {}
+    else:
+        values = parser(cblock)
+    # Assign the muon mass
+    values[symbol] = value
+
+    cblock = 'AMU\n'
+    for k, v in values.items():
+        cblock += '{0} {1}\n'.format(k, v)
+
+    return cblock

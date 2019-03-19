@@ -153,7 +153,6 @@ def create_plane_grid(hkl, cell, f0, f1, N=20):
 
     return xyzgrid
 
-
 class BackupFile():
     """Backup a file before performing an operation
 
