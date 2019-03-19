@@ -25,16 +25,17 @@ from ase import Atoms, io
 from ase.io.castep import read_param
 from ase.build import make_supercell
 from ase.calculators.castep import Castep
+from ase.calculators.dftb import Dftb
 from soprano.utils import safe_input
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
-from pymuonsuite.data.dftb_pars.dftb_pars import get_license
+from pymuonsuite.data.dftb_pars.dftb_pars import get_license, DFTBArgs
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
-from pymuonsuite.io.castep import (save_muonconf_castep, castep_write_input,
+from pymuonsuite.io.castep import (castep_write_input,
                                    parse_castep_mass_block, parse_castep_gamma_block)
-from pymuonsuite.io.dftb import save_muonconf_dftb
+from pymuonsuite.io.dftb import dftb_write_input
 
 
 def find_primitive_structure(struct):
@@ -86,6 +87,7 @@ def generate_muairss_collection(struct, params):
         # Add castep custom species
         csp = scell0.get_chemical_symbols() + [params['mu_symbol']]
         scell.set_array('castep_custom_species', np.array(csp))
+        scell.set_pbc(params['dftb_pbc'])
         collection.append(scell)
 
     return AtomsCollection(collection)
@@ -112,11 +114,11 @@ def parse_structure_name(file_name):
     return base
 
 
-def create_muairss_castep_calculator(params={}, calc=None):
+def create_muairss_castep_calculator(a, params={}, calc=None):
     """Create a calculator containing all the necessary parameters
     for a geometry optimization."""
 
-    if calc is None:
+    if not isinstance(calc, Castep):
         calc = Castep()
     else:
         calc = deepcopy(calc)
@@ -167,6 +169,50 @@ def create_muairss_castep_calculator(params={}, calc=None):
     return calc
 
 
+def create_muairss_dftb_calculator(a, params={}, calc=None):
+
+    if not isinstance(calc, Dftb):
+        args = {}
+    else:
+        args = calc.todict()
+
+    dargs = DFTBArgs(params['dftb_set'])
+    is_spinpol = params.get('spin_polarized', False)
+    if is_spinpol:
+        dargs.set_optional('spinpol.json', True)
+
+    args.update(dargs.args)
+    args = dargs.args
+    args['Driver_'] = 'ConjugateGradient'
+    args['Driver_Masses_'] = ''
+    args['Driver_Masses_Mass_'] = ''
+    args['Driver_Masses_Mass_Atoms'] = '-1'
+    args['Driver_Masses_Mass_MassPerAtom [amu]'] = str(
+        cnst.physical_constants['muon mass'][0]/cnst.u)
+
+    args['Driver_MaxForceComponent [eV/AA]'] = params['geom_force_tol']
+    args['Driver_MaxSteps'] = params['geom_steps']
+    args['Driver_MaxSccIterations'] = params['max_scc_steps']
+
+    if is_spinpol:
+        # Configure initial spins
+        spins = np.array(a.get_initial_magnetic_moments())
+        args['Hamiltonian_SpinPolarisation_InitialSpins'] = '{'
+        args['Hamiltonian_SpinPolarisation_' +
+             'InitialSpins_AllAtomSpins'] = '{' + '\n'.join(
+            map(str, spins)) + '}'
+        args['Hamiltonian_SpinPolarisation_UnpairedElectrons'] = str(
+            np.sum(spins))
+
+    if params['dftb_pbc']:
+        calc = Dftb(kpts=params['k_points_grid'],
+                    run_manyDftb_steps=True, **args)
+    else:
+        calc = Dftb(run_manyDftb_steps=True, **args)
+
+    return calc
+
+
 def save_muairss_collection(struct, params, batch_path=''):
     """Generate input files for a single structure and configuration file"""
 
@@ -183,7 +229,7 @@ def save_muairss_collection(struct, params, batch_path=''):
     # Now save in the appropriate format
     save_formats = {
         'castep': castep_write_input,
-        'dftb+': save_muonconf_dftb
+        'dftb+': dftb_write_input
     }
 
     # Which calculators?
@@ -193,10 +239,11 @@ def save_muairss_collection(struct, params, batch_path=''):
 
     # Make the actual calculators
     make_calcs = {
-        'castep': create_muairss_castep_calculator
+        'castep': create_muairss_castep_calculator,
+        'dftb+': create_muairss_dftb_calculator
     }
 
-    calcs = {c: make_calcs[c](params=params, calc=struct.calc)
+    calcs = {c: make_calcs[c](struct, params=params, calc=struct.calc)
              for c in calcs}
 
     # Save LICENSE file for DFTB+ parameters

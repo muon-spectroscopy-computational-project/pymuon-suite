@@ -17,6 +17,39 @@ from pymuonsuite.utils import BackupFile
 from pymuonsuite.data.dftb_pars import DFTBArgs
 
 
+def dftb_write_input(a, folder, calc=None, name=None):
+    """Writes input files for an Atoms object with a Dftb+
+    calculator.
+
+    | Args:
+    |   a (ase.Atoms):          Atoms object to write. Can have a Dftb
+    |                           calculator attached to carry 
+    |                           arguments.
+    |   folder (str):           Path to save the input files to.
+    |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+    |                           present, the pre-existent one will
+    |                           be ignored.
+    |   name (str):             Seedname to save the files with. If not
+    |                           given, use the name of the folder.
+    """
+
+    if name is None:
+        name = os.path.split(folder)[-1]  # Same as folder name
+
+    if calc is not None:
+        calc.atoms = a
+        a.set_calculator(calc)
+
+    if not isinstance(a.calc, Dftb):
+        a = a.copy()
+        calc = Dftb(label=name, atoms=a, run_manyDftb_steps=True)
+        a.set_calculator(calc)
+
+    a.calc.label = name
+    a.calc.directory = folder
+    a.calc.write_input(a)
+
+
 def load_muonconf_dftb(folder):
     """ Set the tag for a muon in an atoms object
 
@@ -53,6 +86,8 @@ def load_muonconf_dftb(folder):
 
     return atoms
 
+
+# Deprecated, left in for compatibility
 def save_muonconf_dftb(a, folder, params, dftbargs={}):
 
     name = os.path.split(folder)[-1]
