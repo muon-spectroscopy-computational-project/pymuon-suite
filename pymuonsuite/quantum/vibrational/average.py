@@ -14,7 +14,7 @@ import os
 import numpy as np
 from copy import deepcopy
 
-from ase import io
+from ase import io, Atoms
 from ase.io.castep import read_param
 from ase.calculators.castep import Castep
 from ase.calculators.dftb import Dftb
@@ -189,6 +189,11 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         dcell.set_positions(pos + d)
         dcell.info['name'] = sname + '_displaced_{0}'.format(i)
         displaced_cells.append(dcell)
+
+    if kwargs['write_allconf']:
+        # Write a global configuration structure
+        allconf = sum(displaced_cells, cell.copy())
+        io.write(sname + '_allconf.cell', allconf)
 
     # Get a calculator
     if avgprop == 'hyperfine':

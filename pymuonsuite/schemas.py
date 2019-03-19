@@ -43,7 +43,7 @@ def validate_str(s):
 
 
 def validate_bool(value):
-    return (value.strip().lower() in ('true', 't'))
+    return (str(value).strip().lower() in ('true', 't'))
 
 
 def validate_int3(value):
@@ -79,7 +79,7 @@ def load_input_file(fname, param_schema, merge=None):
         params.update(new_params)
 
     if params is None:
-        params = {} # Fix in case the yaml file is empty
+        params = {}  # Fix in case the yaml file is empty
 
     try:
         params = param_schema.validate(params)
@@ -171,6 +171,8 @@ MuonHarmonicSchema = Schema({
     # Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
     # coupling tensors), 'bandstructure'
     Optional('avgprop', default='hyperfine'): validate_all_of('hyperfine', 'bandstructure'),
+    # Write a 'collective' file with all displaced positions in one
+    Optional('write_allconf', default=False): validate_bool,
     # Source of phonon modes, currently accepted values: "castep", "asedftb+"
     Optional('phonon_source', default='castep'): validate_all_of('castep', 'asedftbp'),
     # If using DFTB+ and ASE, which parametrization to use
