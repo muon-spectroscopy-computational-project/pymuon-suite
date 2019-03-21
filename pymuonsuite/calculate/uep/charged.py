@@ -56,23 +56,26 @@ class ChargeDistribution(object):
         if not np.isclose(np.sum(rho)/gvol, sum(q), 1e-4):
             raise RuntimeError('Cell is not neutral')
         rho *= gvol*sum(q)/np.sum(rho)  # Normalise charge
-        rho_G = np.fft.fftn(rho)
+        self._rhoe_G = -np.fft.fftn(rho)  # Put the minus sign for electrons
         Gnorm = np.linalg.norm(self._g_grid, axis=0)
         Gnorm_fixed = np.where(Gnorm > 0, Gnorm, np.inf)
 
         cell = np.array(self._elec_den.real_lattice)
         vol = abs(np.dot(np.cross(cell[:, 0], cell[:, 1]), cell[:, 2]))
+        self._vol = vol
 
-        self._Ve_G = 4*np.pi/Gnorm_fixed**2*(-rho_G/(vol*np.prod(rho_G.shape)))
+        self._Ve_G = 4*np.pi/Gnorm_fixed**2*(self._rhoe_G / (vol*gvol))
 
         # Now on to doing the same for ionic components
+        self._rhoi_G = (q[None, None, None, :] *
+                        np.exp(-1.0j*np.sum(self._g_grid[:, :, :, :, None] *
+                                            pos.T[:, None, None, None, :],
+                                            axis=0) -
+                               0.5*(gw[None, None, None, :] *
+                                    Gnorm[:, :, :, None])**2))
+
         pregrid = (4*np.pi/Gnorm_fixed**2*1.0/vol)
-        self._Vi_G = (pregrid[:, :, :, None] * q[None, None, None, :] *
-                      np.exp(-1.0j*np.sum(self._g_grid[:, :, :, :, None] *
-                                          pos.T[:, None, None, None, :],
-                                          axis=0) -
-                             0.5*(gw[None, None, None, :] *
-                                  Gnorm[:, :, :, None])**2))
+        self._Vi_G = (pregrid[:, :, :, None] * self._rhoi_G)
 
     @property
     def atoms(self):
@@ -81,6 +84,10 @@ class ChargeDistribution(object):
     @property
     def cell(self):
         return self._struct.get_cell()
+
+    @property
+    def volume(self):
+        return self._vol
 
     @property
     def chemical_symbols(self):
@@ -93,6 +100,35 @@ class ChargeDistribution(object):
     @property
     def scaled_positions(self):
         return self._struct.get_scaled_positions()
+
+    def rho(self, p, max_process_p=20):
+        # Return charge density at a point or list of points
+        p = np.array(p)
+        if len(p.shape) == 1:
+            p = p[None, :]   # Make it into a list of points
+
+        # The point list is sliced for convenience, to avoid taking too much
+        # memory
+        N = p.shape[0]
+        rhoe = np.zeros(N)
+        rhoi = np.zeros(N)
+
+        slices = make_process_slices(N, max_process_p)
+
+        for s in slices:
+            # Fourier transform kernel
+            ftk = np.exp(1.0j*np.tensordot(self._g_grid, p[s].T, axes=(0, 0)))
+            rhoe[s] = np.real(np.sum(self._rhoe_G[:, :, :, None]*ftk,
+                                     axis=(0, 1, 2)))
+            rhoi[s] = np.real(np.sum(self._rhoi_G[:, :, :, :, None] *
+                                     ftk[:, :, :, None],
+                                     axis=(0, 1, 2, 3)))
+        # Convert units to e/Ang^3
+        rhoe /= np.prod(self._elec_den.grid)*self._vol
+        rhoi /= self._vol
+        rho = rhoe+rhoi
+
+        return rho, rhoe, rhoi
 
     def V(self, p, max_process_p=20):
         # Return potential at a point or list of points
