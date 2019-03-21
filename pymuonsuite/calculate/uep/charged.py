@@ -51,12 +51,13 @@ class ChargeDistribution(object):
 
         # Here we find the Fourier components of the potential due to
         # the valence electrons
-        rho = self._elec_den.data[:, :, :, 0]
-        gvol = np.prod(rho.shape)
-        if not np.isclose(np.sum(rho)/gvol, sum(q), 1e-4):
+        self._rho = self._elec_den.data[:, :, :, 0]
+        gvol = np.prod(self._rho.shape)
+        if not np.isclose(np.sum(self._rho)/gvol, sum(q), 1e-4):
             raise RuntimeError('Cell is not neutral')
-        rho *= gvol*sum(q)/np.sum(rho)  # Normalise charge
-        self._rhoe_G = -np.fft.fftn(rho)  # Put the minus sign for electrons
+        # Put the minus sign for electrons
+        self._rho *= -gvol*sum(q)/np.sum(self._rho)  # Normalise charge
+        self._rhoe_G = np.fft.fftn(self._rho)
         Gnorm = np.linalg.norm(self._g_grid, axis=0)
         Gnorm_fixed = np.where(Gnorm > 0, Gnorm, np.inf)
 
