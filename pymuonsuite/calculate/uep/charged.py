@@ -52,11 +52,10 @@ class ChargeDistribution(object):
         # Here we find the Fourier components of the potential due to
         # the valence electrons
         self._rho = self._elec_den.data[:, :, :, 0]
-        gvol = np.prod(self._rho.shape)
-        if not np.isclose(np.sum(self._rho)/gvol, sum(q), 1e-4):
+        if not np.isclose(np.average(self._rho), sum(q), 1e-4):
             raise RuntimeError('Cell is not neutral')
         # Put the minus sign for electrons
-        self._rho *= -gvol*sum(q)/np.sum(self._rho)  # Normalise charge
+        self._rho *= -sum(q)/np.sum(self._rho)  # Normalise charge
         self._rhoe_G = np.fft.fftn(self._rho)
         Gnorm = np.linalg.norm(self._g_grid, axis=0)
         Gnorm_fixed = np.where(Gnorm > 0, Gnorm, np.inf)
@@ -65,7 +64,7 @@ class ChargeDistribution(object):
         vol = abs(np.dot(np.cross(cell[:, 0], cell[:, 1]), cell[:, 2]))
         self._vol = vol
 
-        self._Ve_G = 4*np.pi/Gnorm_fixed**2*(self._rhoe_G / (vol*gvol))
+        self._Ve_G = 4*np.pi/Gnorm_fixed**2*(self._rhoe_G / vol)
 
         # Now on to doing the same for ionic components
         self._rhoi_G = (q[None, None, None, :] *
@@ -125,7 +124,7 @@ class ChargeDistribution(object):
                                      ftk[:, :, :, None],
                                      axis=(0, 1, 2, 3)))
         # Convert units to e/Ang^3
-        rhoe /= np.prod(self._elec_den.grid)*self._vol
+        rhoe /= self._vol
         rhoi /= self._vol
         rho = rhoe+rhoi
 

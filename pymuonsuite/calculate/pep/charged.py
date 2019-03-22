@@ -62,7 +62,7 @@ class PEPChargeDistribution(ChargeDistribution):
         sk = 0.5*(1.0-_fk(muAB, 3))
         # Set the diagonal to 1 so that it doesn't affect the products
         ii = range(len(self.positions))
-        sk[ii, ii] = 1
+        sk[:,:,:,ii, ii] = 1
 
         # Now weight functions
         wA = np.prod(sk, axis=-1)
@@ -105,7 +105,7 @@ class PEPChargeDistribution(ChargeDistribution):
                                         ftk[:, :, :, None],
                                         axis=(0, 1, 2)))
         # Convert units to e/Ang^3
-        rhoe /= np.prod(self._elec_den.grid)*self._vol
+        rhoe /= self._vol
         rhoi /= self._vol
         rho = rhoe+rhoi
 
