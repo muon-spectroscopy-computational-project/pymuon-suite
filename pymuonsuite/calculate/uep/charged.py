@@ -19,6 +19,9 @@ from parsefmt.fmtreader import FMTReader
 from pymuonsuite.utils import make_process_slices
 from pymuonsuite.io.castep import parse_castep_ppots
 
+# Coulomb constant
+_cK = 1.0/(4.0*np.pi*cnst.epsilon_0)
+
 
 class ChargeDistribution(object):
 
@@ -155,10 +158,8 @@ class ChargeDistribution(object):
                                    ftk[:, :, :, None],
                                    axis=(0, 1, 2, 3)))
 
-        # Coulomb constant
-        cK = 1.0/(4.0*np.pi*cnst.epsilon_0)
-        Ve *= cK*cnst.e*1e10  # Moving to SI units
-        Vi *= cK*cnst.e*1e10
+        Ve *= _cK*cnst.e*1e10  # Moving to SI units
+        Vi *= _cK*cnst.e*1e10
 
         V = Ve + Vi
 
@@ -191,10 +192,8 @@ class ChargeDistribution(object):
                                     dftk[:, :, :, :, None],
                                     axis=(1, 2, 3, 4))).T
 
-        # Coulomb constant
-        cK = 1.0/(4.0*np.pi*cnst.epsilon_0)
-        dVe *= cK*cnst.e*1e20  # Moving to SI units
-        dVi *= cK*cnst.e*1e20
+        dVe *= _cK*cnst.e*1e20  # Moving to SI units
+        dVi *= _cK*cnst.e*1e20
 
         dV = dVe + dVi
 
@@ -230,10 +229,8 @@ class ChargeDistribution(object):
                                      d2ftk[:, :, :, :, :, None],
                                      axis=(2, 3, 4, 5))).T
 
-        # Coulomb constant
-        cK = 1.0/(4.0*np.pi*cnst.epsilon_0)
-        d2Ve *= cK*cnst.e*1e30  # Moving to SI units
-        d2Vi *= cK*cnst.e*1e30
+        d2Ve *= _cK*cnst.e*1e30  # Moving to SI units
+        d2Vi *= _cK*cnst.e*1e30
 
         d2V = d2Ve + d2Vi
 

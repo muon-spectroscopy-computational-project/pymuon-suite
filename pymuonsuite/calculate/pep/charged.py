@@ -18,6 +18,7 @@ from soprano.utils import (max_distance_in_cell, minimum_supcell,
 
 from pymuonsuite.utils import make_process_slices
 from pymuonsuite.calculate.uep import ChargeDistribution
+from pymuonsuite.calculate.uep.charged import _cK
 
 
 def _fk(x, k=0):
@@ -81,18 +82,28 @@ class PEPChargeDistribution(ChargeDistribution):
                                                                vol)
 
         # Now compute interaction energy of ions
-        gvol = np.prod(self._elec_den.grid)
-        cK = 1.0/(4.0*np.pi*cnst.epsilon_0)
-        self._V = np.real(np.fft.ifftn(self._Ve_G, axes=(0, 1, 2)) +
-                          np.sum(np.fft.ifftn(self._Vi_G, axes=(0, 1, 2)),
-                                 axis=-1))
-        self._V *= cK*cnst.e*1e10*gvol
+        self._rhoion_G = self._rhopart_G + self._rhoi_G
+        self._Vion_G = self._Vpart_G+self._Vi_G
 
-        self._rhoion = self._rhopart
-        self._rhoion += np.real(np.fft.ifftn(self._rhoi_G, axes=(0, 1, 2)))
+        self._ionE = np.real(np.sum(self._rhoion_G *
+                                    np.conj(np.sum(self._Vion_G, axis=-1)
+                                            )[:, :, :, None])
+                             )*_cK*cnst.e*1e10
 
-        self._ionE = np.sum(
-            self._rhoion*self._V[:, :, :, None], axis=(0, 1, 2))
+    def ionE(self, dr=None):
+
+        if dr is None:
+            return self._ionE
+
+        # Otherwise, we need to recalculate by including the effects of the
+        # displacements
+
+        edr = np.exp(-1.0j*np.tensordot(self._g_grid, dr.T, axes=(0, 0)))
+
+        return np.real(np.sum(self._rhoion_G * edr *
+                              np.conj(np.sum(self._Vion_G*edr, axis=-1)
+                                      )[:, :, :, None])
+                       )*_cK*cnst.e*1e10
 
     def rhopart(self, p, dr=None, max_process_p=20):
         # Return partitioned charge density at a point or list of points
@@ -173,9 +184,8 @@ class PEPChargeDistribution(ChargeDistribution):
                                       axis=(0, 1, 2)))
 
         # Coulomb constant
-        cK = 1.0/(4.0*np.pi*cnst.epsilon_0)
-        Ve *= cK*cnst.e*1e10  # Moving to SI units
-        Vi *= cK*cnst.e*1e10
+        Ve *= _cK*cnst.e*1e10  # Moving to SI units
+        Vi *= _cK*cnst.e*1e10
 
         V = Ve + Vi
 
@@ -223,11 +233,63 @@ class PEPChargeDistribution(ChargeDistribution):
         dVe = np.swapaxes(dVe, 0, 1)
         dVi = np.swapaxes(dVi, 0, 1)
 
-        # Coulomb constant
-        cK = 1.0/(4.0*np.pi*cnst.epsilon_0)
-        dVe *= cK*cnst.e*1e20  # Moving to SI units
-        dVi *= cK*cnst.e*1e20
+        dVe *= _cK*cnst.e*1e20  # Moving to SI units
+        dVi *= _cK*cnst.e*1e20
 
         dV = dVe + dVi
 
         return dV, dVe, dVi
+
+    def d2Vpart(self, p, dr=None, max_process_p=20):
+        # Return potential at a point or list of points
+        p = np.array(p)
+        if len(p.shape) == 1:
+            p = p[None, :]   # Make it into a list of points
+
+        # The point list is sliced for convenience, to avoid taking too much
+        # memory
+        N = p.shape[0]
+        I = len(self.positions)
+        d2Ve = np.zeros((3, 3, I, N))
+        d2Vi = np.zeros((3, 3, I, N))
+
+        if dr is None:
+            dr = np.zeros((I, 3))
+        else:
+            dr = np.array(dr)
+            if dr.shape != (I, 3):
+                raise ValueError('Invalid ionic displacement vector')
+        edr = np.exp(-1.0j*np.tensordot(self._g_grid, dr.T, axes=(0, 0)))
+
+        slices = make_process_slices(N, max_process_p)
+
+        for s in slices:
+            # Fourier transform kernel
+            ftk = np.exp(1.0j*np.tensordot(self._g_grid, p[s].T, axes=(0, 0)))
+            dftk = 1.0j*self._g_grid[:, :, :, :, None]*ftk[None, :, :, :, :]
+            g2_mat = (self._g_grid[:, None, :, :, :] *
+                      self._g_grid[None, :, :, :, :])
+            d2ftk = -g2_mat[:, :, :, :, :, None]*ftk[None, None, :, :, :, :]
+            # Compute the electronic potential
+            d2Ve[:, :, :, s] = np.real(
+                np.sum(self._Vpart_G[None, None, :, :, :, :, None] *
+                       d2ftk[:, :, :, :, :, None, :] *
+                       edr[None, None, :, :, :, :, None],
+                       axis=(2, 3, 4)))
+            # Now add the ionic one
+            d2Vi[:, :, :, s] = np.real(
+                np.sum(self._Vi_G[None, None, :, :, :, :, None] *
+                       d2ftk[:, :, :, :, :, None] *
+                       edr[None, None, :, :, :, :, None],
+                       axis=(2, 3, 4)))
+
+        # Swap axes for convenience
+        d2Ve = np.moveaxis(d2Ve, 2, 0)
+        d2Vi = np.moveaxis(d2Vi, 2, 0)
+
+        d2Ve *= _cK*cnst.e*1e30  # Moving to SI units
+        d2Vi *= _cK*cnst.e*1e30
+
+        d2V = d2Ve + d2Vi
+
+        return d2V, d2Ve, d2Vi
