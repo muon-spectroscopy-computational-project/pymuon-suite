@@ -80,6 +80,13 @@ class ChargeDistribution(object):
         pregrid = (4*np.pi/Gnorm_fixed**2*1.0/vol)
         self._Vi_G = (pregrid[:, :, :, None] * self._rhoi_G)
 
+        # Is there any data on spin polarization?
+        self._spinpol = False
+        if self._elec_den.data.shape[-1] >= 2:
+            self._spinpol = True
+            self._spin = self._elec_den.data[:, :, :, 1]
+            self._spin_G = np.fft.fftn(self._spin)
+
     @property
     def atoms(self):
         return self._struct.copy()
@@ -103,6 +110,10 @@ class ChargeDistribution(object):
     @property
     def scaled_positions(self):
         return self._struct.get_scaled_positions()
+
+    @property
+    def has_spin(self):
+        return self._spinpol
 
     def rho(self, p, max_process_p=20):
         # Return charge density at a point or list of points
