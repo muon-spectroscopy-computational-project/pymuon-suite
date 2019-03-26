@@ -90,20 +90,21 @@ class PEPChargeDistribution(ChargeDistribution):
                                             )[:, :, :, None])
                              )*_cK*cnst.e*1e10
 
-    def ionE(self, dr=None):
+    # Commented out right now as it does not work
+    # def ionE(self, dr=None):
 
-        if dr is None:
-            return self._ionE
+    #     if dr is None:
+    #         return self._ionE
 
-        # Otherwise, we need to recalculate by including the effects of the
-        # displacements
+    #     # Otherwise, we need to recalculate by including the effects of the
+    #     # displacements
 
-        edr = np.exp(-1.0j*np.tensordot(self._g_grid, dr.T, axes=(0, 0)))
+    #     edr = np.exp(-1.0j*np.tensordot(self._g_grid, dr.T, axes=(0, 0)))
 
-        return np.real(np.sum(self._rhoion_G * edr *
-                              np.conj(np.sum(self._Vion_G*edr, axis=-1)
-                                      )[:, :, :, None])
-                       )*_cK*cnst.e*1e10
+    #     return np.real(np.sum(self._rhoion_G * edr *
+    #                           np.conj(np.sum(self._Vion_G*edr, axis=-1)
+    #                                   )[:, :, :, None])
+    #                    )*_cK*cnst.e*1e10
 
     def rhopart(self, p, dr=None, max_process_p=20):
         # Return partitioned charge density at a point or list of points
