@@ -21,6 +21,12 @@ from pymuonsuite.io.castep import parse_castep_ppots
 
 # Coulomb constant
 _cK = 1.0/(4.0*np.pi*cnst.epsilon_0)
+# Convert dipolar couplings to Tesla.
+_dipT = (cnst.mu_0/(4*np.pi)*cnst.physical_constants['Bohr magneton'][0]*1e30 *
+         abs(cnst.physical_constants['electron g factor'][0]))
+# Convert Fermi contact term to Tesla
+_fermiT = (2.0/3.0*cnst.mu_0*cnst.physical_constants['Bohr magneton'][0]*1e30 *
+           abs(cnst.physical_constants['electron g factor'][0]))
 
 
 class ChargeDistribution(object):
@@ -87,6 +93,16 @@ class ChargeDistribution(object):
             self._spin = self._elec_den.data[:, :, :, 1]
             self._spin_G = np.fft.fftn(self._spin)
 
+            # Dipolar tensor FFT
+            dyad_G = self._g_grid[:, None]*self._g_grid[None, :]
+            dyad_G /= Gnorm_fixed**2
+            self._dip_G = 4.0/3.0*np.pi*(3*dyad_G -
+                                         np.eye(3)[:, :, None, None, None]+0j)
+            self._dip_G[:, :, 0, 0, 0] = 0
+            self._dip_G *= self._spin_G/(self._vol*np.prod(self._spin.shape))
+            # Convert to Tesla.
+            self._dip_G *= _dipT
+
     @property
     def atoms(self):
         return self._struct.copy()
@@ -137,6 +153,7 @@ class ChargeDistribution(object):
             rhoi[s] = np.real(np.sum(self._rhoi_G[:, :, :, :, None] *
                                      ftk[:, :, :, None],
                                      axis=(0, 1, 2, 3)))
+
         # Convert units to e/Ang^3
         rhoe /= self._vol
         rhoi /= self._vol
@@ -224,12 +241,12 @@ class ChargeDistribution(object):
         d2Vi = np.zeros((N, 3, 3))
 
         slices = make_process_slices(N, max_process_p)
+        g2_mat = (self._g_grid[:, None, :, :, :] *
+                  self._g_grid[None, :, :, :, :])
 
         for s in slices:
             # Fourier transform kernel
             ftk = np.exp(1.0j*np.tensordot(self._g_grid, p[s].T, axes=(0, 0)))
-            g2_mat = (self._g_grid[:, None, :, :, :] *
-                      self._g_grid[None, :, :, :, :])
             d2ftk = -g2_mat[:, :, :, :, :, None]*ftk[None, None, :, :, :, :]
             # Compute the electronic potential
             d2Ve[s] = np.real(
@@ -246,3 +263,31 @@ class ChargeDistribution(object):
         d2V = d2Ve + d2Vi
 
         return d2V, d2Ve, d2Vi
+
+    def Hfine(self, p, contact=False, max_process_p=20):
+        # Return hyperfine tensors at a point or a list of points
+        p = np.array(p)
+        if len(p.shape) == 1:
+            p = p[None, :]   # Make it into a list of points
+
+        # The point list is sliced for convenience, to avoid taking too much
+        # memory
+        N = p.shape[0]
+        HT = np.zeros((N, 3, 3))
+
+        slices = make_process_slices(N, max_process_p)
+
+        for s in slices:
+            # Fourier transform kernel
+            ftk = np.exp(1.0j*np.tensordot(self._g_grid, p[s].T, axes=(0, 0)))
+            # Compute the electronic potential
+            HT[s] = np.real(np.sum(self._dip_G[:, :, :, :, :, None]*ftk[None, None],
+                                   axis=(2, 3, 4))).T
+            # And Fermi contact term
+            if contact:
+                fermi = np.real(
+                    np.sum(self._spin_G[:, :, :, None]*ftk, axis=(0, 1, 2)))
+                fermi *= _fermiT/(self._vol*np.prod(self._spin.shape))
+                HT[s] += np.eye(3)[None, :, :]*fermi[:, None, None]
+
+        return HT
