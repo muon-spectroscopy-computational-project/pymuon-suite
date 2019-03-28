@@ -18,7 +18,6 @@ from copy import deepcopy
 
 import numpy as np
 import argparse as ap
-import scipy.constants as cnst
 from spglib import find_primitive
 
 from ase import Atoms, io
@@ -30,6 +29,7 @@ from soprano.utils import safe_input
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 
+import pymuonsuite.constants as cnst
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
 from pymuonsuite.data.dftb_pars.dftb_pars import get_license, DFTBArgs
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
@@ -127,7 +127,7 @@ def create_muairss_castep_calculator(a, params={}, calc=None):
     # Start by ensuring that the muon mass and gyromagnetic ratios are included
     mass_block = calc.cell.species_mass.value
     calc.cell.species_mass = add_to_castep_block(mass_block, musym,
-                                                 cnst.physical_constants['muon mass'][0]/cnst.u,
+                                                 cnst.m_mu_amu,
                                                  'mass')
 
     gamma_block = calc.cell.species_gamma.value
@@ -170,8 +170,7 @@ def create_muairss_dftb_calculator(a, params={}, calc=None):
     args['Driver_Masses_'] = ''
     args['Driver_Masses_Mass_'] = ''
     args['Driver_Masses_Mass_Atoms'] = '-1'
-    args['Driver_Masses_Mass_MassPerAtom [amu]'] = str(
-        cnst.physical_constants['muon mass'][0]/cnst.u)
+    args['Driver_Masses_Mass_MassPerAtom [amu]'] = str(cnst.m_mu_amu)
 
     args['Driver_MaxForceComponent [eV/AA]'] = params['geom_force_tol']
     args['Driver_MaxSteps'] = params['geom_steps']
