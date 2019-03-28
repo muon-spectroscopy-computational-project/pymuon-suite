@@ -130,11 +130,20 @@ def create_spinpol_dftbp_calculator(calc=None, param_set='3ob-3-1',
     dargs = DFTBArgs(param_set)
     # Make it spin polarised
     try:
-        dargs.set_optional('spinpol.json')
+        dargs.set_optional('spinpol.json', True)
     except KeyError:
         raise ValueError('DFTB+ parameter set does not allow spin polarised'
                          ' calculations')
-    calc.parameters.update(dargs.args)
+    # Fix a few things, and add a spin on the muon
+    args = dargs.args
+    del(args['Hamiltonian_SpinPolarisation'])
+    args['Hamiltonian_SpinPolarisation_'] = 'Colinear'
+    args['Hamiltonian_SpinPolarisation_UnpairedElectrons'] = 1
+    args['Hamiltonian_SpinPolarisation_InitialSpins_'] = ''
+    args['Hamiltonian_SpinPolarisation_InitialSpins_Atoms'] = '-1'
+    args['Hamiltonian_SpinPolarisation_InitialSpins_SpinPerAtom'] = 1
+
+    calc.parameters.update(args)
 
     return calc
 
