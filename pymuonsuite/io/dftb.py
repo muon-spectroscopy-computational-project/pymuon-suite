@@ -23,7 +23,7 @@ def dftb_write_input(a, folder, calc=None, name=None):
 
     | Args:
     |   a (ase.Atoms):          Atoms object to write. Can have a Dftb
-    |                           calculator attached to carry 
+    |                           calculator attached to carry
     |                           arguments.
     |   folder (str):           Path to save the input files to.
     |   calc (ase.Calculator):  Calculator to attach to Atoms. If
@@ -87,7 +87,51 @@ def load_muonconf_dftb(folder):
     return atoms
 
 
+def parse_spinpol_dftb(folder):
+    """Parse atomic spin populations from a detailed.out DFTB+ file."""
+
+    with open(os.path.join(folder, 'detailed.out')) as f:
+        lines = f.readlines()
+
+    # Find the atomic populations blocks
+    spinpol = {
+        'up': [],
+        'down': [],
+    }
+
+    for i, l in enumerate(lines):
+        if 'Atom populations' in l:
+            s = l.split()[2][1:-1]
+            if s not in spinpol:
+                raise RuntimeError('Invalid detailed.out file')
+            for ll in lines[i+2:]:
+                lspl = ll.split()
+                try:
+                    n, pop = map(float, lspl)
+                except ValueError:
+                    break
+                spinpol[s].append(pop)
+
+    # Build population and net spin
+    N = len(spinpol['up'])
+    if N == 0:
+        raise RuntimeError('No atomic populations found in detailed.out')
+
+    pops = np.zeros((N, 2))
+    pops[:, 0] = spinpol['up']
+
+    if len(spinpol['down']) == 0:
+        return pops
+    elif len(spinpol['down']) == N:
+        pops[:, 1] = pops[:, 0]-spinpol['down']
+        pops[:, 0] += spinpol['down']
+        return pops
+    else:
+        raise RuntimeError('Incomplete populations in detailed.out')
+
 # Deprecated, left in for compatibility
+
+
 def save_muonconf_dftb(a, folder, params, dftbargs={}):
 
     name = os.path.split(folder)[-1]
