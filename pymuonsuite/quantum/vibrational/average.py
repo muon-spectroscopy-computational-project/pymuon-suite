@@ -11,6 +11,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import glob
 import numpy as np
 from copy import deepcopy
 
@@ -35,10 +36,11 @@ and try again.""")
 # Internal imports
 from pymuonsuite.io.castep import (parse_castep_masses, castep_write_input,
                                    add_to_castep_block)
-from pymuonsuite.io.dftb import dftb_write_input
+from pymuonsuite.io.dftb import (dftb_write_input, load_muonconf_dftb,
+                                 parse_spinpol_dftb)
+from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,)
-from pymuonsuite.data.dftb_pars import DFTBArgs
 
 
 class MuonAverageError(Exception):
@@ -116,6 +118,7 @@ def create_spinpol_dftbp_calculator(calc=None, param_set='3ob-3-1',
                                     kpts=[1, 1, 1]):
     """Create a calculator containing all necessary parameters for a DFTB+
     SCC spin polarised calculation"""
+    from pymuonsuite.data.dftb_pars import DFTBArgs
 
     if not isinstance(calc, Dftb):
         calc = Dftb()
@@ -147,6 +150,35 @@ def create_spinpol_dftbp_calculator(calc=None, param_set='3ob-3-1',
     calc.parameters.update(args)
 
     return calc
+
+
+def read_output_castep(folder, avgprop='hyperfine'):
+
+    # Read a castep file in the given folder, and then the required property
+    cfile = glob.glob(os.path.join(folder, '*.castep'))[0]
+    sname = seedname(cfile)
+    a = io.read(cfile)
+    a.info['name'] = sname
+
+    # Now read properties depending on what's being measured
+    if avgprop == 'hyperfine':
+        m = parse_hyperfine_magres(os.path.join(folder, sname + '.magres'))
+        a.arrays.update(m.arrays)
+
+    return a
+
+
+def read_output_dftbp(folder, avgprop='hyperfine'):
+
+    # Read a DFTB+ file in the given folder, and then the required property
+    a = load_muonconf_dftb(folder)
+    a.info['name'] = os.path.split(folder)[-1]
+
+    if avgprop == 'hyperfine':
+        pops = parse_spinpol_dftb(folder)
+        a.set_array('atomic_populations', pops)
+
+    return a
 
 
 def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
@@ -259,3 +291,29 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     displaced_coll.info['displacement_scheme'] = displsch
     displaced_coll.save_tree(sname + '_displaced', writer_function,
                              opt_args={'calc': calc})
+
+
+def muon_vibrational_average_read(cell_file, calculator='castep',
+                                  avgprop='hyperfine',
+                                  **kwargs):
+
+    # Open the structure file
+    cell = io.read(cell_file)
+    path = os.path.split(cell_file)[0]
+    sname = seedname(cell_file)
+    num_atoms = len(cell)
+
+    reader_function = {
+        'castep': read_output_castep,
+        'dftb+': read_output_dftbp
+    }[calculator]
+
+    displaced_coll = AtomsCollection.load_tree(sname + '_displaced',
+                                               reader_function,
+                                               opt_args={
+                                                   'avgprop': avgprop
+                                               })
+
+    for a in displaced_coll:
+        print(a.info)
+        print(a.arrays)
