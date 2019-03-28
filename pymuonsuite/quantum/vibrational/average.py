@@ -34,6 +34,7 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 and try again.""")
 
 # Internal imports
+from pymuonsuite import constants
 from pymuonsuite.io.castep import (parse_castep_masses, castep_write_input,
                                    add_to_castep_block)
 from pymuonsuite.io.dftb import (dftb_write_input, load_muonconf_dftb,
@@ -101,7 +102,7 @@ def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None, param_file=None,
 
     gamma_block = calc.cell.species_gamma.value
     calc.cell.species_gamma = add_to_castep_block(gamma_block, mu_symbol,
-                                                  851586494.1, 'gamma')
+                                                  constants.m_gamma, 'gamma')
 
     calc.cell.kpoint_mp_grid = kpts
 
@@ -241,6 +242,8 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
 
     # Fetch masses
     masses = parse_castep_masses(cell)
+    masses[mu_index] = constants.m_mu_amu
+    cell.set_masses(masses)
 
     # Load the phonons
     if phonon_source == 'castep':
