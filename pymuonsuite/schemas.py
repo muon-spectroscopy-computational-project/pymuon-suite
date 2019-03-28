@@ -172,19 +172,30 @@ MuonHarmonicSchema = Schema({
     # Default is [1,1,1].
     Optional('k_points_grid', default=np.ones(3).astype(int)):
     validate_int3,
-    # Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
-    # coupling tensors), 'bandstructure'
-    Optional('avgprop', default='hyperfine'): validate_all_of('hyperfine', 'bandstructure'),
+    # Property to be calculated, currently accepted value is only 'hyperfine'
+    # (hyperfine coupling tensors)
+    Optional('avgprop', default='hyperfine'): validate_all_of('hyperfine',),
+    # Calculator to use for property
+    Optional('calculator', default='castep'):
+    validate_all_of('castep', 'dftb+'),
     # Write a 'collective' file with all displaced positions in one
     Optional('write_allconf', default=False): validate_bool,
     # Source of phonon modes, currently accepted values: "castep", "asedftb+"
-    Optional('phonon_source', default='castep'): validate_all_of('castep', 'asedftbp'),
+    Optional('phonon_source', default='castep'):
+    validate_all_of('castep', 'dftb+'),
     # If using DFTB+ and ASE, which parametrization to use
-    Optional('asedftbp_pars', default='3ob-3-1'): validate_all_of('3ob-3-1', 'pbc-0-3'),
+    Optional('asedftbp_pars', default='3ob-3-1'):
+    validate_all_of('3ob-3-1', 'pbc-0-3'),
     # Output parameters
     # Path of parameter file which can be copied into folders with displaced cell
     # files for convenience
-    Optional('castep_out_param', default=None): validate_str,
+    Optional('castep_param', default=None): validate_str,
+    # The parameter set to use for DFTB+.
+    Optional('dftb_set', default='3ob-3-1'):
+    validate_str,
+    # Whether to turn on periodic boundary conditions in DFTB+
+    Optional('dftb_pbc', default=True):
+    bool,
 })
 
 # Parameter file schema and defaults

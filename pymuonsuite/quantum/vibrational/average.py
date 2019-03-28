@@ -150,7 +150,8 @@ def create_spinpol_dftbp_calculator(calc=None, param_set='3ob-3-1',
 
 def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
                                    mu_symbol='H:mu', grid_n=20, sigma_n=3,
-                                   avgprop='hyperfine', phonon_source='castep',
+                                   avgprop='hyperfine', calculator='castep',
+                                   phonon_source='castep',
                                    **kwargs):
     """
     Write input files to compute a vibrational average for a quantity on a muon 
@@ -170,6 +171,8 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     |   sigma_n (int):      Number of sigmas of the harmonic wavefunction used
     |                       for sampling.
     |   avgprop (str):      Property to calculate and average. Default is 'hyperfine'.
+    |   calculator (str):   Source of the property to calculate and average.
+    |                       Can be 'castep' or 'dftb+'. Default is 'castep'.
     |   phonon_source (str):Source of the phonon data. Can be 'castep' or 'asedftbp'.
     |                       Default is 'castep'.
     |   **kwargs:           Other arguments (such as specific arguments for the given 
@@ -209,7 +212,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     # Load the phonons
     if phonon_source == 'castep':
         ph_evals, ph_evecs = read_castep_gamma_phonons(sname, path)
-    elif phonon_source == 'asedftbp':
+    elif phonon_source == 'dftb+':
         ph_evals, ph_evecs, cell = compute_dftbp_phonons(cell,
                                                          kwargs['asedftbp_pars'],
                                                          kwargs['k_points_grid'])
@@ -241,7 +244,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     if avgprop == 'hyperfine':
         calc = create_hfine_castep_calculator(mu_symbol=mu_symbol,
                                               calc=cell.calc,
-                                              param_file=kwargs['castep_out_param'],
+                                              param_file=kwargs['castep_param'],
                                               kpts=kwargs['k_points_grid'])
 
     displaced_coll = AtomsCollection(displaced_cells)
