@@ -33,16 +33,21 @@ SSH:    git@bitbucket.org:casteppy/casteppy.git
 and try again.""")
 
 # Internal imports
-from pymuonsuite.io.castep import parse_castep_masses, castep_write_input, add_to_castep_block
+from pymuonsuite.io.castep import (parse_castep_masses, castep_write_input,
+                                   add_to_castep_block)
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,)
+from pymuonsuite.data.dftb_pars import DFTBArgs
 
 
 class MuonAverageError(Exception):
     pass
 
 
-def read_castep_phonons(seed, path='.'):
+def read_castep_gamma_phonons(seed, path='.'):
+    """Parse CASTEP phonon data into a casteppy object,
+    and return eigenvalues and eigenvectors at the gamma point.
+    """
     # Parse CASTEP phonon data into casteppy object
     pd = PhononData(seed, path=path)
     # Convert frequencies back to cm-1
@@ -102,6 +107,34 @@ def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None, param_file=None,
 
     calc.param.task = 'Magres'
     calc.param.magres_task = 'Hyperfine'
+
+    return calc
+
+
+def create_spinpol_dftbp_calculator(calc=None, param_set='3ob-3-1',
+                                    kpts=[1, 1, 1]):
+    """Create a calculator containing all necessary parameters for a DFTB+
+    SCC spin polarised calculation"""
+
+    if not isinstance(calc, Dftb):
+        calc = Dftb()
+    else:
+        calc = deepcopy(calc)
+
+    # A bit of a hack for the k-points
+    kc = Dftb(kpts=kpts)
+    kargs = {k: v for k, v in kc.parameters.items() if 'KPoints' in k}
+    calc.parameters.update(kargs)
+
+    # Create the arguments
+    dargs = DFTBArgs(param_set)
+    # Make it spin polarised
+    try:
+        dargs.set_optional('spinpol.json')
+    except KeyError:
+        raise ValueError('DFTB+ parameter set does not allow spin polarised'
+                         ' calculations')
+    calc.parameters.update(dargs.args)
 
     return calc
 
@@ -166,7 +199,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
 
     # Load the phonons
     if phonon_source == 'castep':
-        ph_evals, ph_evecs = read_castep_phonons(sname, path)
+        ph_evals, ph_evecs = read_castep_gamma_phonons(sname, path)
     elif phonon_source == 'asedftbp':
         ph_evals, ph_evecs, cell = compute_dftbp_phonons(cell,
                                                          kwargs['asedftbp_pars'],
