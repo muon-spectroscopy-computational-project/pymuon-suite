@@ -170,7 +170,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     elif phonon_source == 'asedftbp':
         ph_evals, ph_evecs, cell = compute_dftbp_phonons(cell,
                                                          kwargs['asedftbp_pars'],
-                                                         kwargs['asedftbp_kpts'])
+                                                         kwargs['k_points_grid'])
         # Save the optimised file
         fname, ext = os.path.splitext(cell_file)
         io.write(fname + '_opt' + ext, cell)
@@ -200,7 +200,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         calc = create_hfine_castep_calculator(mu_symbol=mu_symbol,
                                               calc=cell.calc,
                                               param_file=kwargs['castep_out_param'],
-                                              kpts=kwargs['castep_out_kpts'])
+                                              kpts=kwargs['k_points_grid'])
 
     displaced_coll = AtomsCollection(displaced_cells)
     displaced_coll.info['displacement_scheme'] = displsch

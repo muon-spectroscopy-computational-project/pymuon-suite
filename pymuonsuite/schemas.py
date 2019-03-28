@@ -168,6 +168,10 @@ MuonHarmonicSchema = Schema({
     Optional('grid_n', default=20): int,
     # Number of sigmas to sample in the harmonic approximation
     Optional('sigma_n', default=3): float,
+    # List of three integer k-points for both phonon and hyperfine calculations.
+    # Default is [1,1,1].
+    Optional('k_points_grid', default=np.ones(3).astype(int)):
+    validate_int3,
     # Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
     # coupling tensors), 'bandstructure'
     Optional('avgprop', default='hyperfine'): validate_all_of('hyperfine', 'bandstructure'),
@@ -177,14 +181,10 @@ MuonHarmonicSchema = Schema({
     Optional('phonon_source', default='castep'): validate_all_of('castep', 'asedftbp'),
     # If using DFTB+ and ASE, which parametrization to use
     Optional('asedftbp_pars', default='3ob-3-1'): validate_all_of('3ob-3-1', 'pbc-0-3'),
-    # If using DFTB+ and ASE, which kpoint grid to use
-    Optional('asedftbp_kpts', default=[1, 1, 1]): validate_int_array,
     # Output parameters
     # Path of parameter file which can be copied into folders with displaced cell
     # files for convenience
     Optional('castep_out_param', default=None): validate_str,
-    # k-point grid for output files, default is [1,1,1]
-    Optional('castep_out_kpts', default=[1, 1, 1]): validate_int3,
 })
 
 # Parameter file schema and defaults
