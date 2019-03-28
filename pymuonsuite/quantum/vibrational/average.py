@@ -35,6 +35,7 @@ and try again.""")
 # Internal imports
 from pymuonsuite.io.castep import (parse_castep_masses, castep_write_input,
                                    add_to_castep_block)
+from pymuonsuite.io.dftb import dftb_write_input
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,)
 from pymuonsuite.data.dftb_pars import DFTBArgs
@@ -214,7 +215,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         ph_evals, ph_evecs = read_castep_gamma_phonons(sname, path)
     elif phonon_source == 'dftb+':
         ph_evals, ph_evecs, cell = compute_dftbp_phonons(cell,
-                                                         kwargs['asedftbp_pars'],
+                                                         kwargs['dftb_set'],
                                                          kwargs['k_points_grid'])
         # Save the optimised file
         fname, ext = os.path.splitext(cell_file)
@@ -241,13 +242,20 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         io.write(sname + '_allconf.cell', allconf)
 
     # Get a calculator
-    if avgprop == 'hyperfine':
-        calc = create_hfine_castep_calculator(mu_symbol=mu_symbol,
-                                              calc=cell.calc,
-                                              param_file=kwargs['castep_param'],
-                                              kpts=kwargs['k_points_grid'])
+    if calculator == 'castep':
+        writer_function = castep_write_input
+        if avgprop == 'hyperfine':
+            calc = create_hfine_castep_calculator(mu_symbol=mu_symbol,
+                                                  calc=cell.calc,
+                                                  param_file=kwargs['castep_param'],
+                                                  kpts=kwargs['k_points_grid'])
+    elif calculator == 'dftb+':
+        writer_function = dftb_write_input
+        if avgprop == 'hyperfine':
+            calc = create_spinpol_dftbp_calculator(
+                param_set=kwargs['dftb_set'])
 
     displaced_coll = AtomsCollection(displaced_cells)
     displaced_coll.info['displacement_scheme'] = displsch
-    displaced_coll.save_tree(sname + '_displaced', castep_write_input,
+    displaced_coll.save_tree(sname + '_displaced', writer_function,
                              opt_args={'calc': calc})

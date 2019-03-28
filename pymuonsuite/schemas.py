@@ -183,9 +183,6 @@ MuonHarmonicSchema = Schema({
     # Source of phonon modes, currently accepted values: "castep", "asedftb+"
     Optional('phonon_source', default='castep'):
     validate_all_of('castep', 'dftb+'),
-    # If using DFTB+ and ASE, which parametrization to use
-    Optional('asedftbp_pars', default='3ob-3-1'):
-    validate_all_of('3ob-3-1', 'pbc-0-3'),
     # Output parameters
     # Path of parameter file which can be copied into folders with displaced cell
     # files for convenience
@@ -196,6 +193,9 @@ MuonHarmonicSchema = Schema({
     # Whether to turn on periodic boundary conditions in DFTB+
     Optional('dftb_pbc', default=True):
     bool,
+    # If using DFTB+, which parametrization to use
+    Optional('dftb_set', default='3ob-3-1'):
+    validate_all_of('3ob-3-1', 'pbc-0-3'),
 })
 
 # Parameter file schema and defaults
