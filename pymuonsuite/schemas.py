@@ -112,7 +112,7 @@ MuAirssSchema = Schema({
     validate_str,
     # The parameter set to use for DFTB+.
     Optional('dftb_set', default='3ob-3-1'):
-    validate_str,
+    validate_all_of('3ob-3-1', 'pbc-0-3'),
     # Whether to turn on periodic boundary conditions in DFTB+
     Optional('dftb_pbc', default=True):
     bool,
@@ -187,9 +187,6 @@ MuonHarmonicSchema = Schema({
     # Path of parameter file which can be copied into folders with displaced cell
     # files for convenience
     Optional('castep_param', default=None): validate_str,
-    # The parameter set to use for DFTB+.
-    Optional('dftb_set', default='3ob-3-1'):
-    validate_str,
     # Whether to turn on periodic boundary conditions in DFTB+
     Optional('dftb_pbc', default=True):
     bool,
