@@ -312,7 +312,10 @@ def add_to_castep_block(cblock, symbol, value, blocktype='mass'):
     # Assign the muon mass
     values[symbol] = value
 
-    cblock = 'AMU\n'
+    cblock = {
+        'mass': 'AMU',
+        'gamma': 'radsectesla'
+    }[blocktype] + '\n'
     for k, v in values.items():
         cblock += '{0} {1}\n'.format(k, v)
 
