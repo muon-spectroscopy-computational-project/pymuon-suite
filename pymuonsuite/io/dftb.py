@@ -14,7 +14,6 @@ from ase.calculators.dftb import Dftb
 from ase.calculators.singlepoint import SinglePointCalculator
 
 from pymuonsuite.utils import BackupFile
-from pymuonsuite.data.dftb_pars import DFTBArgs
 
 
 def dftb_write_input(a, folder, calc=None, name=None):
@@ -51,17 +50,18 @@ def dftb_write_input(a, folder, calc=None, name=None):
 
 
 def load_muonconf_dftb(folder):
-    """ Set the tag for a muon in an atoms object
+    """Read a DFTB+ output non-destructively.
 
     Args:
       directory (str): path to a directory to load DFTB+ results
 
     Returns:
-      calculator (ase.calculator.SinglePointCalculator): a single
-        point calculator for the results of the DFTB+ calculation
+      atoms (ase.Atoms): an atomic structure with the results attached in a
+      SinglePointCalculator
     """
 
     atoms = io.read(os.path.join(folder, 'geo_end.gen'))
+    atoms.info['name'] = os.path.split(folder)[-1]
     results_file = os.path.join(folder, "results.tag")
     if os.path.isfile(results_file):
         # DFTB+ was used to perform the optimisation
@@ -133,6 +133,8 @@ def parse_spinpol_dftb(folder):
 
 
 def save_muonconf_dftb(a, folder, params, dftbargs={}):
+
+    from pymuonsuite.data.dftb_pars import DFTBArgs
 
     name = os.path.split(folder)[-1]
 
