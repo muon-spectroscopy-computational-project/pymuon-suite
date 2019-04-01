@@ -194,17 +194,17 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
                                    phonon_source='castep',
                                    **kwargs):
     """
-    Write input files to compute a vibrational average for a quantity on a muon 
+    Write input files to compute a vibrational average for a quantity on a muon
     in a given system.
 
     | Pars:
     |   cell_file (str):    Filename for input structure file
     |   method (str):       Method to use for the average. Options are 'independent',
     |                       'thermal'. Default is 'independent'.
-    |   mu_index (int):     Position of the muon in the given cell file. 
+    |   mu_index (int):     Position of the muon in the given cell file.
     |                       Default is -1.
     |   mu_symbol (str):    Use this symbol to look for the muon among
-    |                       CASTEP custom species. Overrides muon_index if 
+    |                       CASTEP custom species. Overrides muon_index if
     |                       present in cell.
     |   grid_n (int):       Number of configurations used for sampling. Applies slightly
     |                       differently to different schemes.
@@ -215,7 +215,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     |                       Can be 'castep' or 'dftb+'. Default is 'castep'.
     |   phonon_source (str):Source of the phonon data. Can be 'castep' or 'asedftbp'.
     |                       Default is 'castep'.
-    |   **kwargs:           Other arguments (such as specific arguments for the given 
+    |   **kwargs:           Other arguments (such as specific arguments for the given
     |                       phonon method)
     """
 
@@ -298,12 +298,14 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
 
     displaced_coll = AtomsCollection(displaced_cells)
     displaced_coll.info['displacement_scheme'] = displsch
+    displaced_coll.info['muon_index'] = mu_index
     displaced_coll.save_tree(sname + '_displaced', writer_function,
                              opt_args={'calc': calc})
 
 
 def muon_vibrational_average_read(cell_file, calculator='castep',
-                                  avgprop='hyperfine',
+                                  avgprop='hyperfine', average_T=0,
+                                  average_file='averages.dat',
                                   **kwargs):
 
     # Open the structure file
@@ -322,7 +324,42 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
                                                opt_args={
                                                    'avgprop': avgprop
                                                })
+    mu_i = displaced_coll.info['muon_index']
+    displsch = displaced_coll.info['displacement_scheme']
+
+    to_avg = []
 
     for a in displaced_coll:
-        print(a.info)
-        print(a.arrays)
+        if avgprop == 'hyperfine':
+            to_avg.append(a.get_array('hyperfine')[mu_i])
+
+    to_avg = np.array(to_avg)
+    displsch.recalc_weights(T=average_T)
+    # New shape
+    N = len(displaced_coll)
+    shape = tuple([slice(N)] + [None]*(len(to_avg.shape)-1))
+    avg = np.sum(displsch.weights[shape]*to_avg, axis=0)
+
+    # Print output report
+    with open(average_file, 'w') as f:
+        avgname = {
+            'hyperfine': 'hyperfine tensor'
+        }[avgprop]
+        f.write("""
+Harmonic average of {property} performed on {cell}.
+Scheme details:
+
+{scheme}
+
+Averaged value:
+
+{avg}
+
+All values, by configuration:
+
+{vals}
+
+        """.format(property=avgname, cell=cell_file,
+                   scheme=displsch, avg=avg, vals='\n'.join([
+                       '{0}\n{1}\n'.format(i, v)
+                       for i, v in enumerate(to_avg)])))
