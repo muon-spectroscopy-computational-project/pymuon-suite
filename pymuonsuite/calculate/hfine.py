@@ -93,6 +93,10 @@ def compute_hfine_tensor(points, spins, cell=None, self_i=0, species='e',
         HT += np.eye(3)*avgM*cnst.mu_0/3.0*1e30
     # Add contact term
     if fermi:
-        HT += np.eye(3)*fermi_mm*2.0/3.0*cnst.mu_0
+        # This assumes that fermi_mm is the population of the 1s state, and
+        # fills in with the nuclear density from that.
+        # Further corrections might be done later for shell-resolved populations
+        HT += (np.eye(3)*fermi_mm*2.0/3.0*cnst.mu_0*1.0/np.pi /
+               cnst.physical_constants['Bohr radius'][0]**3)
 
     return HT
