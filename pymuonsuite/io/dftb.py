@@ -100,34 +100,46 @@ def parse_spinpol_dftb(folder):
     }
 
     for i, l in enumerate(lines):
-        if 'Atom populations' in l:
+        if 'Orbital populations' in l:
             s = l.split()[2][1:-1]
             if s not in spinpol:
                 raise RuntimeError('Invalid detailed.out file')
             for ll in lines[i+2:]:
                 lspl = ll.split()
                 try:
-                    n, pop = map(float, lspl)
+                    a_i, n, l, m, pop = map(float, lspl)
                 except ValueError:
                     break
-                spinpol[s].append(pop)
+                a_i, n, l, m = map(int, [a_i, n, l, m])
+                if len(spinpol[s]) < a_i:
+                    spinpol[s].append({})
+                spinpol[s][a_i-1][(n, l, m)] = pop
 
     # Build population and net spin
     N = len(spinpol['up'])
     if N == 0:
         raise RuntimeError('No atomic populations found in detailed.out')
 
-    pops = np.zeros((N, 2))
-    pops[:, 0] = spinpol['up']
+    pops = [{} for i in range(N)]
 
-    if len(spinpol['down']) == 0:
-        return pops
-    elif len(spinpol['down']) == N:
-        pops[:, 1] = pops[:, 0]-spinpol['down']
-        pops[:, 0] += spinpol['down']
-        return pops
-    else:
-        raise RuntimeError('Incomplete populations in detailed.out')
+    # Start with total populations and total spin
+    for i in range(N):
+        pops[i] = {
+            'q': 0,
+            'spin': 0,
+            'q_orbital': {},
+            'spin_orbital': {}
+        }
+        for s, sign in {'up': 1, 'down': -1}.items():
+            for nlm, p in spinpol[s][i].items():
+                pops[i]['q'] += p
+                pops[i]['spin'] += sign*p
+                pops[i]['q_orbital'][nlm] = pops[i]['q_orbital'].get(
+                    nlm, 0.0)+p
+                pops[i]['spin_orbital'][nlm] = pops[i]['spin_orbital'].get(
+                    nlm, 0.0)+p*sign
+
+    return pops
 
 # Deprecated, left in for compatibility
 
