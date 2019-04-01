@@ -16,7 +16,7 @@ _bohrmag = cnst.physical_constants['Bohr magneton'][0]
 
 
 def compute_hfine_tensor(points, spins, cell=None, self_i=0, species='e',
-                         cut_r=10):
+                         cut_r=10, lorentz=True, fermi=True):
     """Compute the hyperfine tensor experienced at point of index i generated
     by a number of localised spins at points, for a given periodic unit cell
     and species.
@@ -34,6 +34,10 @@ def compute_hfine_tensor(points, spins, cell=None, self_i=0, species='e',
     |                           species generating the magnetic field.
     |                           Determines the magnetic moments
     |   cut_r (float):       cutoff radius for dipolar component calculation
+    |   lorentz (bool):      if True, include a Lorentz term (average bulk
+    |                        magnetization). Default is True
+    |   fermi (bool):        if True, include a Fermi contact term 
+    |                        (magnetization at site i). Default is True
 
     | Returns:
     |   HT (np.ndarray):    hyperfine tensor at point i
@@ -84,10 +88,11 @@ def compute_hfine_tensor(points, spins, cell=None, self_i=0, species='e',
     HT *= cnst.mu_0/(4*np.pi)*1e30
 
     # Add Lorentz term
-    if cell is not None:
+    if cell is not None and lorentz:
         avgM = np.sum(magmoms)*3.0/(4.0*np.pi*cut_r**3)
         HT += np.eye(3)*avgM*cnst.mu_0/3.0*1e30
     # Add contact term
-    HT += np.eye(3)*fermi_mm*2.0/3.0*cnst.mu_0
+    if fermi:
+        HT += np.eye(3)*fermi_mm*2.0/3.0*cnst.mu_0
 
     return HT
