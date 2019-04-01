@@ -125,6 +125,9 @@ class DisplacementScheme(object):
                                   ' of this method; use one of the derived '
                                   'classes.')
 
+    def __str__(self):
+        return 'Generic DisplacementScheme'
+
 
 class IndependentDisplacements(DisplacementScheme):
     """IndependentDisplacements
@@ -203,12 +206,13 @@ class IndependentDisplacements(DisplacementScheme):
         self._T = T
 
         om = self.major_evals*1e2*cnst.c*2*np.pi
-        xi = np.exp(-cnst.hbar*om/(cnst.k*T))
+        if T > 0:
+            xi = np.exp(-cnst.hbar*om/(cnst.k*T))
+        else:
+            xi = om*0
         tfac = (1.0-xi**2)/(1+xi**2)
 
         # Now for the weights
-        sx = self.major_sigmas
-
         dz = np.linspace(-self.sigma_n, self.sigma_n, self.n)
 
         rho = np.exp(-dz**2)
@@ -216,3 +220,28 @@ class IndependentDisplacements(DisplacementScheme):
         self._w = np.concatenate(rhoall)
 
         return self.weights
+
+    def __str__(self):
+        return """Independent Displacements Scheme
+Displaces one single atom of index i along the
+three phonon modes with greatest Atomic Participation Ratio (APR).
+
+-------------------------
+
+Atom index: {i}
+
+Phonon frequencies: \n{evals} cm^-1
+
+Displacement vectors: \n{evecs}
+
+Temperature: \n{T} K
+
+Max sigma N: \n{sN}
+
+Weights: \n{w}
+
+-------------------------
+        """.format(i=self.i, evals='\t'.join(map(str, self.major_evals)),
+                   evecs='\n'.join(map(str, self.major_evecs)),
+                   T=self.T, w=self.weights, sN=self.sigma_n,
+                   sigmas=self.major_sigmas)
