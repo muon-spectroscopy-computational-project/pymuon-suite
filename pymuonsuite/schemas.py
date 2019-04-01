@@ -183,7 +183,9 @@ MuonHarmonicSchema = Schema({
     # Source of phonon modes, currently accepted values: "castep", "asedftb+"
     Optional('phonon_source', default='castep'):
     validate_all_of('castep', 'dftb+'),
-    # Output parameters
+    # Temperature for averaging
+    Optional('average_T', default=0): float,
+    # Calculation parameters
     # Path of parameter file which can be copied into folders with displaced cell
     # files for convenience
     Optional('castep_param', default=None): validate_str,
@@ -193,6 +195,8 @@ MuonHarmonicSchema = Schema({
     # If using DFTB+, which parametrization to use
     Optional('dftb_set', default='3ob-3-1'):
     validate_all_of('3ob-3-1', 'pbc-0-3'),
+    # Output files
+    Optional('average_file', default='averages.dat'): validate_str
 })
 
 # Parameter file schema and defaults
