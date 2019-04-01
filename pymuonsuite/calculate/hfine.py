@@ -56,7 +56,7 @@ def compute_hfine_tensor(points, spins, cell=None, self_i=0, species='e',
             mm = mu_cnst.m_gamma*cnst.hbar
         else:
             mm = _get_isotope_data(s, 'gamma')[0]*cnst.hbar
-        magmoms[i] *= mm
+        magmoms[i] *= mm*abs(cnst.physical_constants['electron g factor'][0])
 
     # Do we need a supercell?
     r = np.array(points)-points[self_i]
