@@ -22,12 +22,6 @@ def nq_entry():
                         help="YAML file containing relevant input parameters")
     parser.add_argument('-w',   action='store_true', default=False,
                         help="Create and write input files instead of parsing the results")
-    # We comment this bit out until we have other calculation types
-    #
-    # parser.add_argument('calculation_type', type=str,
-    #                     help="""Type of calculation to be performed, currently supports:
-    #             'vib_avg': Nuclear quantum effects of atoms simulated
-    #             by treating atoms as a particles in a quantum harmonic oscillator""")
 
     args = parser.parse_args()
 
@@ -38,12 +32,6 @@ def nq_entry():
         muon_vibrational_average_write(**params)
     else:
         muon_vibrational_average_read(**params)
-
-    # Call functions
-    # vib_avg(params['cell_file'], params['method'], params['muon_symbol'],
-    #         params['grid_n'], params['property'], params['selection'],
-    #         params['weight'], params['param_file'],
-    #         args.w, params['ase_phonons'])
 
 
 if __name__ == "__main__":
