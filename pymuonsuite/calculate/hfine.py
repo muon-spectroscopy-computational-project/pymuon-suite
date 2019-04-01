@@ -167,15 +167,14 @@ def compute_hfine_mullpop(atoms, populations, self_i=0,
         if fermi_neigh:
             dr = pos-pos[self_i]
             if pbc:
-                dr = minimum_periodic(dr, cell)
+                dr, _ = minimum_periodic(dr, cell)
             drnorm = np.linalg.norm(dr, axis=-1)
 
             # This is totally empirical! Works with C6H6Mu for now
             expcorr = np.exp(-drnorm*1e-10/(1.55*a0))*totspins
-            expcorr[self_i] = 0
+            expcorr[self_i] = 0.0
 
             fermi_mm += np.sum(expcorr)
-        print(fermi_mm)
 
     return compute_hfine_tensor(pos, magmoms, cell, self_i=self_i,
                                 cut_r=cut_r, lorentz=lorentz,
