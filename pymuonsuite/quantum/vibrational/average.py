@@ -42,6 +42,7 @@ from pymuonsuite.io.dftb import (dftb_write_input, load_muonconf_dftb,
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,)
+from pymuonsuite.calculate.hfine import compute_hfine_mullpop
 
 
 class MuonAverageError(Exception):
@@ -177,7 +178,12 @@ def read_output_dftbp(folder, avgprop='hyperfine'):
 
     if avgprop == 'hyperfine':
         pops = parse_spinpol_dftb(folder)
-        a.set_array('atomic_populations', pops)
+        hfine = []
+        for i in range(len(a)):
+            hf = compute_hfine_mullpop(a, pops, self_i=i, fermi=True,
+                                       fermi_neigh=True)
+            hfine.append(hf)
+        a.set_array('hyperfine', np.array(hfine))
 
     return a
 
