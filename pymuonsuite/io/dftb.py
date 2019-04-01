@@ -14,21 +14,54 @@ from ase.calculators.dftb import Dftb
 from ase.calculators.singlepoint import SinglePointCalculator
 
 from pymuonsuite.utils import BackupFile
-from pymuonsuite.data.dftb_pars import DFTBArgs
+
+
+def dftb_write_input(a, folder, calc=None, name=None):
+    """Writes input files for an Atoms object with a Dftb+
+    calculator.
+
+    | Args:
+    |   a (ase.Atoms):          Atoms object to write. Can have a Dftb
+    |                           calculator attached to carry
+    |                           arguments.
+    |   folder (str):           Path to save the input files to.
+    |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+    |                           present, the pre-existent one will
+    |                           be ignored.
+    |   name (str):             Seedname to save the files with. If not
+    |                           given, use the name of the folder.
+    """
+
+    if name is None:
+        name = os.path.split(folder)[-1]  # Same as folder name
+
+    if calc is not None:
+        calc.atoms = a
+        a.set_calculator(calc)
+
+    if not isinstance(a.calc, Dftb):
+        a = a.copy()
+        calc = Dftb(label=name, atoms=a, run_manyDftb_steps=True)
+        a.set_calculator(calc)
+
+    a.calc.label = name
+    a.calc.directory = folder
+    a.calc.write_input(a)
 
 
 def load_muonconf_dftb(folder):
-    """ Set the tag for a muon in an atoms object
+    """Read a DFTB+ output non-destructively.
 
     Args:
       directory (str): path to a directory to load DFTB+ results
 
     Returns:
-      calculator (ase.calculator.SinglePointCalculator): a single
-        point calculator for the results of the DFTB+ calculation
+      atoms (ase.Atoms): an atomic structure with the results attached in a
+      SinglePointCalculator
     """
 
     atoms = io.read(os.path.join(folder, 'geo_end.gen'))
+    atoms.info['name'] = os.path.split(folder)[-1]
     results_file = os.path.join(folder, "results.tag")
     if os.path.isfile(results_file):
         # DFTB+ was used to perform the optimisation
@@ -53,7 +86,67 @@ def load_muonconf_dftb(folder):
 
     return atoms
 
+
+def parse_spinpol_dftb(folder):
+    """Parse atomic spin populations from a detailed.out DFTB+ file."""
+
+    with open(os.path.join(folder, 'detailed.out')) as f:
+        lines = f.readlines()
+
+    # Find the atomic populations blocks
+    spinpol = {
+        'up': [],
+        'down': [],
+    }
+
+    for i, l in enumerate(lines):
+        if 'Orbital populations' in l:
+            s = l.split()[2][1:-1]
+            if s not in spinpol:
+                raise RuntimeError('Invalid detailed.out file')
+            for ll in lines[i+2:]:
+                lspl = ll.split()
+                try:
+                    a_i, n, l, m, pop = map(float, lspl)
+                except ValueError:
+                    break
+                a_i, n, l, m = map(int, [a_i, n, l, m])
+                if len(spinpol[s]) < a_i:
+                    spinpol[s].append({})
+                spinpol[s][a_i-1][(n, l, m)] = pop
+
+    # Build population and net spin
+    N = len(spinpol['up'])
+    if N == 0:
+        raise RuntimeError('No atomic populations found in detailed.out')
+
+    pops = [{} for i in range(N)]
+
+    # Start with total populations and total spin
+    for i in range(N):
+        pops[i] = {
+            'q': 0,
+            'spin': 0,
+            'q_orbital': {},
+            'spin_orbital': {}
+        }
+        for s, sign in {'up': 1, 'down': -1}.items():
+            for nlm, p in spinpol[s][i].items():
+                pops[i]['q'] += p
+                pops[i]['spin'] += sign*p
+                pops[i]['q_orbital'][nlm] = pops[i]['q_orbital'].get(
+                    nlm, 0.0)+p
+                pops[i]['spin_orbital'][nlm] = pops[i]['spin_orbital'].get(
+                    nlm, 0.0)+p*sign
+
+    return pops
+
+# Deprecated, left in for compatibility
+
+
 def save_muonconf_dftb(a, folder, params, dftbargs={}):
+
+    from pymuonsuite.data.dftb_pars import DFTBArgs
 
     name = os.path.split(folder)[-1]
 

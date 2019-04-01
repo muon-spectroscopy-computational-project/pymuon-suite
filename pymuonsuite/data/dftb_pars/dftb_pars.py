@@ -110,6 +110,8 @@ class DFTBArgs(object):
             print("Optional files available:")
             print('\n'.join(self._optdict.keys()))
         else:
+            if name not in self._optdict:
+                raise KeyError('Optional file {0} not available'.format(name))
             self._optdict[name] = value
 
     @staticmethod

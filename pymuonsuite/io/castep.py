@@ -11,12 +11,49 @@ import numpy as np
 import scipy.constants as cnst
 from ase import Atoms
 from ase import io
+from ase.io.castep import write_param
 from ase.calculators.castep import Castep
 from soprano.selection import AtomSelection
 
 
 from pymuonsuite.utils import list_to_string
 from pymuonsuite.utils import find_ipso_hydrogen
+
+
+class CastepError(Exception):
+    pass
+
+
+def castep_write_input(a, folder, calc=None, name=None):
+    """Writes input files for an Atoms object with a Castep
+    calculator.
+
+    | Args:
+    |   a (ase.Atoms):          Atoms object to write. Can have a Castep
+    |                           calculator attached to carry cell/param
+    |                           keywords.
+    |   folder (str):           Path to save the input files to.
+    |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+    |                           present, the pre-existent one will
+    |                           be ignored.
+    |   name (str):             Seedname to save the files with. If not
+    |                           given, use the name of the folder.
+    """
+
+    if name is None:
+        name = os.path.split(folder)[-1]  # Same as folder name
+
+    if calc is not None:
+        a.set_calculator(calc)
+
+    if not isinstance(a.calc, Castep):
+        a = a.copy()
+        calc = Castep(atoms=a)
+        a.set_calculator(calc)
+
+    io.write(os.path.join(folder, name + '.cell'), a)
+    write_param(os.path.join(folder, name + '.param'),
+                a.calc.param, force_write=True)
 
 
 def save_muonconf_castep(a, folder, params):
@@ -27,7 +64,7 @@ def save_muonconf_castep(a, folder, params):
     if isinstance(a.calc, Castep):
         ccalc = a.calc
     else:
-        ccalc = Castep(castep_command=params['castep_command'])
+        ccalc = Castep()
 
     ccalc.cell.kpoint_mp_grid.value = list_to_string(params['k_points_grid'])
     ccalc.cell.species_mass = mass_block.format(params['mu_symbol']
@@ -42,14 +79,13 @@ def save_muonconf_castep(a, folder, params):
     io.write(os.path.join(folder, '{0}.cell'.format(name)), a)
     ccalc.atoms = a
 
-    if params['castep_param'] is not '':
+    if params['castep_param'] is not None:
         castep_params = yaml.load(open(params['castep_param'], 'r'))
     else:
         castep_params = {}
 
-    castep_params['task'] = "GeometryOptimization"
-
     # Parameters from .yaml will overwrite parameters from .param
+    castep_params['task'] = "GeometryOptimization"
     castep_params['geom_max_iter'] = params['geom_steps']
     castep_params['geom_force_tol'] = params['geom_force_tol']
     castep_params['max_scf_cycles'] = params['max_scc_steps']
@@ -57,6 +93,77 @@ def save_muonconf_castep(a, folder, params):
     parameter_file = os.path.join(folder, '{0}.param'.format(name))
     yaml.safe_dump(castep_params, open(parameter_file, 'w'),
                    default_flow_style=False)
+
+
+def parse_castep_bands(infile, header=False):
+    """Parse eigenvalues from a CASTEP .bands file. This only works with spin
+    components = 1.
+
+    | Args:
+    |   infile(str): Directory of bands file.
+    |   header(bool, default=False): If true, just return the number of k-points
+    |       and eigenvalues. Else, parse and return the band structure.
+    | Returns:
+    |   n_kpts(int), n_evals(int): Number of k-points and eigenvalues.
+    |   bands(Numpy float array, shape:(n_kpts, n_evals)): Energy eigenvalues of
+    |       band structure.
+    """
+    file = open(infile, "r")
+    lines = file.readlines()
+    n_kpts = int(lines[0].split()[-1])
+    n_evals = int(lines[3].split()[-1])
+    if header == True:
+        return n_kpts, n_evals
+    if int(lines[1].split()[-1]) != 1:
+        raise ValueError("""Either incorrect file format detected or greater
+                            than 1 spin component used (parse_castep_bands
+                            only works with 1 spin component.)""")
+    # Parse eigenvalues
+    bands = np.zeros((n_kpts, n_evals))
+    for kpt in range(n_kpts):
+        for eval in range(n_evals):
+            bands[kpt][eval] = float(lines[11+eval+kpt*(n_evals+2)].strip())
+    return bands
+
+
+def parse_castep_mass_block(mass_block):
+    """Parse CASTEP custom species masses, returning a dictionary of masses
+    by species, in amu.
+
+    | Args:
+    |   mass_block (str):   Content of a species_mass block
+    | Returns:
+    |   masses (dict):      Dictionary of masses by species symbol
+    """
+
+    mass_tokens = [l.split() for l in mass_block.split('\n')]
+    custom_masses = {}
+
+    units = {
+        'amu': 1,
+        'm_e': cnst.m_e/cnst.u,
+        'kg': 1.0/cnst.u,
+        'g': 1e-3/cnst.u
+    }
+
+    # Is the first line a unit?
+    u = 1
+    if len(mass_tokens) > 0 and len(mass_tokens[0]) == 1:
+        try:
+            u = units[mass_tokens[0][0]]
+        except KeyError:
+            raise CastepError('Invalid mass unit in species_mass block')
+
+        mass_tokens.pop(0)
+
+    for tk in mass_tokens:
+        try:
+            custom_masses[tk[0]] = float(tk[1])*u
+        except (ValueError, IndexError):
+            raise CastepError('Invalid line in species_mass block')
+
+    return custom_masses
+
 
 def parse_castep_masses(cell):
     """Parse CASTEP custom species masses, returning an array of all atom masses
@@ -68,55 +175,60 @@ def parse_castep_masses(cell):
     |   masses(Numpy float array, shape(no. of atoms)): Correct masses of all
     |       atoms in cell file.
     """
-    species_masses = cell.calc.cell.species_mass.value.split()
-    custom_masses = {}
-    #If no units given in species mass block
-    if len(species_masses)%2 == 0:
-        for i in range(0, len(species_masses), 2):
-            custom_masses[species_masses[i]] = float(species_masses[i+1])
-    #If units given in species mass block
-    else:
-        for i in range(1, len(species_masses), 2):
-            custom_masses[species_masses[i]] = float(species_masses[i+1])
+    mass_block = cell.calc.cell.species_mass.value
+    if mass_block is None:
+        return cell.get_masses()
+
+    custom_masses = parse_castep_mass_block(mass_block)
 
     masses = cell.get_masses()
-    symbols = cell.get_array("castep_custom_species")
-    for i, symbol1 in enumerate(symbols):
-        for symbol2 in custom_masses:
-            if symbol1 == symbol2:
-                masses[i] = custom_masses[symbol2]
+    elems = cell.get_chemical_symbols()
+    elems = cell.arrays.get('castep_custom_species', elems)
+
+    masses = [custom_masses.get(elems[i], m) for i, m in enumerate(masses)]
+
+    cell.set_masses(masses)
 
     return masses
 
-def parse_castep_muon(cell, mu_sym, ignore_ipsoH):
-    """Parse muon data from CASTEP cell file, returning
-       the muon and ipso hydrogen index and muon mass.
+
+def parse_castep_gamma_block(gamma_block):
+    """Parse CASTEP custom species gyromagnetic ratios, returning a 
+    dictionary of gyromagnetic ratios by species, in radsectesla.
 
     | Args:
-    |   cell (ASE atoms object): ASE Atoms object containing CASTEP cell data
-    |   mu_sym (str): Symbol used to represent muon
-    |   ignore_ipsoH (bool): If true, do not find ipso hydrogen index
+    |   gamma_block (str):   Content of a species_gamma block
     | Returns:
-    |   mu_index (int): Index of muon in cell file
-    |   ipso_H_index (int): Index of ipso hydrogen in cell file
-    |   mu_mass (float): Mass of muon in kg
+    |   gammas (dict):      Dictionary of gyromagnetic ratios by species symbol
     """
-    # Get muon mass
-    for i, item in enumerate(cell.calc.cell.species_mass.value.split()):
-        if item == mu_sym:
-            mu_mass = float(cell.calc.cell.species_mass.value.split()[i+1])
-    mu_mass = mu_mass*cnst.u  # Convert to kg
-    # Find muon index in structure array
-    sel = AtomSelection.from_array(
-        cell, 'castep_custom_species', mu_sym)
-    mu_index = sel.indices[0]
-    # Find ipso hydrogen location
-    if not ignore_ipsoH:
-        ipso_H_index = find_ipso_hydrogen(mu_index, cell, mu_sym)
-    else:
-        ipso_H_index = None
 
-    return mu_index, ipso_H_index, mu_mass
+    gamma_tokens = [l.split() for l in gamma_block.split('\n')]
+    custom_gammas = {}
+
+    units = {
+        'agr': cnst.e/cnst.m_e,
+        'radsectesla': 1,
+        'mhztesla': 0.5e-6/np.pi,
+    }
+
+    # Is the first line a unit?
+    u = 1
+    if len(gamma_tokens) > 0 and len(gamma_tokens[0]) == 1:
+        try:
+            u = units[gamma_tokens[0][0]]
+        except KeyError:
+            raise CastepError('Invalid gamma unit in species_gamma block')
+
+        gamma_tokens.pop(0)
+
+    for tk in gamma_tokens:
+        try:
+            custom_gammas[tk[0]] = float(tk[1])*u
+        except (ValueError, IndexError):
+            raise CastepError('Invalid line in species_gamma block')
+
+    return custom_gammas
+
 
 def parse_castep_ppots(cfile):
 
@@ -160,6 +272,7 @@ def parse_castep_ppots(cfile):
 
     return ppot_blocks
 
+
 def parse_final_energy(infile):
     """
     Parse final energy from .castep file
@@ -179,3 +292,31 @@ def parse_final_energy(infile):
                 raise RuntimeError(
                     "Corrupt .castep file found: {0}".format(infile))
     return E
+
+
+def add_to_castep_block(cblock, symbol, value, blocktype='mass'):
+    """Add a pair of the form:
+        symbol  value
+       to a given castep block cblock, given the type.
+    """
+
+    parser = {
+        'mass': parse_castep_mass_block,
+        'gamma': parse_castep_gamma_block
+    }[blocktype]
+
+    if cblock is None:
+        values = {}
+    else:
+        values = parser(cblock)
+    # Assign the muon mass
+    values[symbol] = value
+
+    cblock = {
+        'mass': 'AMU',
+        'gamma': 'radsectesla'
+    }[blocktype] + '\n'
+    for k, v in values.items():
+        cblock += '{0} {1}\n'.format(k, v)
+
+    return cblock

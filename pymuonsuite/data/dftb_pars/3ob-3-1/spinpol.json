@@ -8,5 +8,5 @@
   "Hamiltonian_SpinConstants_N": "{ -0.033 -0.027\n -0.027 -0.026\n\n}",
   "Hamiltonian_SpinConstants_O": "{ -0.035 -0.030\n -0.030 -0.028\n\n}",
   "Hamiltonian_SpinConstants_S": "{ -0.021 -0.017 0.000\n -0.017 -0.016 0.000\n 0.000 0.000 -0.080\n\n}",
-  "Hamiltonian_SpinPolarisation_": "Colinear"
+  "Hamiltonian_SpinPolarisation": "Colinear {}"
 }

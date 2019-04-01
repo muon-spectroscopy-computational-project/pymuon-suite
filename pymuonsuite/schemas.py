@@ -43,12 +43,13 @@ def validate_str(s):
 
 
 def validate_bool(value):
-    return (value.strip().lower() in ('true', 't'))
+    return (str(value).strip().lower() in ('true', 't'))
 
 
 def validate_int3(value):
     v = np.array(value)
     return v.shape == (3,) and v.dtype == int
+
 
 def validate_int_array(value):
     v = np.array(value)
@@ -77,6 +78,9 @@ def load_input_file(fname, param_schema, merge=None):
         params = dict(merge)
         params.update(new_params)
 
+    if params is None:
+        params = {}  # Fix in case the yaml file is empty
+
     try:
         params = param_schema.validate(params)
     except SchemaError as e:
@@ -104,11 +108,11 @@ MuAirssSchema = Schema({
     Optional('dftb_command', default='dftb+'):
     validate_str,
     # File path to the CASTEP parameter file.
-    Optional('castep_param', default=''):
+    Optional('castep_param', default=None):
     validate_str,
     # The parameter set to use for DFTB+.
     Optional('dftb_set', default='3ob-3-1'):
-    validate_str,
+    validate_all_of('3ob-3-1', 'pbc-0-3'),
     # Whether to turn on periodic boundary conditions in DFTB+
     Optional('dftb_pbc', default=True):
     bool,
@@ -123,7 +127,7 @@ MuAirssSchema = Schema({
     # diagonal matrix will be generated with the integer repeated on the
     # diagonals. For a list of three numbers a diagonal matrix will be
     # generated where the digonal elements are set to the list. A matrix will
-    # be used direclty as is. Default is a 3x3 indentity matrix.
+    # be used directly as is. Default is a 3x3 indentity matrix.
     Optional('supercell', default=1):
     validate_supercell,
     # List of three integer k-points. Default is [1,1,1].
@@ -151,36 +155,48 @@ MuAirssSchema = Schema({
 
 # Parameter file schema and defaults
 MuonHarmonicSchema = Schema({
-    #File containing structural info about molecule/crystal
+    # File containing structural info about molecule/crystal
     'cell_file': validate_str,
-    #Symbol used to represent muon
-    'muon_symbol': validate_str,
-    #Array of indices of atoms to be vibrated, counting from 1. E.g. for first 3
-    #atoms in cell file enter [1, 2, 3]. Enter [-1] to select all atoms.
-    'atom_indices': validate_int_array,
-    #Number of grid points(displacements of muon) to use on each phonon mode
-    'grid_n': int,
-    #Property to be calculated, currently accepted values: 'hyperfine' (hyperfine
-    #coupling tensors)
-    'property': validate_str,
-    #Is value being calculated a 'matrix', 'vector', or 'scalar'? (e.g. hyperfine
-    #tensor is a matrix)
-    'value_type': validate_str,
-    #Type of weighting to be used, currently accepted values: "harmonic" (harmonic
-    #oscillator wavefunction)
-    Optional('weight', default='harmonic'): validate_str,
-    #Path of parameter file which can be copied into folders with displaced cell
-    #files for convenience
-    Optional('param_file', default=None): validate_str,
-    #Solve the Schroedinger equation numerically on the three axes
-    Optional('numerical_solver', default=False): bool,
-    #If True, use ASE to calculate phonon modes. ASE will use the calculator
-    #of the input cell, e.g. CASTEP for .cell files. Set dftb_phonons to True
-    #in order to use dftb+ as the calculator instead.
-    Optional('ase_phonons', default=False): bool,
-    #If True, use dftb+ to calculate phonon modes. Must have ase_phonons set to
-    #True for this to do anything.
-    Optional('dftb_phonons', default=True): bool
+    # Method used to calculate thermal average
+    Optional('method', default='independent'): validate_all_of('independent', 'thermal'),
+    # Index of muon in cell
+    Optional('mu_index', default=-1): int,
+    # If using Castep custom species, custom species of muon (supersedes index
+    # if present in cell)
+    Optional('mu_symbol', default='H:mu'): validate_str,
+    # Number of grid points to use on each phonon mode or pairs of thermal lines
+    Optional('grid_n', default=20): int,
+    # Number of sigmas to sample in the harmonic approximation
+    Optional('sigma_n', default=3): float,
+    # List of three integer k-points for both phonon and hyperfine calculations.
+    # Default is [1,1,1].
+    Optional('k_points_grid', default=np.ones(3).astype(int)):
+    validate_int3,
+    # Property to be calculated, currently accepted value is only 'hyperfine'
+    # (hyperfine coupling tensors)
+    Optional('avgprop', default='hyperfine'): validate_all_of('hyperfine',),
+    # Calculator to use for property
+    Optional('calculator', default='castep'):
+    validate_all_of('castep', 'dftb+'),
+    # Write a 'collective' file with all displaced positions in one
+    Optional('write_allconf', default=False): validate_bool,
+    # Source of phonon modes, currently accepted values: "castep", "asedftb+"
+    Optional('phonon_source', default='castep'):
+    validate_all_of('castep', 'dftb+'),
+    # Temperature for averaging
+    Optional('average_T', default=0): float,
+    # Calculation parameters
+    # Path of parameter file which can be copied into folders with displaced cell
+    # files for convenience
+    Optional('castep_param', default=None): validate_str,
+    # Whether to turn on periodic boundary conditions in DFTB+
+    Optional('dftb_pbc', default=True):
+    bool,
+    # If using DFTB+, which parametrization to use
+    Optional('dftb_set', default='3ob-3-1'):
+    validate_all_of('3ob-3-1', 'pbc-0-3'),
+    # Output files
+    Optional('average_file', default='averages.dat'): validate_str
 })
 
 # Parameter file schema and defaults

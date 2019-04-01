@@ -14,22 +14,27 @@ from __future__ import unicode_literals
 import os
 import glob
 import shutil
+from copy import deepcopy
 
 import numpy as np
 import argparse as ap
 from spglib import find_primitive
 
-from pymuonsuite.io.castep import save_muonconf_castep
-from pymuonsuite.io.dftb import save_muonconf_dftb
-from pymuonsuite.utils import make_3x3, safe_create_folder
-from pymuonsuite.data.dftb_pars.dftb_pars import get_license
-from pymuonsuite.schemas import load_input_file, MuAirssSchema
-
 from ase import Atoms, io
+from ase.io.castep import read_param
 from ase.build import make_supercell
+from ase.calculators.castep import Castep
+from ase.calculators.dftb import Dftb
 from soprano.utils import safe_input
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
+
+import pymuonsuite.constants as cnst
+from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
+from pymuonsuite.data.dftb_pars.dftb_pars import get_license, DFTBArgs
+from pymuonsuite.schemas import load_input_file, MuAirssSchema
+from pymuonsuite.io.castep import (castep_write_input, add_to_castep_block)
+from pymuonsuite.io.dftb import dftb_write_input
 
 
 def find_primitive_structure(struct):
@@ -81,9 +86,113 @@ def generate_muairss_collection(struct, params):
         # Add castep custom species
         csp = scell0.get_chemical_symbols() + [params['mu_symbol']]
         scell.set_array('castep_custom_species', np.array(csp))
+        scell.set_pbc(params['dftb_pbc'])
         collection.append(scell)
 
     return AtomsCollection(collection)
+
+
+def safe_create_folder(folder_name):
+    while os.path.isdir(folder_name):
+        ans = safe_input(('Folder {} exists, overwrite (y/N)? '
+                          ).format(folder_name))
+        if ans == 'y':
+            shutil.rmtree(folder_name)
+        else:
+            folder_name = safe_input('Please input new folder name:\n')
+    try:
+        os.mkdir(folder_name)
+    except OSError:
+        pass  # It's fine, it already exists
+    return folder_name
+
+
+def parse_structure_name(file_name):
+    name = os.path.basename(file_name)
+    base = os.path.splitext(name)[0]
+    return base
+
+
+def create_muairss_castep_calculator(a, params={}, calc=None):
+    """Create a calculator containing all the necessary parameters
+    for a geometry optimization."""
+
+    if not isinstance(calc, Castep):
+        calc = Castep()
+    else:
+        calc = deepcopy(calc)
+
+    musym = params.get('mu_symbol', 'H:mu')
+
+    # Start by ensuring that the muon mass and gyromagnetic ratios are included
+    mass_block = calc.cell.species_mass.value
+    calc.cell.species_mass = add_to_castep_block(mass_block, musym,
+                                                 cnst.m_mu_amu,
+                                                 'mass')
+
+    gamma_block = calc.cell.species_gamma.value
+    calc.cell.species_gamma = add_to_castep_block(gamma_block, musym,
+                                                  851586494.1, 'gamma')
+
+    # Now assign the k-points
+    calc.cell.kpoint_mp_grid = list_to_string(
+        params.get('k_points_grid', [1, 1, 1]))
+    calc.cell.fix_all_cell = True   # Necessary for older CASTEP versions
+
+    # Read the parameters
+    pfile = params.get('castep_param', None)
+    if pfile is not None:
+        calc.param = read_param(params['castep_param'])
+
+    calc.param.task = 'GeometryOptimization'
+    calc.param.geom_max_iter = params.get('geom_steps', 30)
+    calc.param.geom_force_tol = params.get('geom_force_tol', 0.05)
+    calc.param.max_scf_cycles = params.get('max_scc_steps', 30)
+
+    return calc
+
+
+def create_muairss_dftb_calculator(a, params={}, calc=None):
+
+    if not isinstance(calc, Dftb):
+        args = {}
+    else:
+        args = calc.todict()
+
+    dargs = DFTBArgs(params['dftb_set'])
+    is_spinpol = params.get('spin_polarized', False)
+    if is_spinpol:
+        dargs.set_optional('spinpol.json', True)
+
+    args.update(dargs.args)
+    args = dargs.args
+    args['Driver_'] = 'ConjugateGradient'
+    args['Driver_Masses_'] = ''
+    args['Driver_Masses_Mass_'] = ''
+    args['Driver_Masses_Mass_Atoms'] = '-1'
+    args['Driver_Masses_Mass_MassPerAtom [amu]'] = str(cnst.m_mu_amu)
+
+    args['Driver_MaxForceComponent [eV/AA]'] = params['geom_force_tol']
+    args['Driver_MaxSteps'] = params['geom_steps']
+    args['Driver_MaxSccIterations'] = params['max_scc_steps']
+
+    if is_spinpol:
+        # Configure initial spins
+        spins = np.array(a.get_initial_magnetic_moments())
+        args['Hamiltonian_SpinPolarisation_InitialSpins'] = '{'
+        args['Hamiltonian_SpinPolarisation_' +
+             'InitialSpins_AllAtomSpins'] = '{' + '\n'.join(
+            map(str, spins)) + '}'
+        args['Hamiltonian_SpinPolarisation_UnpairedElectrons'] = str(
+            np.sum(spins))
+
+    if params['dftb_pbc']:
+        calc = Dftb(kpts=params['k_points_grid'],
+                    run_manyDftb_steps=True, **args)
+    else:
+        calc = Dftb(run_manyDftb_steps=True, **args)
+
+    return calc
 
 
 def save_muairss_collection(struct, params, batch_path=''):
@@ -101,8 +210,8 @@ def save_muairss_collection(struct, params, batch_path=''):
 
     # Now save in the appropriate format
     save_formats = {
-        'castep': save_muonconf_castep,
-        'dftb+': save_muonconf_dftb
+        'castep': castep_write_input,
+        'dftb+': dftb_write_input
     }
 
     # Which calculators?
@@ -110,36 +219,24 @@ def save_muairss_collection(struct, params, batch_path=''):
     if 'all' in calcs:
         calcs = save_formats.keys()
 
+    # Make the actual calculators
+    make_calcs = {
+        'castep': create_muairss_castep_calculator,
+        'dftb+': create_muairss_dftb_calculator
+    }
+
+    calcs = {c: make_calcs[c](struct, params=params, calc=struct.calc)
+             for c in calcs}
+
     # Save LICENSE file for DFTB+ parameters
     if 'dftb+' in calcs:
         with open(os.path.join(out_path, 'dftb.LICENSE'), 'w') as f:
             f.write(get_license())
 
-    for cname in calcs:
+    for cname, calc in calcs.items():
         calc_path = os.path.join(out_path, cname)
         dc.save_tree(calc_path, save_formats[cname], name_root=params['name'],
-                     opt_args={'params': params}, safety_check=2)
-
-
-def safe_create_folder(folder_name):
-    while os.path.isdir(folder_name):
-        ans = safe_input(('Folder {} exists, overwrite (y/N)? '
-                         ).format(folder_name))
-        if ans == 'y':
-            shutil.rmtree(folder_name)
-        else:
-            folder_name = safe_input('Please input new folder name:\n')
-    try:
-        os.mkdir(folder_name)
-    except OSError:
-        pass  # It's fine, it already exists
-    return folder_name
-
-
-def parse_structure_name(file_name):
-    name = os.path.basename(file_name)
-    base = os.path.splitext(name)[0]
-    return base
+                     opt_args={'calc': calc}, safety_check=2)
 
 
 def save_muairss_batch(args, global_params):
