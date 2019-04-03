@@ -21,17 +21,6 @@ from ase.calculators.castep import Castep
 from ase.calculators.dftb import Dftb
 from soprano.utils import seedname
 from soprano.collection import AtomsCollection
-try:
-    from casteppy.data.phonon import PhononData
-except ImportError:
-    raise ImportError("""
-Can't use castep phonon interface due to casteppy not being installed.
-Please download and install casteppy from Bitbucket:
-
-HTTPS:  https://bitbucket.org/casteppy/casteppy.git
-SSH:    git@bitbucket.org:casteppy/casteppy.git
-
-and try again.""")
 
 # Internal imports
 from pymuonsuite import constants
@@ -48,11 +37,23 @@ from pymuonsuite.calculate.hfine import compute_hfine_mullpop
 class MuonAverageError(Exception):
     pass
 
-
 def read_castep_gamma_phonons(seed, path='.'):
     """Parse CASTEP phonon data into a casteppy object,
     and return eigenvalues and eigenvectors at the gamma point.
     """
+
+    try:
+        from casteppy.data.phonon import PhononData
+    except ImportError:
+        raise ImportError("""
+    Can't use castep phonon interface due to casteppy not being installed.
+    Please download and install casteppy from Bitbucket:
+
+    HTTPS:  https://bitbucket.org/casteppy/casteppy.git
+    SSH:    git@bitbucket.org:casteppy/casteppy.git
+
+    and try again.""")
+
     # Parse CASTEP phonon data into casteppy object
     pd = PhononData(seed, path=path)
     # Convert frequencies back to cm-1
