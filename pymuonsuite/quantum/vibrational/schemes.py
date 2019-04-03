@@ -196,8 +196,16 @@ class IndependentDisplacements(DisplacementScheme):
         dx = np.dot(self._dq, self.major_evecs)
         dx *= 1e10/self.masses[self.i]**0.5
 
-        self._dx = np.zeros((3*n, self._N, 3))
-        self._dx[:, self.i, :] = dx
+        # We need also the central configuration,
+        # so depending on whether n is even or odd
+        # we get two different situations
+        self._dx = np.zeros((3*n+1, self._N, 3))
+        self._dx[1:, self.i, :] = dx
+        if n % 2 == 1:
+            ci = int((n-1)/2)
+            # Remove the superfluous zeroes
+            self._dx = np.delete(self._dx, np.arange(3)*n+ci+1,
+                                 axis=0)
 
         return self.displacements
 
@@ -214,10 +222,20 @@ class IndependentDisplacements(DisplacementScheme):
 
         # Now for the weights
         dz = np.linspace(-self.sigma_n, self.sigma_n, self.n)
+        w0 = -2  # Weight of the central configuration
 
         rho = np.exp(-dz**2)
-        rhoall = [rho**tf/np.sum(rho**tf) for tf in tfac]
-        self._w = np.concatenate(rhoall)
+        rhoall = np.array([rho**tf/np.sum(rho**tf) for tf in tfac])
+
+        if self.n % 2 == 1:
+            ci = int((self.n-1)/2)
+            # Fix the central configuration's weight
+            w0 += np.sum(rhoall[:, ci])
+            rhoall = np.delete(rhoall, ci, axis=1)
+
+        self._w = np.zeros(np.prod(rhoall.shape)+1)
+        self._w[0] = w0
+        self._w[1:] = np.concatenate(rhoall)
 
         return self.weights
 
