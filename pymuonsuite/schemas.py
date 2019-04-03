@@ -225,8 +225,5 @@ UEPSchema = Schema({
     # Particle mass (in kg)
     Optional('particle_mass',
              default=pcnst['muon mass'][0]):
-    float,
-    # Sorting for output file
-    Optional('sorted_by', default='tot_energy'):
-    validate_all_of('tot_energy', 'pot_energy', 'kin_energy')
+    float
 })
