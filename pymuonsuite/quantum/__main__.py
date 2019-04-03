@@ -10,7 +10,6 @@ from __future__ import unicode_literals
 
 import argparse as ap
 
-from pymuonsuite.quantum.vibrational.programs import vib_avg
 from pymuonsuite.quantum.vibrational.average import (muon_vibrational_average_write,
                                                      muon_vibrational_average_read)
 from pymuonsuite.schemas import load_input_file, MuonHarmonicSchema
