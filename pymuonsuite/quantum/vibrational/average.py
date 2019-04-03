@@ -37,6 +37,7 @@ from pymuonsuite.calculate.hfine import compute_hfine_mullpop
 class MuonAverageError(Exception):
     pass
 
+
 def read_castep_gamma_phonons(seed, path='.'):
     """Parse CASTEP phonon data into a casteppy object,
     and return eigenvalues and eigenvectors at the gamma point.
