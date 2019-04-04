@@ -21,9 +21,10 @@ from ase.calculators.dftb import Dftb
 from ase.dft.kpoints import monkhorst_pack
 from ase.optimize import BFGS
 from ase.phonons import Phonons
+from ase.vibrations import Vibrations
 
 
-def ase_phonon_calc(cell, calc=None, fname=None, kpoints=[1, 1, 1],
+def ase_phonon_calc(struct, calc=None, fname=None, kpoints=[1, 1, 1],
                     ftol=0.01, force_clean=False):
     """Calculate phonon modes of a molecule using ASE and a given calculator.
     The system will be geometry optimized before calculating the modes. A
@@ -31,13 +32,13 @@ def ase_phonon_calc(cell, calc=None, fname=None, kpoints=[1, 1, 1],
     eigenvectors and eigenvalues returned.
 
     | Args:
-    |   cell (ase.Atoms):       Atoms object with to calculate modes for.
+    |   struct (ase.Atoms):     Atoms object with to calculate modes for.
     |   calc (ase.Calculator):  Calculator for energies and forces (if not 
-    |                           present, use the one from the cell)
+    |                           present, use the one from struct)
     |   fname (str):            Name for the .dat file that will hold the 
     |                           phonon report (default is None, no file is written)
-    |   kpoints (np.ndarray):   Kpoint grid for phonon calculation (default is
-    |                           [1,1,1])
+    |   kpoints (np.ndarray):   Kpoint grid for phonon calculation. If None, just 
+    |                           do a Vibration modes calculation (default is [1,1,1])
     |   ftol (float):           Tolerance for geometry optimisation (default
     |                           is 0.01 eV/Ang)
     |   force_clean (bool):     If True, force a deletion of all phonon files 
@@ -45,48 +46,43 @@ def ase_phonon_calc(cell, calc=None, fname=None, kpoints=[1, 1, 1],
     | Returns:
     |   evals (float[k-points][modes]):          Eigenvalues of phonon modes
     |   evecs (float[k-points][modes][ions][3]): Eigenvectors of phonon modes
-    |   cell (ase.Atoms):                        Optimised cell
+    |   struct (ase.Atoms):                      Optimised structure
     """
 
+    N = len(struct)
     if calc is None:
-        calc = cell.calc
-    cell = cell.copy()
-    calc.atoms = cell
-    cell.set_calculator(calc)
-    dyn = BFGS(cell, trajectory='geom_opt.traj')
+        calc = struct.calc
+    struct = struct.copy()
+    calc.atoms = struct
+    struct.set_calculator(calc)
+    dyn = BFGS(struct, trajectory='geom_opt.traj')
     dyn.run(fmax=ftol)
 
     # Calculate phonon modes
-    ph = Phonons(cell, calc)
+    vib_pbc = (kpoints is not None)
+    if vib_pbc:
+        vib = Phonons(struct, calc)
+    else:
+        vib = Vibrations(struct)
     if force_clean:
-        ph.clean()
-    ph.run()
-    ph.read(acoustic=True)
-    path = monkhorst_pack(kpoints)
-    evals, evecs = ph.band_structure(path, True)
+        vib.clean()
+    vib.run()
+    if vib_pbc:
+        vib.read(acoustic=True)
+        path = monkhorst_pack(kpoints)
+        evals, evecs = vib.band_structure(path, True)
+    else:
+        vib.read()
+        # One axis added since it's like the gamma point
+        evals = np.real(vib.get_energies()[None])
+        evecs = np.array([vib.get_mode(i) for i in range(3*N)])[None]
 
     # eV to cm^-1
     evals *= ((cnst.electron_volt/cnst.h)/cnst.c)/100.0
+    # Normalise eigenvectors
+    evecs /= np.linalg.norm(evecs, axis=(2, 3))[:, :, None, None]
 
-    # Write phonon report
-    if fname is not None:
-        filename = fname + '.dat'
-        with open(filename, 'w') as phonfile:
-            print('Writing phonon report in location: ', filename)
-            phonfile.write('Eigenvalues\n')
-            for i, kpt in enumerate(evals):
-                phonfile.write('Mode Frequency(cm-1) k-point = '
-                            '{0}, [{1}]\n'.format(i, ','.join(map(str,
-                                                                    path[i]))))
-                for j, value in enumerate(kpt):
-                    phonfile.write('{0} \t{1}\n'.format(j, value))
-            phonfile.write('Eigenvectors\n')
-            phonfile.write('Mode Ion Vector\n')
-            for i, mode in enumerate(evecs[0]):
-                for j, ion in enumerate(mode):
-                    phonfile.write("{0} {1} \t{2}\n".format(i, j, ion))
-
-    return evals, evecs, cell
+    return evals, evecs, struct
 
 
 def get_apr(evecs, masses):
