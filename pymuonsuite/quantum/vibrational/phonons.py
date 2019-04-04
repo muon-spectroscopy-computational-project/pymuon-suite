@@ -24,7 +24,7 @@ from ase.phonons import Phonons
 from ase.vibrations import Vibrations
 
 
-def ase_phonon_calc(struct, calc=None, fname=None, kpoints=[1, 1, 1],
+def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
                     ftol=0.01, force_clean=False):
     """Calculate phonon modes of a molecule using ASE and a given calculator.
     The system will be geometry optimized before calculating the modes. A
@@ -35,8 +35,6 @@ def ase_phonon_calc(struct, calc=None, fname=None, kpoints=[1, 1, 1],
     |   struct (ase.Atoms):     Atoms object with to calculate modes for.
     |   calc (ase.Calculator):  Calculator for energies and forces (if not 
     |                           present, use the one from struct)
-    |   fname (str):            Name for the .dat file that will hold the 
-    |                           phonon report (default is None, no file is written)
     |   kpoints (np.ndarray):   Kpoint grid for phonon calculation. If None, just 
     |                           do a Vibration modes calculation (default is [1,1,1])
     |   ftol (float):           Tolerance for geometry optimisation (default

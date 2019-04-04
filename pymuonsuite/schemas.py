@@ -56,9 +56,12 @@ def validate_int_array(value):
     return v.dtype == int
 
 
-def validate_float3(value):
-    v = np.array(value)
-    return v.shape == (3,) and v.dtype == float
+def validate_vec3(value):
+    try:
+        v = np.array(value).astype(float)
+    except ValueError:
+        return False
+    return v.shape == (3,)
 
 
 def load_input_file(fname, param_schema, merge=None):
@@ -205,11 +208,30 @@ MuonHarmonicSchema = Schema({
     Optional('average_file', default='averages.dat'): validate_str
 })
 
+AsePhononsSchema = Schema({
+    # Phonon k-points
+    Optional('phonon_kpoint_grid', default=[1, 1, 1]):
+    validate_int3,
+    # K-points used for DFTB+ calculation
+    Optional('kpoint_grid', default=[1, 1, 1]): validate_int3,
+    # Force tolerance for optimisation
+    Optional('force_tol', default=0.01): float,
+    # Which parametrization to use
+    Optional('dftb_set', default='3ob-3-1'):
+    validate_all_of('3ob-3-1', 'pbc-0-3'),
+    # Whether to turn on periodic boundary conditions
+    Optional('pbc', default=True):
+    validate_bool,
+    # Output file to save
+    Optional('output_file', default='phonons.pkl'):
+    validate_str,
+})
+
 # Parameter file schema and defaults
 UEPSchema = Schema({
     # Starting position for muon (absolute coordinates)
     Optional('mu_pos', default=[0.0, 0.0, 0.0]):
-    validate_float3,
+    validate_vec3,
     # Path from which to load the charge density
     Optional('chden_path', default=''):
     validate_str,
