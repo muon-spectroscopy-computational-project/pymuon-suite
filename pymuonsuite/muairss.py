@@ -141,7 +141,7 @@ def create_muairss_castep_calculator(a, params={}, calc=None):
     # Read the parameters
     pfile = params.get('castep_param', None)
     if pfile is not None:
-        calc.param = read_param(params['castep_param'])
+        calc.param = read_param(params['castep_param']).param
 
     calc.param.task = 'GeometryOptimization'
     calc.param.geom_max_iter = params.get('geom_steps', 30)
