@@ -107,6 +107,9 @@ MuAirssSchema = Schema({
     # Command to use to run DFTB+.
     Optional('dftb_command', default='dftb+'):
     validate_str,
+    # Path to script file to copy in all folders
+    Optional('script_file', default=None):
+    validate_str,
     # File path to the CASTEP parameter file.
     Optional('castep_param', default=None):
     validate_str,
@@ -186,6 +189,9 @@ MuonHarmonicSchema = Schema({
     # Temperature for averaging
     Optional('average_T', default=0): float,
     # Calculation parameters
+    # Path to script file to copy in all folders
+    Optional('script_file', default=None):
+    validate_str,
     # Path of parameter file which can be copied into folders with displaced cell
     # files for convenience
     Optional('castep_param', default=None): validate_str,

@@ -238,7 +238,8 @@ def save_muairss_collection(struct, params, batch_path=''):
     for cname, calc in calcs.items():
         calc_path = os.path.join(out_path, cname)
         dc.save_tree(calc_path, save_formats[cname], name_root=params['name'],
-                     opt_args={'calc': calc}, safety_check=2)
+                     opt_args={'calc': calc, 'script': params['script_file']},
+                     safety_check=2)
 
 
 def save_muairss_batch(args, global_params):

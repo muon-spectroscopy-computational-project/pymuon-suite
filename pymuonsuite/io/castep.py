@@ -24,7 +24,7 @@ class CastepError(Exception):
     pass
 
 
-def castep_write_input(a, folder, calc=None, name=None):
+def castep_write_input(a, folder, calc=None, name=None, script=None):
     """Writes input files for an Atoms object with a Castep
     calculator.
 
@@ -38,6 +38,10 @@ def castep_write_input(a, folder, calc=None, name=None):
     |                           be ignored.
     |   name (str):             Seedname to save the files with. If not
     |                           given, use the name of the folder.
+    |   script (str):           Path to a file containing a submission script
+    |                           to copy to the input folder. The script can 
+    |                           contain the argument {seedname} in curly braces,
+    |                           and it will be appropriately replaced.    
     """
 
     if name is None:
@@ -54,6 +58,12 @@ def castep_write_input(a, folder, calc=None, name=None):
     io.write(os.path.join(folder, name + '.cell'), a)
     write_param(os.path.join(folder, name + '.param'),
                 a.calc.param, force_write=True)
+
+    if script is not None:
+        stxt = open(script).read()
+        stxt = stxt.format(seedname=name)
+        with open(os.path.join(folder, 'script.sh'), 'w') as sf:
+            sf.write(stxt)
 
 
 def save_muonconf_castep(a, folder, params):
