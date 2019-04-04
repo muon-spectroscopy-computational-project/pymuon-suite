@@ -31,7 +31,6 @@ from soprano.collection.generate import defectGen
 
 import pymuonsuite.constants as cnst
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
-from pymuonsuite.data.dftb_pars.dftb_pars import get_license, DFTBArgs
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import (castep_write_input, add_to_castep_block)
 from pymuonsuite.io.dftb import dftb_write_input
@@ -154,6 +153,8 @@ def create_muairss_castep_calculator(a, params={}, calc=None):
 
 def create_muairss_dftb_calculator(a, params={}, calc=None):
 
+    from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
+
     if not isinstance(calc, Dftb):
         args = {}
     else:
@@ -230,6 +231,7 @@ def save_muairss_collection(struct, params, batch_path=''):
 
     # Save LICENSE file for DFTB+ parameters
     if 'dftb+' in calcs:
+        from pymuonsuite.data.dftb_pars import get_license
         with open(os.path.join(out_path, 'dftb.LICENSE'), 'w') as f:
             f.write(get_license())
 
