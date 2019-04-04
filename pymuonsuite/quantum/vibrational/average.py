@@ -302,7 +302,8 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     displaced_coll.info['displacement_scheme'] = displsch
     displaced_coll.info['muon_index'] = mu_index
     displaced_coll.save_tree(sname + '_displaced', writer_function,
-                             opt_args={'calc': calc})
+                             opt_args={'calc': calc,
+                                       'script': kwargs['script_file']})
 
 
 def muon_vibrational_average_read(cell_file, calculator='castep',
