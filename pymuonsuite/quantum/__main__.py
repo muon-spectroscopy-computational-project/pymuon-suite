@@ -33,5 +33,19 @@ def nq_entry():
         muon_vibrational_average_read(**params)
 
 
+def asephonons_entry():
+    parser = ap.ArgumentParser(description="Compute phonon modes with ASE and"
+                               " DFTB+ for reuse in quantum effects "
+                               "calculations.")
+    parser.add_argument('structure_file', type=str,
+                        help="Structure for which to compute the phonons")
+    parser.add_argument('parameter_file', type=str,
+                        help="YAML file containing relevant input parameters")
+
+    args = parser.parse_args()
+
+    print(args)
+
+
 if __name__ == "__main__":
     nq_entry()
