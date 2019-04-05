@@ -186,8 +186,11 @@ MuonHarmonicSchema = Schema({
     validate_all_of('castep', 'dftb+'),
     # Write a 'collective' file with all displaced positions in one
     Optional('write_allconf', default=False): validate_bool,
-    # Source of phonon modes, currently accepted values: "castep", "asedftb+"
-    Optional('phonon_source', default='castep'):
+    # Source file for phonon modes
+    Optional('phonon_source_file', default=None):
+    validate_str,
+    # Type of source file for phonon modes
+    Optional('phonon_source_type', default='castep'):
     validate_all_of('castep', 'dftb+'),
     # Temperature for averaging
     Optional('average_T', default=0): float,
@@ -222,8 +225,8 @@ AsePhononsSchema = Schema({
     # Whether to turn on periodic boundary conditions
     Optional('pbc', default=True):
     validate_bool,
-    # Output file to save
-    Optional('output_file', default='phonons.pkl'):
+    # Name of output file to save
+    Optional('output_file', default=None):
     validate_str,
 })
 

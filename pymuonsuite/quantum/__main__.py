@@ -81,7 +81,11 @@ def asephonons_entry():
     io.write(fname + '_opt' + fext, a)
 
     # And write out the phonons
-    pickle.dump(phdata, open(params['output_file'], 'w'))
+    outf = params['output_file']
+    if outf is None:
+        outf = fname + '_opt.phonons.pkl'
+    pickle.dump(phdata, open(outf, 'w'))
+
 
 if __name__ == "__main__":
     nq_entry()

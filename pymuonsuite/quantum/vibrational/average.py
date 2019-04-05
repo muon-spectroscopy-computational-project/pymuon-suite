@@ -12,6 +12,7 @@ from __future__ import unicode_literals
 
 import os
 import glob
+import pickle
 import numpy as np
 from copy import deepcopy
 
@@ -75,26 +76,6 @@ def read_castep_gamma_phonons(seed, path='.'):
                                ' phonon file')
 
     return evals[gamma_i], evecs[gamma_i]
-
-
-def compute_dftbp_phonons(atoms, param_set, kpts):
-
-    # We put this here so the warning about citations is printed only if
-    # necessary
-    from pymuonsuite.data.dftb_pars import DFTBArgs
-
-    args = DFTBArgs(param_set).args
-    calc = Dftb(label=atoms.info.get('name', 'dftbphonons'),
-                atoms=atoms, kpts=kpts, **args)
-    atoms.set_calculator(calc)
-
-    phdata = ase_phonon_calc(atoms, force_clean=True)
-
-    evals = phdata.frequencies[0]
-    evecs = phdata.modes[0]
-    atoms = phdata.structure
-
-    return evals, evecs, atoms
 
 
 def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None, param_file=None,
@@ -197,7 +178,8 @@ def read_output_dftbp(folder, avgprop='hyperfine'):
 def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
                                    mu_symbol='H:mu', grid_n=20, sigma_n=3,
                                    avgprop='hyperfine', calculator='castep',
-                                   phonon_source='castep',
+                                   phonon_source_file=None,
+                                   phonon_source_type='castep',
                                    **kwargs):
     """
     Write input files to compute a vibrational average for a quantity on a muon
@@ -258,15 +240,22 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     cell.set_masses(masses)
 
     # Load the phonons
-    if phonon_source == 'castep':
-        ph_evals, ph_evecs = read_castep_gamma_phonons(sname, path)
-    elif phonon_source == 'dftb+':
-        ph_evals, ph_evecs, cell = compute_dftbp_phonons(cell,
-                                                         kwargs['dftb_set'],
-                                                         kwargs['k_points_grid'])
-        # Save the optimised file
-        fname, ext = os.path.splitext(cell_file)
-        io.write(fname + '_opt' + ext, cell)
+    if phonon_source_type == 'castep':
+        if phonon_source_file is not None:
+            phpath, phfile = os.path.split(phonon_source_file)
+            phfile = seedname(phfile)
+        else:
+            phpath = path
+            phfile = sname
+        ph_evals, ph_evecs = read_castep_gamma_phonons(phfile, phpath)
+    elif phonon_source_type == 'dftb+':
+        if phonon_source_file is None:
+            phonon_source_file = os.path.join(path, sname + '.phonons.pkl')
+
+        with open(phonon_source_file) as f:
+            phdata = pickle.load(f)
+            ph_evals = phdata.frequencies[0]
+            ph_evecs = phdata.modes[0]
 
     # Now create the distribution scheme
     if method == 'independent':
