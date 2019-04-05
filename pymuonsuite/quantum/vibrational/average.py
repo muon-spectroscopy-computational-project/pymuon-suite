@@ -254,8 +254,18 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
 
         with open(phonon_source_file) as f:
             phdata = pickle.load(f)
-            ph_evals = phdata.frequencies[0]
-            ph_evecs = phdata.modes[0]
+            # Find the gamma point
+            gamma_i = None
+            for i, p in enumerate(phdata.path):
+                if (p == 0).all():
+                    gamma_i = i
+                    break
+            try:
+                ph_evals = phdata.frequencies[gamma_i]
+                ph_evecs = phdata.modes[gamma_i]
+            except TypeError:
+                raise RuntimeError(('Phonon file {0} does not contain gamma '
+                                    'point data').format(phonon_source_file))
 
     # Now create the distribution scheme
     if method == 'independent':
