@@ -8,11 +8,15 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
+import pickle
 import argparse as ap
 
+from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.average import (muon_vibrational_average_write,
                                                      muon_vibrational_average_read)
-from pymuonsuite.schemas import load_input_file, MuonHarmonicSchema
+from pymuonsuite.schemas import (load_input_file, MuonHarmonicSchema,
+                                 AsePhononsSchema)
 
 
 def nq_entry():
@@ -34,6 +38,11 @@ def nq_entry():
 
 
 def asephonons_entry():
+
+    from ase import io
+    from ase.calculators.dftb import Dftb
+    from pymuonsuite.data.dftb_pars import DFTBArgs
+
     parser = ap.ArgumentParser(description="Compute phonon modes with ASE and"
                                " DFTB+ for reuse in quantum effects "
                                "calculations.")
@@ -44,8 +53,35 @@ def asephonons_entry():
 
     args = parser.parse_args()
 
-    print(args)
+    # Load parameters
+    params = load_input_file(args.parameter_file, AsePhononsSchema)
 
+    # Load structure
+    a = io.read(args.structure_file)
+    # Create a Dftb calculator
+    dargs = DFTBArgs(params['dftb_set'])
+    # Is it periodic?
+    if params['pbc']:
+        a.set_pbc(True)
+        calc = Dftb(atoms=a, label='asephonons',
+                    kpts=params['kpoint_grid'],
+                    **dargs.args)
+        ph_kpts = params['phonon_kpoint_grid']
+    else:
+        a.set_pbc(False)
+        calc = Dftb(atoms=a, label='asephonons',
+                    **dargs.args)
+        ph_kpts = None
+    a.set_calculator(calc)
+    phdata = ase_phonon_calc(a, kpoints=ph_kpts,
+                             ftol=params['force_tol'])
+
+    # Save optimised structure
+    fname, fext = os.path.splitext(args.structure_file)
+    io.write(fname + '_opt' + fext, a)
+
+    # And write out the phonons
+    pickle.dump(phdata, open(params['output_file'], 'w'))
 
 if __name__ == "__main__":
     nq_entry()

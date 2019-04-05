@@ -161,9 +161,6 @@ def create_muairss_dftb_calculator(a, params={}, calc=None):
         args = calc.todict()
 
     dargs = DFTBArgs(params['dftb_set'])
-    is_spinpol = params.get('spin_polarized', False)
-    if is_spinpol:
-        dargs.set_optional('spinpol.json', True)
 
     args.update(dargs.args)
     args = dargs.args
@@ -176,16 +173,6 @@ def create_muairss_dftb_calculator(a, params={}, calc=None):
     args['Driver_MaxForceComponent [eV/AA]'] = params['geom_force_tol']
     args['Driver_MaxSteps'] = params['geom_steps']
     args['Driver_MaxSccIterations'] = params['max_scc_steps']
-
-    if is_spinpol:
-        # Configure initial spins
-        spins = np.array(a.get_initial_magnetic_moments())
-        args['Hamiltonian_SpinPolarisation_InitialSpins'] = '{'
-        args['Hamiltonian_SpinPolarisation_' +
-             'InitialSpins_AllAtomSpins'] = '{' + '\n'.join(
-            map(str, spins)) + '}'
-        args['Hamiltonian_SpinPolarisation_UnpairedElectrons'] = str(
-            np.sum(spins))
 
     if params['dftb_pbc']:
         calc = Dftb(kpts=params['k_points_grid'],

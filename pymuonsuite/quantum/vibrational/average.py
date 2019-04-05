@@ -88,9 +88,13 @@ def compute_dftbp_phonons(atoms, param_set, kpts):
                 atoms=atoms, kpts=kpts, **args)
     atoms.set_calculator(calc)
 
-    evals, evecs, atoms = ase_phonon_calc(atoms, force_clean=True)
+    phdata = ase_phonon_calc(atoms, force_clean=True)
 
-    return evals[0], evecs[0], atoms
+    evals = phdata.frequencies[0]
+    evecs = phdata.modes[0]
+    atoms = phdata.structure
+
+    return evals, evecs, atoms
 
 
 def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None, param_file=None,

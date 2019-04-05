@@ -11,6 +11,7 @@ from __future__ import unicode_literals
 import copy
 import os
 import shutil
+from collections import namedtuple
 
 import ase.io as ase_io
 import numpy as np
@@ -22,6 +23,9 @@ from ase.dft.kpoints import monkhorst_pack
 from ase.optimize import BFGS
 from ase.phonons import Phonons
 from ase.vibrations import Vibrations
+
+ASEPhononData = namedtuple('ASEPhononData',
+                           ['frequencies', 'modes', 'path', 'structure'])
 
 
 def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
@@ -71,6 +75,7 @@ def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
         evals, evecs = vib.band_structure(path, True)
     else:
         vib.read()
+        path = np.zeros((1, 3))
         # One axis added since it's like the gamma point
         evals = np.real(vib.get_energies()[None])
         evecs = np.array([vib.get_mode(i) for i in range(3*N)])[None]
@@ -80,7 +85,7 @@ def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
     # Normalise eigenvectors
     evecs /= np.linalg.norm(evecs, axis=(2, 3))[:, :, None, None]
 
-    return evals, evecs, struct
+    return ASEPhononData(evals, evecs, path, struct)
 
 
 def get_apr(evecs, masses):
