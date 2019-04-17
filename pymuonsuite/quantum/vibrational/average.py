@@ -95,7 +95,7 @@ def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None, param_file=None,
     calc.cell.kpoint_mp_grid = kpts
 
     if param_file is not None:
-        calc.param = read_param(param_file)
+        calc.param = read_param(param_file).param
 
     calc.param.task = 'Magres'
     calc.param.magres_task = 'Hyperfine'
