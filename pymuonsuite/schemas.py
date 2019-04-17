@@ -69,7 +69,7 @@ def load_input_file(fname, param_schema, merge=None):
     """
 
     if merge is None:
-        params = yaml.load(open(fname, 'r'))
+        params = yaml.safe_load(open(fname, 'r'))
     else:
         try:
             param_schema.validate(merge)
@@ -77,7 +77,7 @@ def load_input_file(fname, param_schema, merge=None):
             message = ('Invalid merge params passed to'
                        ' load_input_file\n{0}'.format(e))
             raise RuntimeError(message)
-        new_params = yaml.load(open(fname, 'r'))
+        new_params = yaml.safe_load(open(fname, 'r'))
         params = dict(merge)
         params.update(new_params)
 

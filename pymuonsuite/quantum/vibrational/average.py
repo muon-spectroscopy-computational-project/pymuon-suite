@@ -252,7 +252,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         if phonon_source_file is None:
             phonon_source_file = os.path.join(path, sname + '.phonons.pkl')
 
-        with open(phonon_source_file) as f:
+        with open(phonon_source_file, 'rb') as f:
             phdata = pickle.load(f)
             # Find the gamma point
             gamma_i = None

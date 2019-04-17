@@ -89,7 +89,7 @@ def asephonons_entry():
     outf = params['output_file']
     if outf is None:
         outf = fname + '_opt.phonons.pkl'
-    pickle.dump(phdata, open(outf, 'w'))
+    pickle.dump(phdata, open(outf, 'wb'))
 
 
 if __name__ == "__main__":
