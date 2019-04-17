@@ -34,7 +34,12 @@ def nq_entry():
     if args.w:
         muon_vibrational_average_write(**params)
     else:
-        muon_vibrational_average_read(**params)
+        try:
+            muon_vibrational_average_read(**params)
+        except IOError:
+            print('\nCould not find displaced structure folder: '
+                  'maybe you wanted to run with the -w option'
+                  ' to write it?\n')
 
 
 def asephonons_entry():
