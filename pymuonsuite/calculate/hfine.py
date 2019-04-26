@@ -52,9 +52,9 @@ def compute_hfine_tensor(points, spins, cell=None, self_i=0, species='e',
     if species.shape == ():
         species = np.repeat(species[None], N)
     for i, s in enumerate(species):
-        if s == 'e':
+        if s == b'e':
             mm = 2*_bohrmag
-        elif s == 'mu':
+        elif s == b'mu':
             mm = mu_cnst.m_gamma*cnst.hbar
         else:
             mm = _get_isotope_data(s, 'gamma')[0]*cnst.hbar
