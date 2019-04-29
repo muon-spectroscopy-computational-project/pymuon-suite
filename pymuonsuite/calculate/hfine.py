@@ -111,7 +111,9 @@ def compute_hfine_mullpop(atoms, populations, self_i=0,
     |   atoms (ase.Atoms):   Atoms object to work with
     |   populations (np.ndarray):  electronic orbital-resolved Mulliken
     |                              populations, as returned for example by
-    |                              parse_spinpol_dftb
+    |                              parse_spinpol_dftb. Spins here ought to
+    |                              be in Bohr magnetons (so for example
+    |                              one electron up would pass as 0.5)
     |   self_i (int):        index of point at which to compute the tensor.
     |                        Local spin density will give rise to a Fermi
     |                        contact term
@@ -146,13 +148,14 @@ def compute_hfine_mullpop(atoms, populations, self_i=0,
 
     # First correction: compile the total spins
     totspins = np.array([sp['spin'] for sp in populations])
-    magmoms = totspins*0.5
+    magmoms = totspins
 
+    # Removed as it should not be included
     # Then the orbital parts
-    for i, pop in enumerate(populations):
-        for (n, l, m), p in pop['q_orbital'].items():
-            # Twice the angular momentum, half the g factor
-            magmoms[i] += p*l*m*0.5
+    # for i, pop in enumerate(populations):
+    #     for (n, l, m), p in pop['q_orbital'].items():
+    #         # Twice the angular momentum, half the g factor
+    #         magmoms[i] += p*l*m*0.5
 
     # Fermi contact term density
     fermi_mm = 0
@@ -162,7 +165,7 @@ def compute_hfine_mullpop(atoms, populations, self_i=0,
         for (n, l, m), p in populations[self_i]['spin_orbital'].items():
             if l > 0:
                 continue
-            fermi_mm += 1/np.pi*(Z/(n*a0*1e10)**3.0)*p
+            fermi_mm += 2/np.pi*(Z/(n*a0*1e10)**3.0)*p
         # If required, add the neighbour effect
         if fermi_neigh:
             dr = pos-pos[self_i]
