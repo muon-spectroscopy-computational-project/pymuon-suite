@@ -47,7 +47,7 @@ def validate_str_list(value):
 
 
 def validate_bool(value):
-    return (str(value).strip().lower() in ('true', 't'))
+    return (str(value).strip().lower() in ('true', 't', 'false', 'f'))
 
 
 def validate_int3(value):

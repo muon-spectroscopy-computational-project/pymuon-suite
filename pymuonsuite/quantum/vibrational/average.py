@@ -234,11 +234,6 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
 
     cell.set_array('castep_custom_species', species)
 
-    # Fetch masses
-    masses = parse_castep_masses(cell)
-    masses[mu_index] = constants.m_mu_amu
-    cell.set_masses(masses)
-
     # Load the phonons
     if phonon_source_type == 'castep':
         if phonon_source_file is not None:
@@ -267,6 +262,17 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
                 raise RuntimeError(('Phonon file {0} does not contain gamma '
                                     'point data').format(phonon_source_file))
 
+    # Fetch masses
+    try:
+        masses = parse_castep_masses(cell)
+    except AttributeError:
+        # Just fall back on ASE standard masses if not available
+        masses = cell.get_masses()
+    masses[mu_index] = constants.m_mu_amu
+    cell.set_masses(masses)
+
+
+
     # Now create the distribution scheme
     if method == 'independent':
         displsch = IndependentDisplacements(ph_evals, ph_evecs, masses,
@@ -285,7 +291,11 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     if kwargs['write_allconf']:
         # Write a global configuration structure
         allconf = sum(displaced_cells, cell.copy())
-        io.write(sname + '_allconf.cell', allconf)
+        if all(allconf.get_pbc()):
+            io.write(sname + '_allconf.cell', allconf)
+        else:
+            io.write(sname + '_allconf.xyz', allconf)
+
 
     # Get a calculator
     if calculator == 'castep':
