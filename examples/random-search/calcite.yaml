@@ -1,5 +1,4 @@
 name:       calcite
 calculator: dftb+
 dftb_set:   3ob-3-1
-dftb_optionals: [one, two]
-k_points_grid: [2,2,2]
+poisson_r:  1.2

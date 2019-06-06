@@ -163,6 +163,14 @@ def create_muairss_dftb_calculator(a, params={}, calc=None):
 
     dargs = DFTBArgs(params['dftb_set'])
 
+    for opt in params['dftb_optionals']:
+        try:
+            dargs.set_optional(opt, True)
+        except KeyError:
+            print(('WARNING: optional DFTB+ file {0} not available for {1}'
+                   ' parameter set, skipping').format(opt, params['dftb_set'])
+                  )
+
     args.update(dargs.args)
     args = dargs.args
     args['Driver_'] = 'ConjugateGradient'
@@ -275,9 +283,6 @@ def main():
 
     args = parser.parse_args()
     params = load_input_file(args.parameter_file, MuAirssSchema)
-
-    print(params['dftb_optionals'])
-    print(params['k_points_grid'])
 
     if os.path.isdir(args.structures):
         save_muairss_batch(args, params)

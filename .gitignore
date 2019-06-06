@@ -111,3 +111,7 @@ dep/*
 
 # Visual Studio code
 .vscode/*
+
+# Examples
+examples/random-search/muon-airss-out/*
+examples/random-search/merged.cif

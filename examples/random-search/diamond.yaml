@@ -1,0 +1,5 @@
+name:       diamond
+calculator: dftb+
+dftb_set:   3ob-3-1
+supercell: [-1, 1, 1, 1, -1, 1, 1, 1, -1]
+poisson_r: 0.6
