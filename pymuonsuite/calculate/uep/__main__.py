@@ -154,7 +154,8 @@ def geomopt_entry():
         results = geomopt(params, outf)
 
     # Now dump results
-    pickle.dump(results, open(seedpath + '.uep.pkl', 'w'))
+    if params['save_pickle']:
+        pickle.dump(results, open(seedpath + '.uep.pkl', 'wb'))
 
 
 if __name__ == "__main__":

@@ -268,5 +268,8 @@ UEPSchema = Schema({
     # Particle mass (in kg)
     Optional('particle_mass',
              default=pcnst['muon mass'][0]):
-    float
+    float,
+    # Save pickled output
+    Optional('save_pickle', default=True):
+    bool
 })

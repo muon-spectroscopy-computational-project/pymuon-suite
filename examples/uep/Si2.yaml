@@ -1,0 +1,5 @@
+mu_pos: [3, 3, 3]
+chden_path: Si2
+chden_seed: Si2
+gw_factor:  10.0
+save_pickle: False
