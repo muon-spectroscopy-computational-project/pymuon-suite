@@ -42,6 +42,10 @@ def validate_str(s):
         return isinstance(s, str)
 
 
+def validate_str_list(value):
+    return all(map(validate_str, value))
+
+
 def validate_bool(value):
     return (str(value).strip().lower() in ('true', 't'))
 
@@ -116,9 +120,12 @@ MuAirssSchema = Schema({
     # File path to the CASTEP parameter file.
     Optional('castep_param', default=None):
     validate_str,
-    # The parameter set to use for DFTB+.
+    # The parameter set to use for DFTB+
     Optional('dftb_set', default='3ob-3-1'):
     validate_all_of('3ob-3-1', 'pbc-0-3'),
+    # Additional optional json files to activate for DFTBArgs
+    Optional('dftb_optionals', default=[]):
+    validate_str_list,
     # Whether to turn on periodic boundary conditions in DFTB+
     Optional('dftb_pbc', default=True):
     bool,
@@ -164,18 +171,20 @@ MuonHarmonicSchema = Schema({
     # File containing structural info about molecule/crystal
     'cell_file': validate_str,
     # Method used to calculate thermal average
-    Optional('method', default='independent'): validate_all_of('independent', 'thermal'),
+    Optional('method', default='independent'):
+    validate_all_of('independent', 'thermal'),
     # Index of muon in cell
     Optional('mu_index', default=-1): int,
     # If using Castep custom species, custom species of muon (supersedes index
     # if present in cell)
     Optional('mu_symbol', default='H:mu'): validate_str,
-    # Number of grid points to use on each phonon mode or pairs of thermal lines
+    # Number of grid points to use on each phonon mode or pairs of
+    # thermal lines
     Optional('grid_n', default=20): int,
     # Number of sigmas to sample in the harmonic approximation
     Optional('sigma_n', default=3): float,
-    # List of three integer k-points for both phonon and hyperfine calculations.
-    # Default is [1,1,1].
+    # List of three integer k-points for both phonon and hyperfine
+    # calculations. Default is [1,1,1].
     Optional('k_points_grid', default=np.ones(3).astype(int)):
     validate_int3,
     # Property to be calculated, currently accepted value is only 'hyperfine'
@@ -198,8 +207,8 @@ MuonHarmonicSchema = Schema({
     # Path to script file to copy in all folders
     Optional('script_file', default=None):
     validate_str,
-    # Path of parameter file which can be copied into folders with displaced cell
-    # files for convenience
+    # Path of parameter file which can be copied into folders with displaced
+    # cell files for convenience
     Optional('castep_param', default=None): validate_str,
     # Whether to turn on periodic boundary conditions in DFTB+
     Optional('dftb_pbc', default=True):

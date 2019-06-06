@@ -54,6 +54,7 @@ def find_primitive_structure(struct):
 
 
 def generate_muairss_collection(struct, params):
+
     if params['mu_symbol'] in struct.get_chemical_symbols():
         print('WARNING: chosen muon symbol conflicts with existing elements in'
               ' the starting unit cell. This could cause mistakes')
@@ -274,6 +275,9 @@ def main():
 
     args = parser.parse_args()
     params = load_input_file(args.parameter_file, MuAirssSchema)
+
+    print(params['dftb_optionals'])
+    print(params['k_points_grid'])
 
     if os.path.isdir(args.structures):
         save_muairss_batch(args, params)
