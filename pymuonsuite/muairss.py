@@ -138,6 +138,7 @@ def create_muairss_castep_calculator(a, params={}, calc=None):
     calc.cell.kpoint_mp_grid = list_to_string(
         params.get('k_points_grid', [1, 1, 1]))
     calc.cell.fix_all_cell = True   # Necessary for older CASTEP versions
+    calc.param.charge = 1.0 if params['charged'] else 0.0
 
     # Read the parameters
     pfile = params.get('castep_param', None)
@@ -182,6 +183,7 @@ def create_muairss_dftb_calculator(a, params={}, calc=None):
     args['Driver_MaxForceComponent [eV/AA]'] = params['geom_force_tol']
     args['Driver_MaxSteps'] = params['geom_steps']
     args['Driver_MaxSccIterations'] = params['max_scc_steps']
+    args['Hamiltonian_Charge'] = 1.0 if params['charged'] else 0.0
 
     if params['dftb_pbc']:
         calc = Dftb(kpts=params['k_points_grid'],

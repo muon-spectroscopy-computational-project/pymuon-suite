@@ -135,6 +135,9 @@ MuAirssSchema = Schema({
     # Van der Waals radius to use when generating muon sites. Default is 0.5.
     Optional('vdw_scale', default=0.5):
     float,
+    # Whether to make the muon charged (naked muon instead of muonium)
+    Optional('charged', default=False):
+    bool,
     # Supercell size and shape to use. This can either be a single int, a list
     # of three integers or a 3x3 matrix of integers. For a single number a
     # diagonal matrix will be generated with the integer repeated on the
