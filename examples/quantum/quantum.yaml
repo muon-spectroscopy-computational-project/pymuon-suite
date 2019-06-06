@@ -1,0 +1,9 @@
+cell_file:          ethyleneMu_opt.xyz
+phonon_source_file: ethylene_phonons.pkl
+phonon_source_type: dftb+
+calculator:         dftb+
+write_allconf:      true
+dftb_pbc:           false
+grid_n:             10
+mu_index:           -1
+
