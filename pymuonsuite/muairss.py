@@ -34,6 +34,7 @@ from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import (castep_write_input, add_to_castep_block)
 from pymuonsuite.io.dftb import dftb_write_input
+from pymuonsuite.io.uep import UEPCalculator, uep_write_input
 
 
 def find_primitive_structure(struct):
@@ -194,6 +195,26 @@ def create_muairss_dftb_calculator(a, params={}, calc=None):
     return calc
 
 
+def create_muairss_uep_calculator(a, params={}, calc=None):
+
+    if not isinstance(calc, UEPCalculator):
+        calc = UEPCalculator(atoms=a, chden=params['uep_chden'])
+    else:
+        dummy = UEPCalculator(chden=params['uep_chden'])
+        calc.chden_path = dummy.chden_path
+        calc.chden_seed = dummy.chden_seed
+
+    if not params['charged']:
+        raise RuntimeError("Can't use UEP method for neutral system")
+
+    calc.label = params['name']
+    calc.gw_factor = params['uep_gw_factor']
+    calc.geom_steps = params['geom_steps']
+    calc.opt_tol = params['geom_force_tol']
+
+    return calc
+
+
 def save_muairss_collection(struct, params, batch_path=''):
     """Generate input files for a single structure and configuration file"""
 
@@ -210,7 +231,8 @@ def save_muairss_collection(struct, params, batch_path=''):
     # Now save in the appropriate format
     save_formats = {
         'castep': castep_write_input,
-        'dftb+': dftb_write_input
+        'dftb+': dftb_write_input,
+        'uep': uep_write_input
     }
 
     # Which calculators?
@@ -221,7 +243,8 @@ def save_muairss_collection(struct, params, batch_path=''):
     # Make the actual calculators
     make_calcs = {
         'castep': create_muairss_castep_calculator,
-        'dftb+': create_muairss_dftb_calculator
+        'dftb+': create_muairss_dftb_calculator,
+        'uep': create_muairss_uep_calculator
     }
 
     calcs = {c: make_calcs[c](struct, params=params, calc=struct.calc)

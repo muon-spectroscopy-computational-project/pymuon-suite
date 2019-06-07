@@ -107,7 +107,7 @@ MuAirssSchema = Schema({
     # list of values. Currently supported calculators are CASTEP and DFTB+. Can
     # also pass all as an option to generate files for all calculators.
     Optional('calculator', default='dftb+'):
-    validate_all_of('castep', 'dftb+', 'all'),
+    validate_all_of('castep', 'dftb+', 'uep', 'all'),
     # Command to use to run CASTEP.
     Optional('castep_command', default='castep.serial'):
     validate_str,
@@ -129,6 +129,11 @@ MuAirssSchema = Schema({
     # Whether to turn on periodic boundary conditions in DFTB+
     Optional('dftb_pbc', default=True):
     bool,
+    # Charge density file for UEP
+    Optional('uep_chden', default=''):
+    validate_str,
+    Optional('uep_gw_factor', default=5.0):
+    float,
     # Radius to use when generating muon sites with the possion disk algorithm.
     Optional('poisson_r', default=0.8):
     float,

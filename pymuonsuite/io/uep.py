@@ -126,6 +126,9 @@ class UEPCalculator(object):
 
 def uep_write_input(a, folder, calc=None, name=None, script=None):
 
+    if name is None:
+        name = os.path.split(folder)[-1]
+
     calc.path = folder
     calc.label = name
     calc.atoms = a
