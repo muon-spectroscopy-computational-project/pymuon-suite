@@ -115,3 +115,12 @@ dep/*
 # Examples
 examples/random-search/muon-airss-out/*
 examples/random-search/merged.cif
+examples/uep/*
+!examples/uep/Si2.uep
+!examples/uep/Si2.yaml
+!examples/uep/Si2/Si2*
+examples/quantum/*
+!examples/quantum/ethyleneMu.xyz
+!examples/quantum/phonons.yaml
+!examples/quantum/quantum.yaml
+!examples/quantum/run_all.sh
