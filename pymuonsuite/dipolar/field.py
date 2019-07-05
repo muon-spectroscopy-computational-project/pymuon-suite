@@ -20,7 +20,7 @@ from pymuonsuite.constants import m_gamma
 
 class DipolarField(object):
 
-    def __init__(self, atoms, mu_pos, isotopes={}, isotope_list=None, cutoff=10):
+    def __init__(self, atoms, mu_pos, isotopes={}, isotope_list=None, cutoff=10, overlap_eps=1e-3):
 
         # Get positions, cell, and species, only things we care about
         self.cell = np.array(atoms.get_cell())
@@ -34,38 +34,58 @@ class DipolarField(object):
 
         self.grid_f = grid_f
 
-
-        r = (pos[:, None, :]+grid[None, :, :]-self.mu_pos[None, None, :]).reshape((-1,3))
+        r = (pos[:, None, :]+grid[None, :, :] -
+             self.mu_pos[None, None, :]).reshape((-1, 3))
         rnorm = np.linalg.norm(r, axis=1)
         sphere = np.where(rnorm <= cutoff)[0]
-        sphere = sphere[np.argsort(rnorm[sphere])[::-1]] # Sort by length
+        sphere = sphere[np.argsort(rnorm[sphere])[::-1]]  # Sort by length
         r = r[sphere]
         rnorm = rnorm[sphere]
 
         self._r = r
         self._rn = rnorm
+        self._rn = np.where(self._rn > overlap_eps, self._rn, np.inf)
         self._ri = sphere
-        self._dT = 3*r[:,:,None]*r[:,None,:]/rnorm[:,None,None]**2-np.eye(3)[None,:,:]
+        self._dT = 3*r[:, :, None]*r[:, None, :] / \
+            self._rn[:, None, None]**2-np.eye(3)[None, :, :]
+
+        self._gn = self.grid_f.shape[0]
+        self._a_i = self._ri//self._gn
+        self._ijk = self.grid_f[self._ri % self._gn]
 
         # Get gammas
         self.gammas = _get_isotope_data(el, 'gamma', isotopes, isotope_list)
+        self.gammas = self.gammas[self._a_i]
+        Dn = _dip_constant(self._rn*1e-10, m_gamma, self.gammas)
+        De = _dip_constant(self._rn*1e-10, m_gamma,
+                           cnst.physical_constants['electron gyromag. ratio'][0])
 
-    def get_single_field(self, moments, ext_field_dir=[0,0,1], moment_type='e'):
+        self._D = {'n': Dn, 'e': De}
 
-        gn = self.grid_f.shape[0]
-        a_i = self._ri//gn
-        ijk = self.grid_f[self._ri%gn]
+    def get_single_field(self, moments, ext_field_dir=[0, 0, 1.0], moment_type='e'):
 
-        s = np.array(moments)[a_i]
-        if moment_type == 'n':
-            gammas = self.gammas[a_i]
-        elif moment_type == 'e':
-            gammas = cnst.physical_constants['electron gyromag. ratio'][0]
+        s = np.array(moments)[self._a_i]
+        D = self._D[moment_type]
 
-        D = _dip_constant(self._rn*1e-10, m_gamma, gammas)
-
-        n = np.array(ext_field_dir)
+        n = np.array(ext_field_dir).astype(float)
         n /= np.linalg.norm(n)
 
-        DT = np.sum((D*s)[:,None,None]*self._dT, axis=0)
+        DT = np.sum((D*s)[:, None, None]*self._dT, axis=0)
         return np.dot(n, np.dot(DT, n))
+
+    def get_pwd_distribution(self, moment_gen, orients, moment_type='e'):
+
+        s = moment_gen(self._a_i, self._ijk)
+
+        D = self._D[moment_type]
+        DT = np.sum((D*s)[:, None, None]*self._dT, axis=0)
+
+        return np.sum(np.tensordot(DT, orients, axes=(1,1)).T*orients, axis=1)
+
+    def get_zf_distribution(self, moment_gen, moment_type='e'):
+
+        s = moment_gen(self._a_i, self._ijk)
+
+        D = self._D[moment_type]
+        DT = D[:,None,None]*self._dT
+        return np.sum(DT*s[:,None,:]*s[:,:,None], axis=(1,2))
