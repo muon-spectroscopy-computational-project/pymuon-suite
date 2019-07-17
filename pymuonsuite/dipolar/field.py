@@ -10,17 +10,68 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import warnings
 import numpy as np
 import scipy.constants as cnst
+from scipy.integrate import quad, romberg
 from soprano.utils import minimum_supcell, supcell_gridgen
 from soprano.calculate.powder import ZCW, SHREWD, TriAvg
 from soprano.properties.nmr.utils import _get_isotope_data, _dip_constant
 from pymuonsuite.constants import m_gamma
 
+try:
+    from numba import jit
+except ImportError:
+    warnings.warn('Numba not found - install for boost in performance')
+
+    def jit(nopython=True):
+        def dummy(f):
+            def wrapf(*args, **kwargs):
+                return f(*args, **kwargs)
+            return wrapf
+        return dummy
+
+# Dipolar line functions
+
+
+@jit(nopython=True)
+def _distr_D(x, D):
+    return np.where((x > -D/2)*(x < D), 1/(3*D*((2*(x/D))/3+1.0/3.0)**0.5), 0)
+
+
+@jit(nopython=True)
+def _distr_eta(x, x0, D, eta):
+    den = eta**2*(2-2*x0/D)**2-9*(x-x0)**2
+    y = np.where(den > 0, 1.0/den**0.5
+                 * 3/np.pi, 0)
+    return y
+
+# @jit(nopython=True)
+def _distr_spec(x, D, eta):
+    x0min = np.expand_dims((x - 2/3.0*eta)/(1-2/3.0*eta/D), 0)
+    x0max = np.expand_dims((x + 2/3.0*eta)/(1+2/3.0*eta/D), 0)
+    xd = np.expand_dims(x, 0)
+    f0 = np.expand_dims(np.linspace(0, 1, 3000), 1)
+    x0 = (x0max-x0min)*(f0)+x0min
+    phi0 = (x0max-x0min)*(10*f0**3-15 *
+                          f0**4+6*f0**5)+x0min
+
+    ker = _distr_D(phi0/D, 1.0)*_distr_eta(xd/D, phi0/D,
+                                           1.0, eta/D)*(30*f0**2*(1-2*f0+f0**2))
+    return np.trapz(ker, x0, axis=0)
+
+    # x0 = (3*f0**2-1)*0.5
+    # ker = _distr_eta(xd/D, x0, 1.0, eta/D)
+    # ker = np.where((x0 < D)*(x0 > -D/2), ker, 0)
+
+    # return np.trapz(ker, f0, axis=0)
+
+
 
 class DipolarField(object):
 
-    def __init__(self, atoms, mu_pos, isotopes={}, isotope_list=None, cutoff=10, overlap_eps=1e-3):
+    def __init__(self, atoms, mu_pos, isotopes={}, isotope_list=None,
+                 cutoff=10, overlap_eps=1e-3):
 
         # Get positions, cell, and species, only things we care about
         self.cell = np.array(atoms.get_cell())
@@ -46,9 +97,10 @@ class DipolarField(object):
         self._rn = rnorm
         self._rn = np.where(self._rn > overlap_eps, self._rn, np.inf)
         self._ri = sphere
-        self._dT = 3*r[:, :, None]*r[:, None, :] / \
-            self._rn[:, None, None]**2-np.eye(3)[None, :, :]
+        self._dT = (3*r[:, :, None]*r[:, None, :] /
+                    self._rn[:, None, None]**2-np.eye(3)[None, :, :])/2
 
+        self._an = len(pos)
         self._gn = self.grid_f.shape[0]
         self._a_i = self._ri//self._gn
         self._ijk = self.grid_f[self._ri % self._gn]
@@ -62,30 +114,72 @@ class DipolarField(object):
 
         self._D = {'n': Dn, 'e': De}
 
-    def get_single_field(self, moments, ext_field_dir=[0, 0, 1.0], moment_type='e'):
+        # Start with all zeros
+        self.spins = rnorm*0
 
-        s = np.array(moments)[self._a_i]
-        D = self._D[moment_type]
+    def set_moments(self, moments, moment_type='e'):
 
-        n = np.array(ext_field_dir).astype(float)
-        n /= np.linalg.norm(n)
+        spins = np.array(moments)
+        if spins.shape != (self._an,):
+            raise ValueError('Invalid moments array shape')
 
-        DT = np.sum((D*s)[:, None, None]*self._dT, axis=0)
-        return np.dot(n, np.dot(DT, n))
+        try:
+            self.spins = spins[self._a_i]*self._D[moment_type]
+        except KeyError:
+            raise ValueError('Invalid moment type')
 
-    def get_pwd_distribution(self, moment_gen, orients, moment_type='e'):
+    def dipten(self):
+        return np.sum(self.spins[:, None, None]*self._dT, axis=0)
 
-        s = moment_gen(self._a_i, self._ijk)
+    def frequency(self, axis=[0, 0, 1]):
 
-        D = self._D[moment_type]
-        DT = np.sum((D*s)[:, None, None]*self._dT, axis=0)
+        D = self.dipten()
+        return np.sum(np.dot(D, axis)*axis)
 
-        return np.sum(np.tensordot(DT, orients, axes=(1,1)).T*orients, axis=1)
+    def pwd_spec(self, width=None, h_steps=100):
 
-    def get_zf_distribution(self, moment_gen, moment_type='e'):
+        dten = self.dipten()
+        evals, evecs = np.linalg.eigh(dten)
+        evals = np.sort(evals)
+        D = evals[2]
+        eta = (evals[1]-evals[0])/2
 
-        s = moment_gen(self._a_i, self._ijk)
+        if width is None:
+            width = D
 
-        D = self._D[moment_type]
-        DT = D[:,None,None]*self._dT
-        return np.sum(DT*s[:,None,:]*s[:,:,None], axis=(1,2))
+        om = np.linspace(-width, width, 2*h_steps+1)
+        if np.isclose(eta/D, 0):
+            spec = _distr_D(om, D)
+        else:
+            spec = _distr_spec(om, D, eta)
+        spec = (spec+spec[::-1])/2
+
+        return om, spec
+
+    # def get_single_field(self, moments, ext_field_dir=[0, 0, 1.0], moment_type='e'):
+
+    #     s = np.array(moments)[self._a_i]
+    #     D = self._D[moment_type]
+
+    #     n = np.array(ext_field_dir).astype(float)
+    #     n /= np.linalg.norm(n)
+
+    #     DT = np.sum((D*s)[:, None, None]*self._dT, axis=0)
+    #     return np.dot(n, np.dot(DT, n))
+
+    # def get_pwd_distribution(self, moment_gen, orients, moment_type='e'):
+
+    #     s = moment_gen(self._a_i, self._ijk)
+
+    #     D = self._D[moment_type]
+    #     DT = np.sum((D*s)[:, None, None]*self._dT, axis=0)
+
+    #     return np.sum(np.tensordot(DT, orients, axes=(1, 1)).T*orients, axis=1)
+
+    # def get_zf_distribution(self, moment_gen, moment_type='e'):
+
+    #     s = moment_gen(self._a_i, self._ijk)
+
+    #     D = self._D[moment_type]
+    #     DT = D[:, None, None]*self._dT
+    #     return np.sum(DT*s[:, None, :]*s[:, :, None], axis=(1, 2))

@@ -139,7 +139,7 @@ def create_muairss_castep_calculator(a, params={}, calc=None):
     calc.cell.kpoint_mp_grid = list_to_string(
         params.get('k_points_grid', [1, 1, 1]))
     calc.cell.fix_all_cell = True   # Necessary for older CASTEP versions
-    calc.param.charge = 1.0 if params['charged'] else 0.0
+    calc.param.charge = params.get('charged', False)*1.0
 
     # Read the parameters
     pfile = params.get('castep_param', None)
