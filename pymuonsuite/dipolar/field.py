@@ -47,25 +47,41 @@ def _distr_eta(x, x0, D, eta):
     return y
 
 # @jit(nopython=True)
-def _distr_spec(x, D, eta):
+def _distr_spec(x, D, eta, nsteps=3000):
     x0min = np.expand_dims((x - 2/3.0*eta)/(1-2/3.0*eta/D), 0)
+    x0min = np.where(x0min > -D/2, x0min, -D/2)
     x0max = np.expand_dims((x + 2/3.0*eta)/(1+2/3.0*eta/D), 0)
     xd = np.expand_dims(x, 0)
-    f0 = np.expand_dims(np.linspace(0, 1, 3000), 1)
-    x0 = (x0max-x0min)*(f0)+x0min
+    f0 = np.expand_dims(np.linspace(0, 1, nsteps), 1)
     phi0 = (x0max-x0min)*(10*f0**3-15 *
                           f0**4+6*f0**5)+x0min
+    """
+    Note on this integral:
 
+    ok, this is a bit tricky. Basically, we take _distr_D (the eta = 0 pattern),
+    then for each frequency there we broaden one delta into a line that represents
+    the distribution one gets by changing phi from 0 to 2pi.
+
+    This would be all nice and good, but requires two fixes to work smoothly:
+    1) make sure that x0min is properly picked, because the kernel of the 
+    integral diverges at the boundaries and you don't want that to fall inside
+    your interval of definition for x0, or it'll cause numerical noise. Hence
+    the np.where clause above
+    2) condition the kernel of the integral to tame the singularities at the
+    boundaries. This is done by picking a function phi(t) such that x = phi(t)
+    and phi(a) = a and phi(b) = b, while phi'(a) = phi'(b) = 0, so that
+
+    dx = phi'(t) dt 
+
+    and we can integrate in t instead than x and the derivative kindly kills
+    off the divergence for us. Our choice of function here can be seen above 
+    in the definition of phi0.
+    """
     ker = _distr_D(phi0/D, 1.0)*_distr_eta(xd/D, phi0/D,
                                            1.0, eta/D)*(30*f0**2*(1-2*f0+f0**2))
-    return np.trapz(ker, x0, axis=0)
 
-    # x0 = (3*f0**2-1)*0.5
-    # ker = _distr_eta(xd/D, x0, 1.0, eta/D)
-    # ker = np.where((x0 < D)*(x0 > -D/2), ker, 0)
-
-    # return np.trapz(ker, f0, axis=0)
-
+    dx0 = 1.0/(nsteps-1)*(x0max[0]-x0min[0])
+    return np.sum(ker, axis=0)*dx0
 
 
 class DipolarField(object):
