@@ -46,7 +46,7 @@ def _distr_eta(x, x0, D, eta):
                  * 3/np.pi, 0)
     return y
 
-# @jit(nopython=True)
+@jit(nopython=True)
 def _distr_spec(x, D, eta, nsteps=3000):
     x0min = np.expand_dims((x - 2/3.0*eta)/(1-2/3.0*eta/D), 0)
     x0min = np.where(x0min > -D/2, x0min, -D/2)
