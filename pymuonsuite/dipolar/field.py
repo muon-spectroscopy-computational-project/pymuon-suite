@@ -19,34 +19,33 @@ from soprano.calculate.powder import ZCW, SHREWD, TriAvg
 from soprano.properties.nmr.utils import _get_isotope_data, _dip_constant
 from pymuonsuite.constants import m_gamma
 
-try:
-    from numba import jit
-except ImportError:
-    warnings.warn('Numba not found - install for boost in performance')
+# try:
+#     from numba import jit
+# except ImportError:
+#     warnings.warn('Numba not found - install for boost in performance')
 
-    def jit(nopython=True):
-        def dummy(f):
-            def wrapf(*args, **kwargs):
-                return f(*args, **kwargs)
-            return wrapf
-        return dummy
+#     def jit(nopython=True):
+#         def dummy(f):
+#             def wrapf(*args, **kwargs):
+#                 return f(*args, **kwargs)
+#             return wrapf
+#         return dummy
 
 # Dipolar line functions
 
 
-@jit(nopython=True)
 def _distr_D(x, D):
-    return np.where((x > -D/2)*(x < D), 1/(3*D*((2*(x/D))/3+1.0/3.0)**0.5), 0)
+    x = np.where((x > -D/2)*(x < D), x, np.inf)
+    return 1/(3*D*((2*(x/D))/3+1.0/3.0)**0.5)
 
 
-@jit(nopython=True)
 def _distr_eta(x, x0, D, eta):
     den = eta**2*(2-2*x0/D)**2-9*(x-x0)**2
-    y = np.where(den > 0, 1.0/den**0.5
-                 * 3/np.pi, 0)
+    den = np.where(den > 0, den, np.inf)
+    y = 1.0/den**0.5 * 3/np.pi
     return y
 
-@jit(nopython=True)
+
 def _distr_spec(x, D, eta, nsteps=3000):
     x0min = np.expand_dims((x - 2/3.0*eta)/(1-2/3.0*eta/D), 0)
     x0min = np.where(x0min > -D/2, x0min, -D/2)
@@ -169,6 +168,7 @@ class DipolarField(object):
         else:
             spec = _distr_spec(om, D, eta)
         spec = (spec+spec[::-1])/2
+        spec /= np.trapz(spec, om)  # Normalize
 
         return om, spec
 
