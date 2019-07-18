@@ -83,7 +83,7 @@ def asephonons_entry():
 
     # Save optimised structure
     fname, fext = os.path.splitext(args.structure_file)
-    io.write(fname + '_opt' + fext, a)
+    io.write(fname + '_opt' + fext, phdata.structure)
 
     # And write out the phonons
     outf = params['output_file']

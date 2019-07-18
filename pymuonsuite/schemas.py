@@ -132,6 +132,7 @@ MuAirssSchema = Schema({
     # Charge density file for UEP
     Optional('uep_chden', default=''):
     validate_str,
+    # Gaussian Width factor for UEP
     Optional('uep_gw_factor', default=5.0):
     float,
     # Radius to use when generating muon sites with the possion disk algorithm.
