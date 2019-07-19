@@ -151,7 +151,7 @@ class DipolarField(object):
         D = self.dipten()
         return np.sum(np.dot(D, axis)*axis)
 
-    def pwd_spec(self, width=None, h_steps=100):
+    def pwd_spec(self, width=None, h_steps=100, nsteps=100):
 
         dten = self.dipten()
         evals, evecs = np.linalg.eigh(dten)
@@ -166,36 +166,65 @@ class DipolarField(object):
         if np.isclose(eta/D, 0):
             spec = _distr_D(om, D)
         else:
-            spec = _distr_spec(om, D, eta)
+            spec = _distr_spec(om, D, eta, nsteps=nsteps)
         spec = (spec+spec[::-1])/2
         spec /= np.trapz(spec, om)  # Normalize
 
         return om, spec
 
-    # def get_single_field(self, moments, ext_field_dir=[0, 0, 1.0], moment_type='e'):
+    def random_spec_uniaxial(self, axis=[0, 0, 1], width=None, h_steps=100):
 
-    #     s = np.array(moments)[self._a_i]
-    #     D = self._D[moment_type]
+        # Consider individual dipolar constants
+        DD = self.spins[:, None, None]*self._dT
+        Ds = np.dot(np.tensordot(DD, axis, axes=(1, 0)), axis)
 
-    #     n = np.array(ext_field_dir).astype(float)
-    #     n /= np.linalg.norm(n)
+        if width is None:
+            width = np.sum(np.abs(Ds))
 
-    #     DT = np.sum((D*s)[:, None, None]*self._dT, axis=0)
-    #     return np.dot(n, np.dot(DT, n))
+        """
 
-    # def get_pwd_distribution(self, moment_gen, orients, moment_type='e'):
+        To generate the spectrum we consider the probability distribution
+        for each of these. Basically it's
 
-    #     s = moment_gen(self._a_i, self._ijk)
+        rho(d) = 1/2*delta(d-D)+1/2*delta(d+D)
 
-    #     D = self._D[moment_type]
-    #     DT = np.sum((D*s)[:, None, None]*self._dT, axis=0)
+        with the Dirac delta. So the characteristic function is
 
-    #     return np.sum(np.tensordot(DT, orients, axes=(1, 1)).T*orients, axis=1)
+        f(t) = cos(D*t)
 
-    # def get_zf_distribution(self, moment_gen, moment_type='e'):
+        which means we can generate the total distribution function as
+        an inverse FFT of a product:
 
-    #     s = moment_gen(self._a_i, self._ijk)
+        rho_tot(d) = IFFT[Prod(cos(D_i*t))]
+        """
 
-    #     D = self._D[moment_type]
-    #     DT = D[:, None, None]*self._dT
-    #     return np.sum(DT*s[:, None, :]*s[:, :, None], axis=(1, 2))
+        dt = h_steps/(2*h_steps+1.0)*2*np.pi/width
+
+        t = np.linspace(-h_steps*dt, h_steps*dt, 2*h_steps+1)
+        chfun = np.prod(np.cos(Ds[:, None]*t[None, :]), axis=0)
+
+        spec = np.abs(np.fft.fftshift(np.fft.ifft(chfun)))
+        om = np.linspace(-width, width, 2*h_steps+1)
+
+        spec /= np.trapz(spec, om)
+
+        return om, spec
+
+    def random_spec_pwd(self, width=None, h_steps=100, pwdN=50):
+
+        if width is None:
+            width = np.sum(np.abs(self.spins))
+
+        pwd = ZCW('sphere')
+        orients, weights = pwd.get_orient_points(pwdN)
+        specs = []
+
+        for n in orients:
+            specs.append(self.random_spec_uniaxial(n, width=width,
+                                                   h_steps=h_steps))
+
+        specs = np.array(specs)
+        om = specs[0,0]
+        spec = np.sum(specs[:,1]*weights[:,None], axis=0)
+
+        return om, spec
