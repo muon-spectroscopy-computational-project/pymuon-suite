@@ -224,7 +224,50 @@ class DipolarField(object):
                                                    h_steps=h_steps))
 
         specs = np.array(specs)
-        om = specs[0,0]
-        spec = np.sum(specs[:,1]*weights[:,None], axis=0)
+        om = specs[0, 0]
+        spec = np.sum(specs[:, 1]*weights[:, None], axis=0)
 
         return om, spec
+
+    def random_spec_zf(self, width=None, h_steps=100):
+
+        if width is None:
+            width = np.sum(np.abs(self.spins))
+
+        dt = h_steps/(2*h_steps+1.0)*2*np.pi/width
+        t = np.linspace(-h_steps*dt, h_steps*dt, 2*h_steps+1)
+
+        """
+        Same logic as random_spec_pwd, except here we know that each
+        tensor contributes to one component of the field with a uniform
+        probability distribution, with width defined by the tensor, which we
+        compute here. Then the characteristic function of the uniform
+        probability distribution is sinc.
+
+        Returns three spectra, corresponding to three projected components
+        of the distribution: Bx, By, and Bz.
+        """
+
+        # Find the maximal component values for each tensor
+        phi = np.arctan(self._dT[:, 1]/self._dT[:, 0])
+        phi = np.where(np.isnan(phi), 0, phi)
+        theta = np.arctan(
+            (self._dT[:, 0]*np.cos(phi)+self._dT[:, 1]*np.sin(phi))/self._dT[:, 2])
+        ct = np.cos(theta)
+        st = np.sin(theta)
+        cp = np.cos(phi)
+        sp = np.sin(phi)
+        maxdir = np.swapaxes(np.array([st*cp, st*sp, ct]), 0, 1)
+        maxw = np.abs(np.sum(self._dT*maxdir, axis=1))*self.spins[:,None]
+
+        chfun = np.prod(np.sin(maxw[:, :, None]*t[None, None, :]) /
+                        (maxw[:, :, None]*t[None, None, :]),
+                        axis=0)
+        chfun = np.where(np.isnan(chfun), 1, chfun)
+        spec = np.abs(np.fft.fftshift(np.fft.ifft(chfun, axis=-1), axes=(-1)))
+        om = np.linspace(-width, width, 2*h_steps+1)
+
+        spec /= np.trapz(spec, om, axis=-1)[:,None]
+
+        return om, spec
+
