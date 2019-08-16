@@ -33,7 +33,7 @@ import pymuonsuite.constants as cnst
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import (castep_write_input, add_to_castep_block)
-from pymuonsuite.io.dftb import dftb_write_input
+from pymuonsuite.io.dftb import dftb_write_input, dftb_read_input
 from pymuonsuite.io.uep import UEPCalculator, uep_write_input
 
 
@@ -263,6 +263,29 @@ def save_muairss_collection(struct, params, batch_path=''):
                      safety_check=2)
 
 
+def load_muairss_collection(struct, params, batch_path=''):
+
+    # Output folder
+    out_path = os.path.join(batch_path, params['out_folder'])
+
+    load_formats = {
+        'dftb+': dftb_read_input
+    }
+
+    calcs = [s.strip().lower() for s in params['calculator'].split(',')]
+    if 'all' in calcs:
+        calcs = load_formats.keys()
+
+    loaded = {}
+
+    for cname in calcs:
+        calc_path = os.path.join(out_path, cname)
+        dc = AtomsCollection.load_tree(calc_path, load_formats[cname],
+                                       safety_check=2)
+        loaded[cname] = dc
+
+    return loaded
+
 def save_muairss_batch(args, global_params):
     structures_path = args.structures
 
@@ -296,24 +319,46 @@ def save_muairss_batch(args, global_params):
     print("Done!")
 
 
-def main():
+def main_generate():
+    main('w')
+
+
+def main(task=None):
     parser = ap.ArgumentParser()
     parser.add_argument('structures', type=str, default=None,
                         help="A structure file or a folder of files in an ASE "
                         "readable format")
     parser.add_argument('parameter_file', type=str, default=None, help="""YAML
-                        formatted file with generation parameters. The 
+                        formatted file with generation parameters. The
                         arguments can be overridden by structure-specific YAML
                         files if a folder is passed as the first argument.""")
+    parser.add_argument('-t', type=str, default='r', choices=['r', 'w'],
+                        dest='task',
+                        help="""Task to be run by muairss. Can be either 'w'
+                        (=generate and WRITE structures) or 'r' (=READ and
+                        cluster results). Default is READ.""")
 
     args = parser.parse_args()
     params = load_input_file(args.parameter_file, MuAirssSchema)
 
-    if os.path.isdir(args.structures):
-        save_muairss_batch(args, params)
-    elif os.path.isfile(args.structures):
-        struct = io.read(args.structures)
-        save_muairss_collection(struct, params)
-    else:
-        raise RuntimeError("{} is neither a file or a directory"
-                           .format(args.structures))
+    if task is None:
+        task = args.task
+
+    if task == 'w':
+        if os.path.isdir(args.structures):
+            save_muairss_batch(args, params)
+        elif os.path.isfile(args.structures):
+            struct = io.read(args.structures)
+            save_muairss_collection(struct, params)
+        else:
+            raise RuntimeError("{} is neither a file or a directory"
+                               .format(args.structures))
+    elif task == 'r':
+        if os.path.isdir(args.structures):
+            load_muairss_batch(args, params)
+        elif os.path.isfile(args.structures):
+            struct = io.read(args.structures)
+            load_muairss_collection(struct, params)
+        else:
+            raise RuntimeError("{} is neither a file or a directory"
+                               .format(args.structures))

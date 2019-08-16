@@ -55,7 +55,8 @@ def castep_write_input(a, folder, calc=None, name=None, script=None):
         calc = Castep(atoms=a)
         a.set_calculator(calc)
 
-    io.write(os.path.join(folder, name + '.cell'), a, magnetic_moments='initial')
+    io.write(os.path.join(folder, name + '.cell'),
+             a, magnetic_moments='initial')
     write_param(os.path.join(folder, name + '.param'),
                 a.calc.param, force_write=True)
 
@@ -64,6 +65,12 @@ def castep_write_input(a, folder, calc=None, name=None, script=None):
         stxt = stxt.format(seedname=name)
         with open(os.path.join(folder, 'script.sh'), 'w') as sf:
             sf.write(stxt)
+
+
+def castep_read_input(folder):
+    sname = os.path.split(folder)[-1]
+    a = io.read(os.path.join(folder, sname + '.castep'))
+    return a
 
 
 def save_muonconf_castep(a, folder, params):
@@ -176,8 +183,8 @@ def parse_castep_mass_block(mass_block):
 
 
 def parse_castep_masses(cell):
-    """Parse CASTEP custom species masses, returning an array of all atom masses
-    in .cell file with corrected custom masses.
+    """Parse CASTEP custom species masses, returning an array of all atom 
+    masses in .cell file with corrected custom masses.
 
     | Args:
     |   cell(ASE Atoms object): Atoms object containing relevant .cell file
