@@ -70,6 +70,8 @@ def dftb_read_input(folder):
       SinglePointCalculator
     """
 
+    print(folder)
+
     atoms = io.read(os.path.join(folder, 'geo_end.gen'))
     atoms.info['name'] = os.path.split(folder)[-1]
     results_file = os.path.join(folder, "results.tag")
@@ -83,6 +85,7 @@ def dftb_read_input(folder):
             calc = Dftb(atoms=atoms)
             calc.atoms_input = atoms
             calc.directory = folder
+            calc.do_forces = True
             calc.read_results()
 
         energy = calc.get_potential_energy()
