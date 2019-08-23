@@ -32,7 +32,8 @@ from soprano.collection.generate import defectGen
 import pymuonsuite.constants as cnst
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
-from pymuonsuite.io.castep import (castep_write_input, add_to_castep_block)
+from pymuonsuite.io.castep import (castep_write_input, castep_read_input,
+                                   add_to_castep_block)
 from pymuonsuite.io.dftb import dftb_write_input, dftb_read_input
 from pymuonsuite.io.uep import UEPCalculator, uep_write_input
 
@@ -269,7 +270,8 @@ def load_muairss_collection(struct, params, batch_path=''):
     out_path = os.path.join(batch_path, params['out_folder'])
 
     load_formats = {
-        'dftb+': dftb_read_input
+        'dftb+': dftb_read_input,
+        'castep': castep_read_input
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
@@ -285,6 +287,7 @@ def load_muairss_collection(struct, params, batch_path=''):
         loaded[cname] = dc
 
     return loaded
+
 
 def save_muairss_batch(args, global_params):
     structures_path = args.structures
@@ -358,7 +361,7 @@ def main(task=None):
             load_muairss_batch(args, params)
         elif os.path.isfile(args.structures):
             struct = io.read(args.structures)
-            load_muairss_collection(struct, params)
+            collection = load_muairss_collection(struct, params)
         else:
             raise RuntimeError("{} is neither a file or a directory"
                                .format(args.structures))

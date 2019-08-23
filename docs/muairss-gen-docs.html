@@ -1,0 +1,41 @@
+<h2>MuonAirss-Gen User Guide</h2>
+
+<p>The script <code>pm-muairss-gen</code> is aimed at generating a number of random starting structures to then converge with some outside calculator to potential stopping sites. The script is used as follows:</p>
+
+<pre><code>pm-muairss-gen &lt;structure&gt; &lt;parameter file&gt;
+</code></pre>
+
+<p>Here <code>&lt;structure&gt;</code> may be a single structure file in a format readable by the Atomic Simulation Environment (ASE), or a folder containing multiple ones, in which case separate folders will be generated for the output structures. <code>&lt;parameter file&gt;</code> is meant to be a file in YAML format containing the parameters defining the way the structures are generated. For example, a typical YAML file may look like:</p>
+
+<pre><code>name: structure 
+poisson_r: 0.8 
+supercell: [2, 2, 2]
+</code></pre>
+
+<p>with variables written like Python values (strings, floats, or lists). The important thing is to make sure that the separators after the colon are spaces and not tabs, since the latter are not compatible with the format. Here we present a list of acceptable keywords to use in this file.</p>
+
+<h3>Keywords</h3>
+
+<ul>
+<li><strong>name</strong> <em>(string)</em>: name to call the folder for containing each structure. This name will be postfixed with a unique number, e.g. <code>struct_001</code>.</li>
+<li><strong>calculator</strong> <em>(string or list of strings)</em>: calculator to generate structure files for. Must be a single word or a comma seperated list of values. Currently supported calculators are CASTEP, DFTB+ and UEP. Can also pass <code>all</code> as an option to generate files for all calculators.</li>
+<li><strong>castep_command</strong> <em>(string)</em>: command to use to run CASTEP.</li>
+<li><strong>dftb_command</strong> <em>(string)</em>: command to use to run DFTB+.</li>
+<li><strong>script_file</strong> <em>(string)</em>: path to script file to copy in all folders.</li>
+<li><strong>castep_param</strong> <em>(string)</em>: file path to the CASTEP parameter file.</li>
+<li><strong>dftb_set</strong> <em>(string)</em>: the parameter set to use for DFTB+. Currently supported are <code>3ob-3-1</code> and <code>pbc-0-3</code>. For more information see (the DFTB site)[http://www.dftb.org/parameters/].</li>
+<li><strong>dftb_optionals</strong> <em>(list of strings)</em>: additional optional json files to activate for DFTBArgs (for example, <code>dftd3.json</code> will use DFTD3 dispersion forces for <code>3ob-3-1</code> if DFTB+ has been compiled to support them).</li>
+<li><strong>dftb_pbc</strong> <em>(bool)</em>: whether to turn on periodic boundary conditions in DFTB+.</li>
+<li><strong>uep_chden</strong> <em>(string)</em>: path to the <code>.den_fmt</code> file containing the electronic density for an Unperturbed Electrostatic Potential optimisation. The corresponding <code>.castep</code> file must be in the same folder and with the same seedname.</li>
+<li><strong>uep_gw_factor</strong> <em>(float)</em>: Gaussian width factor for UEP calculation. Higher values will make the potential of atomic nuclei closer to the point-like approximation but may introduce artifacts.</li>
+<li><strong>poisson_r</strong> <em>(float)</em>: Poisson sphere radius to use for random generation. No two starting muon positions will be closer than this distance. Smaller values make for bigger structure sets.</li>
+<li><strong>vdw_scale</strong> <em>(float)</em>: Van der Waals scaling factor to use when generating muon sites to avoid existing atoms. Smaller values will allow muons to get closer to the other ions.</li>
+<li><strong>charged</strong> <em>(bool)</em>: if True, the muon will be considered charged instead of a muonium with an accompanying electron. Must be True for UEP calculations.</li>
+<li><strong>supercell</strong> <em>(int or list of ints)</em>: supercell size and shape to use. This can either be a single int, a list of three integers or a 3x3 matrix of integers. For a single number a diagonal matrix will be generated with the integer repeated on the diagonals. For a list of three numbers a diagonal matrix will be generated where the digonal elements are set to the list. A matrix will be used directly as is. Default is a 3x3 indentity matrix.</li>
+<li><strong>k_points_grid</strong> <em>(list of ints)</em>: list of three integer k-points. Default is [1,1,1].</li>
+<li><strong>out_folder</strong> <em>(string)</em>: name to call the output folder used to store the input files that the script generates.</li>
+<li><strong>mu_symbol</strong> <em>(string)</em>: the symbol to use for the muon when writing out the castep custom species.</li>
+<li><strong>geom_steps</strong> <em>(int)</em>: maximum number of geometry optimisation steps.</li>
+<li><strong>geom_force<em>tol</strong> _(float)</em>: tolerance on geometry optimisation in units of eV/AA.</li>
+<li><strong>max_scc_steps</strong> <em>(int)</em>: if applicable, max number of SCC steps to perform before giving up. Default is 200 which is also the default for DFTB+.</li>
+</ul>
