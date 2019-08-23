@@ -70,8 +70,6 @@ def dftb_read_input(folder):
       SinglePointCalculator
     """
 
-    print(folder)
-
     atoms = io.read(os.path.join(folder, 'geo_end.gen'))
     atoms.info['name'] = os.path.split(folder)[-1]
     results_file = os.path.join(folder, "results.tag")
