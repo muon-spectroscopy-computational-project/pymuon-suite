@@ -28,6 +28,7 @@ from ase.calculators.dftb import Dftb
 from soprano.utils import safe_input
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
+from soprano.analyse.phylogen import PhylogenCluster, Gene
 
 import pymuonsuite.constants as cnst
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
@@ -322,6 +323,27 @@ def save_muairss_batch(args, global_params):
     print("Done!")
 
 
+def muairss_cluster(struct, collection, params):
+
+    clusters = {}
+
+    for calc, ccoll in collection.items():
+        # Start by extracting the muon positions
+        genes = [Gene('energy', 1, {}),
+                 Gene('defect_asymmetric_fpos', 1,
+                  {'index': -1, 'struct': struct})]
+        pclust = PhylogenCluster(ccoll, genes)
+
+        cmethod = params['clustering_method']
+        if cmethod == 'hier':
+            cl = pclust.get_hier_clusters(params['clustering_hier_t'])
+        elif cmethod == 'kmeans':
+            cl = pclust.get_kmeans_clusters(params['clustering_kmeans_k'])
+
+        clusters[calc] = []
+
+
+
 def main_generate():
     main('w')
 
@@ -362,6 +384,7 @@ def main(task=None):
         elif os.path.isfile(args.structures):
             struct = io.read(args.structures)
             collection = load_muairss_collection(struct, params)
+            muairss_cluster(struct, collection, params)
         else:
             raise RuntimeError("{} is neither a file or a directory"
                                .format(args.structures))

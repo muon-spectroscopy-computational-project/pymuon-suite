@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 
 import numpy as np
 
+
 def write_tensors(tensors, filename, symbols):
     """
     Write out a set of 2 dimensional tensors for every atom in a system.
@@ -26,4 +27,5 @@ def write_tensors(tensors, filename, symbols):
     tensfile = open(filename, 'w')
     for i in range(np.size(tensors, 0)):
         tensfile.write('{0} {1}\n'.format(symbols[i], i))
-        tensfile.write('\n'.join(['\t'.join([str(x) for x in l]) for l in tensors[i]]) + '\n')
+        tensfile.write('\n'.join(['\t'.join([str(x) for x in l])
+                                  for l in tensors[i]]) + '\n')
