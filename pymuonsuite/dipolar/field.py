@@ -172,7 +172,8 @@ class DipolarField(object):
 
         return om, spec
 
-    def random_spec_uniaxial(self, axis=[0, 0, 1], width=None, h_steps=100):
+    def random_spec_uniaxial(self, axis=[0, 0, 1], width=None, h_steps=100,
+                             occ=1.0):
 
         # Consider individual dipolar constants
         DD = self.spins[:, None, None]*self._dT
@@ -196,12 +197,20 @@ class DipolarField(object):
         an inverse FFT of a product:
 
         rho_tot(d) = IFFT[Prod(cos(D_i*t))]
+
+        In case of occupancy < 1.0 all we need to do is include the possibility
+        of field = 0, so:
+
+        rho(d) = (1/2*delta(d-D)+1/2*delta(d+D))*occ + delta(d)*(1-occ)
+
+        and the rest follows easily.
+
         """
 
         dt = h_steps/(2*h_steps+1.0)*2*np.pi/width
 
         t = np.linspace(-h_steps*dt, h_steps*dt, 2*h_steps+1)
-        chfun = np.prod(np.cos(Ds[:, None]*t[None, :]), axis=0)
+        chfun = np.prod(np.cos(Ds[:, None]*t[None, :])*occ+(1-occ), axis=0)
 
         spec = np.abs(np.fft.fftshift(np.fft.ifft(chfun)))
         om = np.linspace(-width, width, 2*h_steps+1)
@@ -210,7 +219,7 @@ class DipolarField(object):
 
         return om, spec
 
-    def random_spec_pwd(self, width=None, h_steps=100, pwdN=50):
+    def random_spec_pwd(self, width=None, h_steps=100, pwdN=50, occ=1.0):
 
         if width is None:
             width = np.sum(np.abs(self.spins))
@@ -221,7 +230,8 @@ class DipolarField(object):
 
         for n in orients:
             specs.append(self.random_spec_uniaxial(n, width=width,
-                                                   h_steps=h_steps))
+                                                   h_steps=h_steps,
+                                                   occ=occ))
 
         specs = np.array(specs)
         om = specs[0, 0]
@@ -258,7 +268,7 @@ class DipolarField(object):
         cp = np.cos(phi)
         sp = np.sin(phi)
         maxdir = np.swapaxes(np.array([st*cp, st*sp, ct]), 0, 1)
-        maxw = np.abs(np.sum(self._dT*maxdir, axis=1))*self.spins[:,None]
+        maxw = np.abs(np.sum(self._dT*maxdir, axis=1))*self.spins[:, None]
 
         chfun = np.prod(np.sin(maxw[:, :, None]*t[None, None, :]) /
                         (maxw[:, :, None]*t[None, None, :]),
@@ -267,7 +277,6 @@ class DipolarField(object):
         spec = np.abs(np.fft.fftshift(np.fft.ifft(chfun, axis=-1), axes=(-1)))
         om = np.linspace(-width, width, 2*h_steps+1)
 
-        spec /= np.trapz(spec, om, axis=-1)[:,None]
+        spec /= np.trapz(spec, om, axis=-1)[:, None]
 
         return om, spec
-
