@@ -290,17 +290,23 @@ def load_muairss_collection(struct, params, batch_path=''):
     return loaded
 
 
-def save_muairss_batch(args, global_params):
+def muairss_batch_io(args, global_params, save=False):
     structures_path = args.structures
 
     all_files = glob.glob(os.path.join(structures_path, "*"))
     structure_files = [path for path in all_files
                        if not os.path.splitext(path)[1] == '.yaml']
 
-    global_params['out_folder'] = safe_create_folder(
-        global_params['out_folder'])
+    if save:
+        global_params['out_folder'] = safe_create_folder(
+            global_params['out_folder'])
 
-    print("Beginning creation of {} structures".format(len(structure_files)))
+    print("Beginning {0} of {1} structures".format(
+        'creation' if save else 'loading', len(structure_files)))
+
+    bpath = global_params['out_folder']
+
+    loaded = {}
 
     for path in structure_files:
         name = parse_structure_name(path)
@@ -316,11 +322,20 @@ def save_muairss_batch(args, global_params):
                                      merge=params)
         params['out_folder'] = params['name']
 
-        print("Making {} ---------------------".format(name))
-        save_muairss_collection(struct, params,
-                                batch_path=global_params['out_folder'])
+        if save:
+            print("Making {} ---------------------".format(name))
+            save_muairss_collection(struct, params,
+                                    batch_path=bpath)
+        else:
+            print("Loading {} ---------------------".format(name))
+            coll = load_muairss_collection(struct, params,
+                                           batch_path=bpath)
+            loaded[name] = coll
 
     print("Done!")
+
+    if not save:
+        return loaded
 
 
 def muairss_cluster(struct, collection, params):
@@ -331,7 +346,7 @@ def muairss_cluster(struct, collection, params):
         # Start by extracting the muon positions
         genes = [Gene('energy', 1, {}),
                  Gene('defect_asymmetric_fpos', 1,
-                  {'index': -1, 'struct': struct})]
+                      {'index': -1, 'struct': struct})]
         pclust = PhylogenCluster(ccoll, genes)
 
         cmethod = params['clustering_method']
@@ -341,7 +356,6 @@ def muairss_cluster(struct, collection, params):
             cl = pclust.get_kmeans_clusters(params['clustering_kmeans_k'])
 
         clusters[calc] = []
-
 
 
 def main_generate():
@@ -371,7 +385,7 @@ def main(task=None):
 
     if task == 'w':
         if os.path.isdir(args.structures):
-            save_muairss_batch(args, params)
+            muairss_batch_io(args, params, True)
         elif os.path.isfile(args.structures):
             struct = io.read(args.structures)
             save_muairss_collection(struct, params)
@@ -380,7 +394,7 @@ def main(task=None):
                                .format(args.structures))
     elif task == 'r':
         if os.path.isdir(args.structures):
-            load_muairss_batch(args, params)
+            all_coll = muairss_batch_io(args, params)
         elif os.path.isfile(args.structures):
             struct = io.read(args.structures)
             collection = load_muairss_collection(struct, params)
