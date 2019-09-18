@@ -37,6 +37,7 @@ from pymuonsuite.io.castep import (castep_write_input, castep_read_input,
                                    add_to_castep_block)
 from pymuonsuite.io.dftb import dftb_write_input, dftb_read_input
 from pymuonsuite.io.uep import UEPCalculator, uep_write_input
+from pymuonsuite.io.output import write_cluster_report
 
 
 def find_primitive_structure(struct):
@@ -330,7 +331,7 @@ def muairss_batch_io(args, global_params, save=False):
             print("Loading {} ---------------------".format(name))
             coll = load_muairss_collection(struct, params,
                                            batch_path=bpath)
-            loaded[name] = coll
+            loaded[name] = {'struct': struct, 'collection': coll}
 
     print("Done!")
 
@@ -338,7 +339,10 @@ def muairss_batch_io(args, global_params, save=False):
         return loaded
 
 
-def muairss_cluster(struct, collection, params):
+def muairss_cluster(struct, collection, params, name=None):
+
+    if name is None:
+        name = params['name']
 
     clusters = {}
 
@@ -355,7 +359,10 @@ def muairss_cluster(struct, collection, params):
         elif cmethod == 'kmeans':
             cl = pclust.get_kmeans_clusters(params['clustering_kmeans_k'])
 
-        clusters[calc] = []
+        # Split the collection
+        clusters[calc] = [cl, ccoll.classify(cl[0])]
+
+    return clusters
 
 
 def main_generate():
@@ -395,10 +402,17 @@ def main(task=None):
     elif task == 'r':
         if os.path.isdir(args.structures):
             all_coll = muairss_batch_io(args, params)
+            clusters = {}
+            for name, data in all_coll.items():
+                clusters[name] = muairss_cluster(data['struct'],
+                                                 data['collection'], params)
         elif os.path.isfile(args.structures):
             struct = io.read(args.structures)
             collection = load_muairss_collection(struct, params)
-            muairss_cluster(struct, collection, params)
+            clusters = {
+                params['name']: muairss_cluster(struct, collection, params)
+            }
         else:
             raise RuntimeError("{} is neither a file or a directory"
                                .format(args.structures))
+        write_cluster_report(args, params, clusters)
