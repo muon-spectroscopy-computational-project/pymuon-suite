@@ -55,7 +55,8 @@ def castep_write_input(a, folder, calc=None, name=None, script=None):
         calc = Castep(atoms=a)
         a.set_calculator(calc)
 
-    io.write(os.path.join(folder, name + '.cell'), a, magnetic_moments='initial')
+    io.write(os.path.join(folder, name + '.cell'),
+             a, magnetic_moments='initial')
     write_param(os.path.join(folder, name + '.param'),
                 a.calc.param, force_write=True)
 
@@ -238,7 +239,6 @@ def parse_castep_gamma_block(gamma_block):
             raise CastepError('Invalid line in species_gamma block')
 
     return custom_gammas
-
 
 def parse_castep_ppots(cfile):
 

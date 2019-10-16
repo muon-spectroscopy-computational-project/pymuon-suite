@@ -40,6 +40,25 @@ class ChargeDistribution(object):
         self._struct = io.read(seedpath + '.castep')
         ppots = parse_castep_ppots(seedpath + '.castep')
 
+        # Override by also grabbing any pseudopotentials found in the .cell
+        # file
+
+        cppot = None
+        try:
+            cppot = io.read(seedpath + '.cell').calc.cell.species_pot.value
+        except IOError:
+            pass # If not available, ignore this
+        if cppot is not None:
+            ppf = [l.split() for l in cppot.split('\n') if l]
+            for el, pppath in ppf:
+                f = os.path.join(path, pppath)
+                try:
+                    ppots.update(parse_castep_ppots(f))
+                except IOError:
+                    # File not found
+                    print('WARNING: pseudopotential file '
+                          '{0} not found'.format(f))
+
         # FFT grid
         lattice = np.array(self._elec_den.real_lattice)
         grid = np.array(self._elec_den.grid)
@@ -55,8 +74,15 @@ class ChargeDistribution(object):
         # Information for the elements, and guarantee zero net charge
         elems = self._struct.get_chemical_symbols()
         pos = self._struct.get_positions()
-        q = np.array([ppots[el][0] for el in elems])
-        gw = np.array([ppots[el][1]/gw_fac for el in elems])
+        try:
+            q = np.array([ppots[el][0] for el in elems])
+            gw = np.array([ppots[el][1]/gw_fac for el in elems])
+        except KeyError:
+            raise RuntimeError("""Some or all CASTEP pseudopotentials were not found.
+UEP calculation can not go on. Please notice that at the moment only ultrasoft
+pseudopotentials are supported, and if not generated automatically, they must
+be possible to retrieve using the paths in the SPECIES_POT block of the .cell file.
+""")
 
         # Here we find the Fourier components of the potential due to
         # the valence electrons
