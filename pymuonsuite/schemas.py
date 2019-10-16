@@ -167,7 +167,7 @@ MuAirssSchema = Schema({
     Optional('geom_steps', default=30):
     int,
     # Tolerance on geometry optimisation in units of eV/AA.
-    Optional('geom_force_tol', default=0.5):
+    Optional('geom_force_tol', default=0.05):
     float,
     # Max number of SCC steps to perform before giving up. Default is
     # 200 which is also the default for DFTB+.
