@@ -116,7 +116,6 @@ dep/*
 examples/random-search/muon-airss-out/*
 examples/random-search/merged.cif
 examples/uep/*
-!examples/uep/Si2.uep
 !examples/uep/Si2.yaml
 !examples/uep/Si2/Si2*
 examples/quantum/*
@@ -124,3 +123,8 @@ examples/quantum/*
 !examples/quantum/phonons.yaml
 !examples/quantum/quantum.yaml
 !examples/quantum/run_all.sh
+
+# Documentatation
+docs/*
+!docs/*.md
+!docs/Makefile

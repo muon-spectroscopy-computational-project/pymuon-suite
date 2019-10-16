@@ -95,7 +95,12 @@ class DipolarField(object):
 
         self.mu_pos = np.array(mu_pos)
 
-        scell = minimum_supcell(cutoff, self.cell)
+        # Is it periodic?
+        if np.any(atoms.get_pbc()):
+            scell = minimum_supcell(cutoff, self.cell)
+        else:
+            scell = [1,1,1]
+            
         grid_f, grid = supcell_gridgen(self.cell, scell)
 
         self.grid_f = grid_f
