@@ -42,6 +42,8 @@ if __name__ == '__main__':
           entry_points={
               'console_scripts': [
                   ('pm-muairss-gen = '
+                   'pymuonsuite.muairss:main_generate'),
+                  ('pm-muairss = '
                    'pymuonsuite.muairss:main'),
                   ('pm-uep-opt = '
                    'pymuonsuite.calculate.uep.__main__:geomopt_entry'),

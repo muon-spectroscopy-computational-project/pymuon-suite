@@ -59,7 +59,7 @@ def dftb_write_input(a, folder, calc=None, name=None, script=None):
             sf.write(stxt)
 
 
-def load_muonconf_dftb(folder):
+def dftb_read_input(folder):
     """Read a DFTB+ output non-destructively.
 
     Args:
@@ -83,6 +83,7 @@ def load_muonconf_dftb(folder):
             calc = Dftb(atoms=atoms)
             calc.atoms_input = atoms
             calc.directory = folder
+            calc.do_forces = True
             calc.read_results()
 
         energy = calc.get_potential_energy()
@@ -95,6 +96,13 @@ def load_muonconf_dftb(folder):
         atoms.set_calculator(calc)
 
     return atoms
+
+
+def load_muonconf_dftb(folder):
+    """Duplicate of dftb_read_input.
+    Implemented here for backwards compatibility.
+    """
+    return dftb_read_input(folder)
 
 
 def parse_spinpol_dftb(folder):

@@ -28,13 +28,16 @@ from ase.calculators.dftb import Dftb
 from soprano.utils import safe_input
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
+from soprano.analyse.phylogen import PhylogenCluster, Gene
 
 import pymuonsuite.constants as cnst
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
-from pymuonsuite.io.castep import (castep_write_input, add_to_castep_block)
-from pymuonsuite.io.dftb import dftb_write_input
+from pymuonsuite.io.castep import (castep_write_input, castep_read_input,
+                                   add_to_castep_block)
+from pymuonsuite.io.dftb import dftb_write_input, dftb_read_input
 from pymuonsuite.io.uep import UEPCalculator, uep_write_input
+from pymuonsuite.io.output import write_cluster_report
 
 
 def find_primitive_structure(struct):
@@ -263,17 +266,48 @@ def save_muairss_collection(struct, params, batch_path=''):
                      safety_check=2)
 
 
-def save_muairss_batch(args, global_params):
+def load_muairss_collection(struct, params, batch_path=''):
+
+    # Output folder
+    out_path = os.path.join(batch_path, params['out_folder'])
+
+    load_formats = {
+        'dftb+': dftb_read_input,
+        'castep': castep_read_input
+    }
+
+    calcs = [s.strip().lower() for s in params['calculator'].split(',')]
+    if 'all' in calcs:
+        calcs = load_formats.keys()
+
+    loaded = {}
+
+    for cname in calcs:
+        calc_path = os.path.join(out_path, cname)
+        dc = AtomsCollection.load_tree(calc_path, load_formats[cname],
+                                       safety_check=2)
+        loaded[cname] = dc
+
+    return loaded
+
+
+def muairss_batch_io(args, global_params, save=False):
     structures_path = args.structures
 
     all_files = glob.glob(os.path.join(structures_path, "*"))
     structure_files = [path for path in all_files
                        if not os.path.splitext(path)[1] == '.yaml']
 
-    global_params['out_folder'] = safe_create_folder(
-        global_params['out_folder'])
+    if save:
+        global_params['out_folder'] = safe_create_folder(
+            global_params['out_folder'])
 
-    print("Beginning creation of {} structures".format(len(structure_files)))
+    print("Beginning {0} of {1} structures".format(
+        'creation' if save else 'loading', len(structure_files)))
+
+    bpath = global_params['out_folder']
+
+    loaded = {}
 
     for path in structure_files:
         name = parse_structure_name(path)
@@ -289,31 +323,98 @@ def save_muairss_batch(args, global_params):
                                      merge=params)
         params['out_folder'] = params['name']
 
-        print("Making {} ---------------------".format(name))
-        save_muairss_collection(struct, params,
-                                batch_path=global_params['out_folder'])
+        if save:
+            print("Making {} ---------------------".format(name))
+            save_muairss_collection(struct, params,
+                                    batch_path=bpath)
+        else:
+            print("Loading {} ---------------------".format(name))
+            coll = load_muairss_collection(struct, params,
+                                           batch_path=bpath)
+            loaded[name] = {'struct': struct, 'collection': coll}
 
     print("Done!")
 
+    if not save:
+        return loaded
 
-def main():
+
+def muairss_cluster(struct, collection, params, name=None):
+
+    if name is None:
+        name = params['name']
+
+    clusters = {}
+
+    for calc, ccoll in collection.items():
+        # Start by extracting the muon positions
+        genes = [Gene('energy', 1, {}),
+                 Gene('defect_asymmetric_fpos', 1,
+                      {'index': -1, 'struct': struct})]
+        pclust = PhylogenCluster(ccoll, genes=genes)
+
+        cmethod = params['clustering_method']
+        if cmethod == 'hier':
+            cl = pclust.get_hier_clusters(params['clustering_hier_t'])
+        elif cmethod == 'kmeans':
+            cl = pclust.get_kmeans_clusters(params['clustering_kmeans_k'])
+
+        # Get the energy
+        gvecs = pclust.get_genome_vectors()[0]
+        # Split the collection
+        clusters[calc] = [cl, ccoll.classify(cl[0]), gvecs]
+
+    return clusters
+
+
+def main_generate():
+    main('w')
+
+
+def main(task=None):
     parser = ap.ArgumentParser()
     parser.add_argument('structures', type=str, default=None,
                         help="A structure file or a folder of files in an ASE "
                         "readable format")
     parser.add_argument('parameter_file', type=str, default=None, help="""YAML
-                        formatted file with generation parameters. The 
+                        formatted file with generation parameters. The
                         arguments can be overridden by structure-specific YAML
                         files if a folder is passed as the first argument.""")
+    parser.add_argument('-t', type=str, default='r', choices=['r', 'w'],
+                        dest='task',
+                        help="""Task to be run by muairss. Can be either 'w'
+                        (=generate and WRITE structures) or 'r' (=READ and
+                        cluster results). Default is READ.""")
 
     args = parser.parse_args()
     params = load_input_file(args.parameter_file, MuAirssSchema)
 
-    if os.path.isdir(args.structures):
-        save_muairss_batch(args, params)
-    elif os.path.isfile(args.structures):
-        struct = io.read(args.structures)
-        save_muairss_collection(struct, params)
-    else:
-        raise RuntimeError("{} is neither a file or a directory"
-                           .format(args.structures))
+    if task is None:
+        task = args.task
+
+    if task == 'w':
+        if os.path.isdir(args.structures):
+            muairss_batch_io(args, params, True)
+        elif os.path.isfile(args.structures):
+            struct = io.read(args.structures)
+            save_muairss_collection(struct, params)
+        else:
+            raise RuntimeError("{} is neither a file or a directory"
+                               .format(args.structures))
+    elif task == 'r':
+        if os.path.isdir(args.structures):
+            all_coll = muairss_batch_io(args, params)
+            clusters = {}
+            for name, data in all_coll.items():
+                clusters[name] = muairss_cluster(data['struct'],
+                                                 data['collection'], params)
+        elif os.path.isfile(args.structures):
+            struct = io.read(args.structures)
+            collection = load_muairss_collection(struct, params)
+            clusters = {
+                params['name']: muairss_cluster(struct, collection, params)
+            }
+        else:
+            raise RuntimeError("{} is neither a file or a directory"
+                               .format(args.structures))
+        write_cluster_report(args, params, clusters)

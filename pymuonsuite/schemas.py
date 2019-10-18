@@ -173,6 +173,15 @@ MuAirssSchema = Schema({
     # 200 which is also the default for DFTB+.
     Optional('max_scc_steps', default=200):
     int,
+    # Clustering method to use
+    Optional('clustering_method', default='hier'):
+    validate_all_of('hier', 'kmeans'),
+    # t parameter for hierarchical clustering
+    Optional('clustering_hier_t', default=0.3):
+    float,
+    # Number of clusters for k-means clustering
+    Optional('clustering_kmeans_k', default=4):
+    int
 })
 
 # Parameter file schema and defaults

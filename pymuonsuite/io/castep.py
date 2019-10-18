@@ -67,6 +67,12 @@ def castep_write_input(a, folder, calc=None, name=None, script=None):
             sf.write(stxt)
 
 
+def castep_read_input(folder):
+    sname = os.path.split(folder)[-1]
+    a = io.read(os.path.join(folder, sname + '.castep'))
+    return a
+
+
 def save_muonconf_castep(a, folder, params):
     # Muon mass and gyromagnetic ratio
     mass_block = 'AMU\n{0}       0.1138'
@@ -177,8 +183,8 @@ def parse_castep_mass_block(mass_block):
 
 
 def parse_castep_masses(cell):
-    """Parse CASTEP custom species masses, returning an array of all atom masses
-    in .cell file with corrected custom masses.
+    """Parse CASTEP custom species masses, returning an array of all atom 
+    masses in .cell file with corrected custom masses.
 
     | Args:
     |   cell(ASE Atoms object): Atoms object containing relevant .cell file
