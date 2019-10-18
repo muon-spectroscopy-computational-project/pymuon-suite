@@ -351,7 +351,7 @@ def muairss_cluster(struct, collection, params, name=None):
         genes = [Gene('energy', 1, {}),
                  Gene('defect_asymmetric_fpos', 1,
                       {'index': -1, 'struct': struct})]
-        pclust = PhylogenCluster(ccoll, genes)
+        pclust = PhylogenCluster(ccoll, genes=genes)
 
         cmethod = params['clustering_method']
         if cmethod == 'hier':
@@ -359,8 +359,10 @@ def muairss_cluster(struct, collection, params, name=None):
         elif cmethod == 'kmeans':
             cl = pclust.get_kmeans_clusters(params['clustering_kmeans_k'])
 
+        # Get the energy
+        gvecs = pclust.get_genome_vectors()[0]
         # Split the collection
-        clusters[calc] = [cl, ccoll.classify(cl[0])]
+        clusters[calc] = [cl, ccoll.classify(cl[0]), gvecs]
 
     return clusters
 

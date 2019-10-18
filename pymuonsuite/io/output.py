@@ -57,3 +57,66 @@ Parameter file: {param}
         for name, cdata in clusters.items():
 
             f.write('Clusters for {0}:\n'.format(name))
+
+            for calc, clusts in cdata.items():
+
+                # Computer readable
+                fdat = open(params['name'] +
+                            '_{0}_{1}_clusters.dat'.format(name, calc), 'w')
+
+                f.write('CALCULATOR: {0}\n'.format(calc))
+                (cinds, cgroups), ccolls, gvecs = clusts
+
+                f.write('\t{0} clusters found\n'.format(max(cinds)))
+
+                for i, g in enumerate(cgroups):
+
+                    f.write(
+                        '\n\n\t-----------\n\tCluster '
+                        '{0}\n\t-----------\n'.format(i+1))
+                    f.write('\tStructures: {0}\n'.format(len(g)))
+                    coll = ccolls[i+1]
+                    E = gvecs[g, 0]
+                    Emin = np.amin(E)
+                    Eavg = np.average(E)
+                    Estd = np.std(E)
+
+                    f.write('\n\tEnergy (eV):\n')
+                    f.write('\tMinimum\t\tAverage\t\tStDev\n')
+                    f.write('\t{0:.2f}\t\t{1:.2f}\t\t{2:.2f}\n'.format(Emin,
+                                                                       Eavg,
+                                                                       Estd))
+
+                    fdat.write('\t'.join(map(str, [i+1, len(g),
+                                                   Emin, Eavg, Estd])) + '\n')
+
+                    f.write('\n\n\tStructure list:')
+
+                    for j, s in enumerate(coll):
+                        if j % 4 == 0:
+                            f.write('\n\t')
+                        f.write('{0}\t'.format(s.info['name']))
+
+                fdat.close()
+
+                # Print distance matrix
+
+                f.write('\n\n\t----------\n\n\tSimilarity (ranked):\n')
+
+                centers = np.array([np.average(gvecs[g], axis=0)
+                                    for g in cgroups])
+                dmat = np.linalg.norm(
+                    centers[:, None]-centers[None, :], axis=-1)
+
+                inds = np.triu_indices(len(cgroups), k=1)
+                for i in np.argsort(dmat[inds]):
+                    c1 = inds[0][i]
+                    c2 = inds[1][i]
+                    d = dmat[c1, c2]
+                    f.write('\t{0} <--> {1} (distance = {2:.3f})\n'.format(c1,
+                                                                           c2,
+                                                                           d))
+
+            f.write('\n--------------------------\n\n')
+
+        f.write('\n==========================\n\n')
