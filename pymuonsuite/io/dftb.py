@@ -143,16 +143,16 @@ def parse_spinpol_dftb(folder):
     # Start with total populations and total spin
     for i in range(N):
         pops[i] = {
-            'q': 0,
+            'pop': 0,
             'spin': 0,
-            'q_orbital': {},
+            'pop_orbital': {},
             'spin_orbital': {}
         }
         for s, sign in {'up': 1, 'down': -1}.items():
             for nlm, p in spinpol[s][i].items():
-                pops[i]['q'] += p
+                pops[i]['pop'] += p
                 pops[i]['spin'] += sign*p
-                pops[i]['q_orbital'][nlm] = pops[i]['q_orbital'].get(
+                pops[i]['pop_orbital'][nlm] = pops[i]['pop_orbital'].get(
                     nlm, 0.0)+p
                 pops[i]['spin_orbital'][nlm] = pops[i]['spin_orbital'].get(
                     nlm, 0.0)+p*sign

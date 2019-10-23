@@ -150,13 +150,6 @@ def compute_hfine_mullpop(atoms, populations, self_i=0,
     totspins = np.array([sp['spin'] for sp in populations])
     magmoms = totspins
 
-    # Removed as it should not be included
-    # Then the orbital parts
-    # for i, pop in enumerate(populations):
-    #     for (n, l, m), p in pop['q_orbital'].items():
-    #         # Twice the angular momentum, half the g factor
-    #         magmoms[i] += p*l*m*0.5
-
     # Fermi contact term density
     fermi_mm = 0
     if fermi:
