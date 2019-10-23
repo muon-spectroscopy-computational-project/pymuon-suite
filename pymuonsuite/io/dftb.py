@@ -123,7 +123,7 @@ def parse_spinpol_dftb(folder):
             if s not in spinpol:
                 raise RuntimeError('Invalid detailed.out file')
             for ll in lines[i+2:]:
-                lspl = ll.split()
+                lspl = ll.split()[:5]
                 try:
                     a_i, n, l, m, pop = map(float, lspl)
                 except ValueError:
