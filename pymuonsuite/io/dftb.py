@@ -117,7 +117,18 @@ def parse_spinpol_dftb(folder):
         'down': [],
     }
 
+    charges = {}
+
     for i, l in enumerate(lines):
+        if 'Atomic gross charges (e)' in l:
+            for ll in lines[i+2:]:
+                lspl = ll.split()[:2]
+                try:
+                    a_i, q = int(lspl[0]), float(lspl[1])
+                except (IndexError, ValueError):
+                    break
+                charges[a_i-1] = q
+
         if 'Orbital populations' in l:
             s = l.split()[2][1:-1]
             if s not in spinpol:
@@ -143,6 +154,7 @@ def parse_spinpol_dftb(folder):
     # Start with total populations and total spin
     for i in range(N):
         pops[i] = {
+            'q': charges[i],
             'pop': 0,
             'spin': 0,
             'pop_orbital': {},
