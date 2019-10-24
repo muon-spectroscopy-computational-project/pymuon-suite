@@ -36,7 +36,7 @@ from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import (castep_write_input, castep_read_input,
                                    add_to_castep_block)
 from pymuonsuite.io.dftb import dftb_write_input, dftb_read_input
-from pymuonsuite.io.uep import UEPCalculator, uep_write_input
+from pymuonsuite.io.uep import UEPCalculator, uep_write_input, uep_read_input
 from pymuonsuite.io.output import write_cluster_report
 
 
@@ -273,7 +273,8 @@ def load_muairss_collection(struct, params, batch_path=''):
 
     load_formats = {
         'dftb+': dftb_read_input,
-        'castep': castep_read_input
+        'castep': castep_read_input,
+        'uep': uep_read_input
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
@@ -282,10 +283,15 @@ def load_muairss_collection(struct, params, batch_path=''):
 
     loaded = {}
 
+
     for cname in calcs:
+        opt_args = {}
+        if cname == 'uep':
+            opt_args['atoms'] = struct
+
         calc_path = os.path.join(out_path, cname)
         dc = AtomsCollection.load_tree(calc_path, load_formats[cname],
-                                       safety_check=2)
+                                       opt_args=opt_args, safety_check=2)
         loaded[cname] = dc
 
     return loaded

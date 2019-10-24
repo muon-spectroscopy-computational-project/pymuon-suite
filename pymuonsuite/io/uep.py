@@ -10,6 +10,7 @@ import os
 import yaml
 import pickle
 import subprocess as sp
+from ase import Atoms
 from scipy.constants import physical_constants as pcnst
 
 
@@ -69,6 +70,9 @@ class UEPCalculator(object):
         self.read()
         return self._fx_opt
 
+    def get_potential_energy(self, a):
+        return self._Eclass
+
     def write_input(self, a=None):
 
         if a is None:
@@ -93,6 +97,7 @@ class UEPCalculator(object):
             'opt_tol': self.opt_tol,
             'opt_method': self.opt_method,
             'gw_factor': self.gw_factor,
+            'save_pickle': True,                # Always save it with a "calculator"
         }
 
         yaml.dump(outdata, open(os.path.join(self.path, self.label + '.yaml'),
@@ -129,6 +134,9 @@ def uep_write_input(a, folder, calc=None, name=None, script=None):
     if name is None:
         name = os.path.split(folder)[-1]
 
+    if calc is None:
+        calc = UEPCalculator()
+
     calc.path = folder
     calc.label = name
     calc.atoms = a
@@ -140,3 +148,22 @@ def uep_write_input(a, folder, calc=None, name=None, script=None):
         stxt = stxt.format(seedname=name)
         with open(os.path.join(folder, 'script.sh'), 'w') as sf:
             sf.write(stxt)
+
+def uep_read_input(folder, name=None, atoms=None):
+
+    if name is None:
+        name = os.path.split(folder)[-1]        
+
+    calc = UEPCalculator(label=name, path=folder)
+    calc.read()
+
+    a = Atoms('H', positions=[calc._x_opt])
+
+    if atoms is not None:
+        a = atoms + a
+
+    a.info['name'] = name
+    a.set_calculator(calc)
+    calc.atoms = a
+
+    return a
