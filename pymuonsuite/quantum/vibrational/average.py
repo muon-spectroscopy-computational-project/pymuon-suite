@@ -45,14 +45,14 @@ def read_castep_gamma_phonons(seed, path='.'):
     """
 
     try:
-        from casteppy.data.phonon import PhononData
+        from euphonic.data.phonon import PhononData
     except ImportError:
         raise ImportError("""
-    Can't use castep phonon interface due to casteppy not being installed.
-    Please download and install casteppy from Bitbucket:
+    Can't use castep phonon interface due to Euphonic not being installed.
+    Please download and install Euphonic from Github:
 
-    HTTPS:  https://bitbucket.org/casteppy/casteppy.git
-    SSH:    git@bitbucket.org:casteppy/casteppy.git
+    HTTPS:  https://github.com/pace-neutrons/Euphonic.git
+    SSH:    git@github.com:pace-neutrons/Euphonic.git
 
     and try again.""")
 
@@ -270,8 +270,6 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         masses = cell.get_masses()
     masses[mu_index] = constants.m_mu_amu
     cell.set_masses(masses)
-
-
 
     # Now create the distribution scheme
     if method == 'independent':
