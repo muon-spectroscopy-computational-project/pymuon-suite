@@ -58,7 +58,6 @@ class DisplacementScheme(object):
         self._sigmas = (cnst.hbar/(_wnum2om*evals))**0.5
 
         self._n = 0               # Grid points
-        self._sigma_n = 3         # Number of sigmas covered
         self._M = evecs.shape[0]  # Number of modes (should be 3N)
         self._N = evecs.shape[1]  # Number of atoms
 
@@ -97,10 +96,6 @@ class DisplacementScheme(object):
     @property
     def n(self):
         return self._n
-
-    @property
-    def sigma_n(self):
-        return self._sigma_n
 
     def save(self, file):
         pickle.dump(self, open(file, 'w'))
@@ -155,6 +150,7 @@ class IndependentDisplacements(DisplacementScheme):
         self._majev = get_major_emodes(self._evecs, masses, i, ortho=True)
 
         self._T = 0
+        self._sigma_n = 3         # Number of sigmas covered
 
     @property
     def i(self):
@@ -179,6 +175,10 @@ class IndependentDisplacements(DisplacementScheme):
     @property
     def T(self):
         return self._T
+
+    @property
+    def sigma_n(self):
+        return self._sigma_n
 
     def recalc_displacements(self, n=20, sigma_n=3):
 
