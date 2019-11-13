@@ -263,3 +263,89 @@ Weights: \n{w}
                    evecs='\n'.join(map(str, self.major_evecs)),
                    T=self.T, w=self.weights, sN=self.sigma_n,
                    sigmas=self.major_sigmas)
+
+
+class MonteCarloDisplacements(DisplacementScheme):
+    """MonteCarloDisplacements
+
+    Compute displacements and weights for an averaging method based on 
+    sampling the thermal distribution for multiple modes at the same time.
+    This method is described in B. Monserrat et al., Jour. Chem. Phys. 141,
+    134113 (2014). 
+
+    The selected modes are sampled at the same time, producing configurations
+    with a normal distribution around the equilibrium configuration.
+    """
+
+    def __init__(self, evals, evecs, masses, modes=None):
+        super(self.__class__, self).__init__(evals, evecs, masses)
+
+        # Selected modes
+        if modes is None:
+            modes = np.arange(self._M)  # All of them
+
+        self._modes = modes
+        self._T = 0
+
+    @property
+    def modes(self):
+        return self._modes.copy()
+
+    @property
+    def T(self):
+        return self._T
+
+    def recalc_displacements(self, n=50, T=0):
+
+        self._n = n
+        self._T = T
+
+        om = self._evals*1e2*cnst.c*2*np.pi
+        if T > 0:
+            xi = np.exp(-cnst.hbar*om/(cnst.k*T))
+        else:
+            xi = om*0
+        tfac = (1.0-xi**2)/(1+xi**2)
+
+        dz = np.random.normal(size=n)
+        self._dq = np.zeros((n, self._M))
+        self._dq[:, self._modes] = dz[:, None] * \
+            (self._sigmas/tfac**0.5)[None, self._modes]
+
+        # Turn these into position displacements
+        dx = self._dq[:, self._modes, None, None] * \
+            self._evecs[None, self._modes]
+        dx = np.sum(dx, axis=1)
+        dx *= 1e10/self.masses[None, :, None]**0.5
+
+        self._dx = dx
+
+        return self.displacements
+
+    def recalc_weights(self):
+        
+        self._w = np.ones(self._n)/self._n
+
+        return self.weights
+
+    def __str__(self):
+        return """Monte Carlo Normal Displacements Scheme
+Displaces all atoms along chosen phonon modes, randomly,
+with amplitude determined by the desired temperature. Since they already
+follow a normal distribution, all points have equal weight.
+
+-------------------------
+
+Modes: \n{modes}
+
+Phonon frequencies: \n{evals} cm^-1
+
+Displacement vectors: \n{evecs}
+
+Temperature: \n{T} K
+
+-------------------------
+        """.format(modes=self._modes, 
+                   evals='\t'.join(map(str, self._evals)),
+                   evecs='\n'.join(map(str, self._evecs)),
+                   T=self.T)
