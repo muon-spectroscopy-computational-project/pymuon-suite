@@ -38,11 +38,11 @@ class DisplacementScheme(object):
 
     def __init__(self, evals, evecs, masses, cut_imaginary=True):
 
-        evals = np.array(evals)
-        evecs = np.array(evecs)
+        evals = np.real(evals)
+        evecs = np.real(evecs)
         masses = np.array(masses)
 
-        if (evals < 0).any():
+        if (evals <= 0).any():
             if cut_imaginary:
                 print('Warning: removing imaginary frequency eigenmodes')
                 evals_i = np.where(evals > 0)[0]
@@ -55,7 +55,7 @@ class DisplacementScheme(object):
         self._evecs = evecs
         self._masses = masses*cnst.u                        # amu to kg
 
-        self._sigmas = (cnst.hbar/(_wnum2om*evals))**0.5
+        self._sigmas = np.real((cnst.hbar/(_wnum2om*evals))**0.5)
 
         self._n = 0               # Grid points
         self._M = evecs.shape[0]  # Number of modes (should be 3N)
@@ -222,7 +222,7 @@ class IndependentDisplacements(DisplacementScheme):
 
         # Now for the weights
         dz = np.linspace(-self.sigma_n, self.sigma_n, self.n)
-        w0 = -2  # Weight of the central configuration
+        w0 = -2.0  # Weight of the central configuration
 
         rho = np.exp(-dz**2)
         rhoall = np.array([rho**tf/np.sum(rho**tf) for tf in tfac])
