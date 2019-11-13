@@ -346,6 +346,9 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
     for a in displaced_coll:
         if avgprop == 'hyperfine':
             to_avg.append(a.get_array('hyperfine')[mu_i])
+        elif avgprop == 'charge':
+            # Used mostly as test 
+            to_avg.append(a.get_charges()[mu_i])
 
     to_avg = np.array(to_avg)
     displsch.recalc_weights(T=average_T)
@@ -357,10 +360,11 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
     # Print output report
     with open(average_file, 'w') as f:
         avgname = {
-            'hyperfine': 'hyperfine tensor'
+            'hyperfine': 'hyperfine tensor',
+            'charge': 'charge'
         }[avgprop]
         f.write("""
-Harmonic average of {property} performed on {cell}.
+Quantum average of {property} calculated on {cell}.
 Scheme details:
 
 {scheme}
