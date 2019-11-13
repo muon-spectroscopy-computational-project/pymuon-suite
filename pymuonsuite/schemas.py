@@ -207,7 +207,8 @@ MuonHarmonicSchema = Schema({
     validate_int3,
     # Property to be calculated, currently accepted value is only 'hyperfine'
     # (hyperfine coupling tensors)
-    Optional('avgprop', default='hyperfine'): validate_all_of('hyperfine',),
+    Optional('avgprop', default='hyperfine'): validate_all_of('hyperfine',
+                                                              'charge'),
     # Calculator to use for property
     Optional('calculator', default='castep'):
     validate_all_of('castep', 'dftb+'),
