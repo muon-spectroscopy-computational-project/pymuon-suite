@@ -12,6 +12,8 @@ import scipy.constants as cnst
 
 from pymuonsuite.quantum.vibrational.schemes import (
     IndependentDisplacements, MonteCarloDisplacements)
+from pymuonsuite.quantum.vibrational.harmonic import (harmonicRho,
+                                                      harmonicRhoSum)
 
 
 class TestDisplacements(unittest.TestCase):
@@ -29,15 +31,43 @@ class TestDisplacements(unittest.TestCase):
 
     # Volume averaged value (for reference)
     @classmethod
-    def _A_expect(self, gridX=5, gridN=51, sigmas=np.ones(3)):
+    def _A_expect(self, gridX=5, gridN=51, sigmas=np.ones(3), xi=np.zeros(3)):
         grid = np.array(np.meshgrid(
             *[np.linspace(-gridX, gridX, gridN)]*3,
             indexing='ij')).reshape((3, -1)).T
         Avol = self._A(grid)
-        Gvol = np.exp(-np.sum((grid/sigmas[None,:])**2, axis=1))
+        Gvol = np.exp(-np.sum((grid/sigmas[None, :])**2 *
+                              ((1.0-xi**2)/(1+xi**2))[None, :],
+                              axis=1))
         avgvol = np.sum(Avol*Gvol)/np.sum(Gvol)
 
         return avgvol
+
+    def test_harmonic(self):
+        # Simple tests for the core theory functions
+
+        x = np.linspace(-5.0, 5, 100)*1e-10
+        m = cnst.u
+        om = 1e20*cnst.hbar/m
+
+        rhos = harmonicRhoSum(x, m, om)
+        rhot = harmonicRho(x, m, om)
+
+        self.assertAlmostEqual(np.trapz(rhos, x), 1)
+        self.assertAlmostEqual(np.trapz(rhot, x), 1)
+
+        self.assertTrue(np.average((rhos-rhot)**2) < 1e-3)
+
+        # Now with non-zero temperature...
+        T = 0.7*cnst.hbar*om/cnst.k
+
+        rhos = harmonicRhoSum(x, m, om, T)
+        rhot = harmonicRho(x, m, om, T)
+
+        self.assertAlmostEqual(np.trapz(rhos, x), 1)
+        self.assertAlmostEqual(np.trapz(rhot, x), 1)
+
+        self.assertTrue(np.average((rhos-rhot)**2) < 1e-3)
 
     def test_independent(self):
 
@@ -49,7 +79,7 @@ class TestDisplacements(unittest.TestCase):
         avgvol = self._A_expect(5, 51, scheme._sigmas*1e10/cnst.u**0.5)
 
         # Test even number of points
-        scheme.recalc_displacements(n=20)
+        scheme.recalc_displacements(n=20, sigma_n=5)
         scheme.recalc_weights()
         displ = scheme.displacements
         weights = scheme.weights
@@ -59,7 +89,7 @@ class TestDisplacements(unittest.TestCase):
         self.assertAlmostEqual(avgvol, avgdispl, 2)
 
         # Test odd number of points
-        scheme.recalc_displacements(n=21)
+        scheme.recalc_displacements(n=21, sigma_n=5)
         scheme.recalc_weights()
         displ = scheme.displacements
         weights = scheme.weights
@@ -67,6 +97,17 @@ class TestDisplacements(unittest.TestCase):
         avgdispl = np.sum(Adspl*weights)
 
         self.assertAlmostEqual(avgvol, avgdispl, 2)
+
+        # Non-zero temperature
+        T = 50
+        E = cnst.hbar*self.evals*1e2*cnst.c*2*np.pi
+        xi = np.exp(-0.5*E/(cnst.k*T))
+        avgvolT = self._A_expect(5, 51, scheme._sigmas*1e10/cnst.u**0.5, xi)
+
+        weights = scheme.recalc_weights(T=T)
+        avgdisplT = np.sum(Adspl*weights)
+
+        self.assertAlmostEqual(avgvolT, avgdisplT, 2)
 
     def test_montecarlo(self):
 
@@ -83,7 +124,18 @@ class TestDisplacements(unittest.TestCase):
         # MonteCarlo accuracy is low
         self.assertAlmostEqual(avgvol, avgdispl, 1)
 
+        # Non-zero temperature
+        T = 50
+        E = cnst.hbar*self.evals*1e2*cnst.c*2*np.pi
+        xi = np.exp(-0.5*E/(cnst.k*T))
+        avgvolT = self._A_expect(5, 51, scheme._sigmas*1e10/cnst.u**0.5, xi)
 
+        displ = scheme.recalc_displacements(n=100000, T=T)
+        weights = scheme.recalc_weights()
+        Adspl = self._A(displ[:, 0])
+        avgdisplT = np.sum(Adspl*weights)
+
+        self.assertAlmostEqual(avgvolT, avgdisplT, 1)
 
 if __name__ == "__main__":
 

@@ -16,6 +16,7 @@ import numpy as np
 import scipy.constants as cnst
 from soprano.collection import AtomsCollection
 from pymuonsuite.quantum.vibrational.phonons import get_major_emodes
+from pymuonsuite.quantum.vibrational.harmonic import harmonicRho
 
 # Cm^-1 to rad/s
 _wnum2om = 2*np.pi*1e2*cnst.c
@@ -215,7 +216,7 @@ class IndependentDisplacements(DisplacementScheme):
 
         om = self.major_evals*1e2*cnst.c*2*np.pi
         if T > 0:
-            xi = np.exp(-cnst.hbar*om/(cnst.k*T))
+            xi = np.exp(-0.5*cnst.hbar*om/(cnst.k*T))
         else:
             xi = om*0
         tfac = (1.0-xi**2)/(1+xi**2)
@@ -303,7 +304,7 @@ class MonteCarloDisplacements(DisplacementScheme):
 
         om = self._evals*1e2*cnst.c*2*np.pi
         if T > 0:
-            xi = np.exp(-cnst.hbar*om/(cnst.k*T))
+            xi = np.exp(-0.5*cnst.hbar*om/(cnst.k*T))
         else:
             xi = om*0
         tfac = (1.0-xi**2)/(1+xi**2)
