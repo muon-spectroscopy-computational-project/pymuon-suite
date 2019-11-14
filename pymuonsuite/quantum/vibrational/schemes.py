@@ -225,7 +225,8 @@ class IndependentDisplacements(DisplacementScheme):
         w0 = -2.0  # Weight of the central configuration
 
         rho = np.exp(-dz**2)
-        rhoall = np.array([rho**tf/np.sum(rho**tf) for tf in tfac])
+        rhoall = rho[None,:]**tfac[:,None]
+        rhoall /= np.sum(rhoall, axis=1)[:,None]
 
         if self.n % 2 == 1:
             ci = int((self.n-1)/2)
@@ -307,7 +308,7 @@ class MonteCarloDisplacements(DisplacementScheme):
             xi = om*0
         tfac = (1.0-xi**2)/(1+xi**2)
 
-        dz = np.random.normal(size=n)
+        dz = np.random.normal(size=n, scale=0.5**0.5)
         self._dq = np.zeros((n, self._M))
         self._dq[:, self._modes] = dz[:, None] * \
             (self._sigmas/tfac**0.5)[None, self._modes]
