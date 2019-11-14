@@ -190,7 +190,7 @@ MuonHarmonicSchema = Schema({
     'cell_file': validate_str,
     # Method used to calculate thermal average
     Optional('method', default='independent'):
-    validate_all_of('independent', 'thermal'),
+    validate_all_of('independent', 'montecarlo'),
     # Index of muon in cell
     Optional('mu_index', default=-1): int,
     # If using Castep custom species, custom species of muon (supersedes index

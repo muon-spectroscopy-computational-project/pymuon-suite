@@ -31,7 +31,8 @@ from pymuonsuite.io.dftb import (dftb_write_input, load_muonconf_dftb,
                                  parse_spinpol_dftb)
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
-from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,)
+from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,
+                                                     MonteCarloDisplacements)
 from pymuonsuite.calculate.hfine import compute_hfine_mullpop
 
 
@@ -104,7 +105,7 @@ def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None, param_file=None,
 
 
 def create_spinpol_dftbp_calculator(calc=None, param_set='3ob-3-1',
-                                    kpts=[1, 1, 1]):
+                                    kpts=None):
     """Create a calculator containing all necessary parameters for a DFTB+
     SCC spin polarised calculation"""
     from pymuonsuite.data.dftb_pars import DFTBArgs
@@ -115,9 +116,10 @@ def create_spinpol_dftbp_calculator(calc=None, param_set='3ob-3-1',
         calc = deepcopy(calc)
 
     # A bit of a hack for the k-points
-    kc = Dftb(kpts=kpts)
-    kargs = {k: v for k, v in kc.parameters.items() if 'KPoints' in k}
-    calc.parameters.update(kargs)
+    if kpts is not None:
+        kc = Dftb(kpts=kpts)
+        kargs = {k: v for k, v in kc.parameters.items() if 'KPoints' in k}
+        calc.parameters.update(kargs)
 
     # Create the arguments
     dargs = DFTBArgs(param_set)
@@ -188,7 +190,7 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     | Pars:
     |   cell_file (str):    Filename for input structure file
     |   method (str):       Method to use for the average. Options are 'independent',
-    |                       'thermal'. Default is 'independent'.
+    |                       'montecarlo'. Default is 'independent'.
     |   mu_index (int):     Position of the muon in the given cell file.
     |                       Default is -1.
     |   mu_symbol (str):    Use this symbol to look for the muon among
@@ -276,6 +278,9 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         displsch = IndependentDisplacements(ph_evals, ph_evecs, masses,
                                             mu_index)
         displsch.recalc_displacements(n=grid_n, sigma_n=sigma_n)
+    elif method == 'montecarlo':
+        displsch = MonteCarloDisplacements(ph_evals, ph_evecs, masses)
+        displsch.recalc_displacements(n=grid_n, T=kwargs['average_T'])
 
     # Make it a collection
     pos = cell.get_positions()
@@ -283,6 +288,8 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     for i, d in enumerate(displsch.displacements):
         dcell = cell.copy()
         dcell.set_positions(pos + d)
+        if calculator == 'dftb' and not kwargs['dftb_pbc']:
+            dcell.set_pbc(False)
         dcell.info['name'] = sname + '_displaced_{0}'.format(i)
         displaced_cells.append(dcell)
 
@@ -294,7 +301,6 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
         else:
             io.write(sname + '_allconf.xyz', allconf)
 
-
     # Get a calculator
     if calculator == 'castep':
         writer_function = castep_write_input
@@ -305,9 +311,10 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
                                                   kpts=kwargs['k_points_grid'])
     elif calculator == 'dftb+':
         writer_function = dftb_write_input
+        kpts = kwargs['k_points_grid'] if kwargs['dftb_pbc'] else None
         if avgprop == 'hyperfine':
             calc = create_spinpol_dftbp_calculator(
-                param_set=kwargs['dftb_set'])
+                param_set=kwargs['dftb_set'], kpts=kpts)
 
     displaced_coll = AtomsCollection(displaced_cells)
     displaced_coll.info['displacement_scheme'] = displsch
@@ -347,7 +354,7 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
         if avgprop == 'hyperfine':
             to_avg.append(a.get_array('hyperfine')[mu_i])
         elif avgprop == 'charge':
-            # Used mostly as test 
+            # Used mostly as test
             to_avg.append(a.get_charges()[mu_i])
 
     to_avg = np.array(to_avg)
