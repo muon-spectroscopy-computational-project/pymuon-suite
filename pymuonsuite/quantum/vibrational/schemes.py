@@ -20,10 +20,24 @@ from pymuonsuite.quantum.vibrational.harmonic import harmonicRho
 
 # Cm^-1 to rad/s
 _wnum2om = 2*np.pi*1e2*cnst.c
+# Cm^-1 to J
+_wnum2E = _wnum2om*cnst.hbar
+# Cm^-1 to K
+_wnum2T = _wnum2E/cnst.k
 
 
 class PhononDisplacementError(Exception):
     pass
+
+
+def _wnumSigmaEnhance(wnums, T=0):
+    # Enhancement factor for the sigmas, given the energies in wave number
+    if T > 0:
+        xi = np.exp(-_wnum2T*wnums/T)
+    else:
+        xi = 0*wnums
+    tf = (1.0-xi)/(1+xi)
+    return tf
 
 
 class DisplacementScheme(object):
@@ -66,6 +80,9 @@ class DisplacementScheme(object):
         self._dx = None
         self._w = None
 
+        self._Td = 0    # Temperature for displacements
+        self._Tw = 0    # Temperature for weights
+
     @property
     def evals(self):
         return self._evals.copy()
@@ -97,6 +114,14 @@ class DisplacementScheme(object):
     @property
     def n(self):
         return self._n
+
+    @property
+    def Td(self):
+        return self._Td
+
+    @property
+    def Tw(self):
+        return self._Tw
 
     def save(self, file):
         pickle.dump(self, open(file, 'w'))
@@ -143,15 +168,14 @@ class IndependentDisplacements(DisplacementScheme):
     <f> = <f_1> + <f_2> + <f_3>
     """
 
-    def __init__(self, evals, evecs, masses, i):
+    def __init__(self, evals, evecs, masses, i, sigma_n=3):
         super(self.__class__, self).__init__(evals, evecs, masses)
 
         # Find the major eigenmodes for the atom of interest
         self._i = i
         self._majev = get_major_emodes(self._evecs, masses, i, ortho=True)
 
-        self._T = 0
-        self._sigma_n = 3         # Number of sigmas covered
+        self._sigma_n = sigma_n         # Number of sigmas covered
 
     @property
     def i(self):
@@ -174,19 +198,15 @@ class IndependentDisplacements(DisplacementScheme):
         return self._sigmas[self._majev[0]]
 
     @property
-    def T(self):
-        return self._T
-
-    @property
     def sigma_n(self):
         return self._sigma_n
 
-    def recalc_displacements(self, n=20, sigma_n=3):
+    def recalc_displacements(self, n=20, T=0):
 
+        self._Td = T
         self._n = n
-        self._sigma_n = sigma_n
         # Displacements along the three normal modes of choice
-        dz = np.linspace(-sigma_n, sigma_n, n)
+        dz = np.linspace(-self.sigma_n, self.sigma_n, n)
 
         sx = self.major_sigmas
         self._dq = np.zeros((3*n, 3))
@@ -212,22 +232,17 @@ class IndependentDisplacements(DisplacementScheme):
 
     def recalc_weights(self, T=0):
 
-        self._T = T
+        self._Tw = T
 
-        om = self.major_evals*1e2*cnst.c*2*np.pi
-        if T > 0:
-            xi = np.exp(-0.5*cnst.hbar*om/(cnst.k*T))
-        else:
-            xi = om*0
-        tfac = (1.0-xi**2)/(1+xi**2)
+        tfac = _wnumSigmaEnhance(self.major_evals, T)
 
         # Now for the weights
         dz = np.linspace(-self.sigma_n, self.sigma_n, self.n)
         w0 = -2.0  # Weight of the central configuration
 
         rho = np.exp(-dz**2)
-        rhoall = rho[None,:]**tfac[:,None]
-        rhoall /= np.sum(rhoall, axis=1)[:,None]
+        rhoall = rho[None, :]**tfac[:, None]
+        rhoall /= np.sum(rhoall, axis=1)[:, None]
 
         if self.n % 2 == 1:
             ci = int((self.n-1)/2)
@@ -242,7 +257,7 @@ class IndependentDisplacements(DisplacementScheme):
         return self.weights
 
     def __str__(self):
-        return """Independent Displacements Scheme
+        msg = """Independent Displacements Scheme
 Displaces one single atom of index i along the
 three phonon modes with greatest Atomic Participation Ratio (APR).
 
@@ -254,7 +269,7 @@ Phonon frequencies: \n{evals} cm^-1
 
 Displacement vectors: \n{evecs}
 
-Temperature: \n{T} K
+Temperature: \n{Td} K (displacements), {Tw} K (weights)
 
 Max sigma N: \n{sN}
 
@@ -263,8 +278,25 @@ Weights: \n{w}
 -------------------------
         """.format(i=self.i, evals='\t'.join(map(str, self.major_evals)),
                    evecs='\n'.join(map(str, self.major_evecs)),
-                   T=self.T, w=self.weights, sN=self.sigma_n,
+                   Td=self.Td, Tw=self.Tw, w=self.weights, sN=self.sigma_n,
                    sigmas=self.major_sigmas)
+
+        if self.Tw != self.Td:
+            msg += """
+WARNING: Temperatures for displacements and weights are different.
+This can be a cause of inaccuracy in averaging.
+
+------------------------
+"""
+        if self.Tw > self.Td:
+            msg += """
+WARNING: Temperatures for weights is higher than for displacements.
+This is very likely to cause inaccuracy in averaging.
+
+------------------------
+"""
+
+        return msg
 
 
 class MonteCarloDisplacements(DisplacementScheme):
@@ -287,7 +319,6 @@ class MonteCarloDisplacements(DisplacementScheme):
             modes = np.arange(self._M)  # All of them
 
         self._modes = modes
-        self._T = 0
 
     @property
     def modes(self):
@@ -300,18 +331,13 @@ class MonteCarloDisplacements(DisplacementScheme):
     def recalc_displacements(self, n=50, T=0):
 
         self._n = n
-        self._T = T
+        self._Td = T
 
-        om = self._evals*1e2*cnst.c*2*np.pi
-        if T > 0:
-            xi = np.exp(-0.5*cnst.hbar*om/(cnst.k*T))
-        else:
-            xi = om*0
-        tfac = (1.0-xi**2)/(1+xi**2)
+        tfac = _wnumSigmaEnhance(self._evals, T)
 
-        dz = np.random.normal(size=n, scale=0.5**0.5)
+        dz = np.random.normal(size=(n, len(self._modes)), scale=0.5**0.5)
         self._dq = np.zeros((n, self._M))
-        self._dq[:, self._modes] = dz[:, None] * \
+        self._dq[:, self._modes] = dz * \
             (self._sigmas/tfac**0.5)[None, self._modes]
 
         # Turn these into position displacements
@@ -324,14 +350,16 @@ class MonteCarloDisplacements(DisplacementScheme):
 
         return self.displacements
 
-    def recalc_weights(self):
-        
+    def recalc_weights(self, T=0):
+
+        self._Tw = T
+
         self._w = np.ones(self._n)/self._n
 
         return self.weights
 
     def __str__(self):
-        return """Monte Carlo Normal Displacements Scheme
+        msg = """Monte Carlo Normal Displacements Scheme
 Displaces all atoms along chosen phonon modes, randomly,
 with amplitude determined by the desired temperature. Since they already
 follow a normal distribution, all points have equal weight.
@@ -344,10 +372,27 @@ Phonon frequencies: \n{evals} cm^-1
 
 Displacement vectors: \n{evecs}
 
-Temperature: \n{T} K
+Temperature: \n{Td} K (displacements), {Tw} K (weights)
 
 -------------------------
-        """.format(modes=self._modes, 
+        """.format(modes=self._modes,
                    evals='\t'.join(map(str, self._evals)),
                    evecs='\n'.join(map(str, self._evecs)),
-                   T=self.T)
+                   Td=self.Td, Tw=self.Tw)
+
+        if self.Tw != self.Td:
+            msg += """
+WARNING: Temperatures for displacements and weights are different.
+This can be a cause of inaccuracy in averaging.
+
+------------------------
+"""
+        if self.Tw > self.Td:
+            msg += """
+WARNING: Temperatures for weights is higher than for displacements.
+This is very likely to cause inaccuracy in averaging.
+
+------------------------
+"""
+
+        return msg

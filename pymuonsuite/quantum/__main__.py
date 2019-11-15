@@ -31,6 +31,10 @@ def nq_entry():
     # Load parameters
     params = load_input_file(args.parameter_file, MuonHarmonicSchema)
 
+    # Temperature
+    if params['average_T'] is None:
+        params['average_T'] = params['displace_T']
+
     if args.w:
         muon_vibrational_average_write(**params)
     else:

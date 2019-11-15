@@ -43,7 +43,12 @@ class TestDisplacements(unittest.TestCase):
 
         return avgvol
 
-    def test_harmonic(self):
+    def assertSmallRelativeError(self, x0, x1, tol):
+        err = abs((x1-x0)/x0)
+        if err > tol:
+            raise AssertionError('Error {0} is bigger than {1}'.format(err, tol))
+
+    def testHarmonic(self):
         # Simple tests for the core theory functions
 
         x = np.linspace(-5.0, 5, 100)*1e-10
@@ -69,34 +74,34 @@ class TestDisplacements(unittest.TestCase):
 
         self.assertTrue(np.average((rhos-rhot)**2) < 1e-3)
 
-    def test_independent(self):
+    def testIndependent(self):
 
         scheme = IndependentDisplacements(self.evals, self.evecs,
-                                          self.masses, 0)
+                                          self.masses, 0, sigma_n=5)
         self.assertTrue(np.isclose(scheme._sigmas, cnst.u**0.5).all())
 
         # Volumetric averaging
         avgvol = self._A_expect(5, 51, scheme._sigmas*1e10/cnst.u**0.5)
 
         # Test even number of points
-        scheme.recalc_displacements(n=20, sigma_n=5)
+        scheme.recalc_displacements(n=20)
         scheme.recalc_weights()
         displ = scheme.displacements
         weights = scheme.weights
         Adspl = self._A(displ[:, 0])
         avgdispl = np.sum(Adspl*weights)
 
-        self.assertAlmostEqual(avgvol, avgdispl, 2)
+        self.assertSmallRelativeError(avgvol, avgdispl, 1e-2)
 
         # Test odd number of points
-        scheme.recalc_displacements(n=21, sigma_n=5)
+        scheme.recalc_displacements(n=21)
         scheme.recalc_weights()
         displ = scheme.displacements
         weights = scheme.weights
         Adspl = self._A(displ[:, 0])
         avgdispl = np.sum(Adspl*weights)
 
-        self.assertAlmostEqual(avgvol, avgdispl, 2)
+        self.assertSmallRelativeError(avgvol, avgdispl, 1e-2)
 
         # Non-zero temperature
         T = 50
@@ -107,7 +112,7 @@ class TestDisplacements(unittest.TestCase):
         weights = scheme.recalc_weights(T=T)
         avgdisplT = np.sum(Adspl*weights)
 
-        self.assertAlmostEqual(avgvolT, avgdisplT, 2)
+        self.assertSmallRelativeError(avgvolT, avgdisplT, 1e-2)
 
     def test_montecarlo(self):
 
@@ -122,7 +127,7 @@ class TestDisplacements(unittest.TestCase):
         avgdispl = np.sum(Adspl*weights)
 
         # MonteCarlo accuracy is low
-        self.assertAlmostEqual(avgvol, avgdispl, 1)
+        self.assertSmallRelativeError(avgvol, avgdispl, 1e-1)
 
         # Non-zero temperature
         T = 50
@@ -135,7 +140,7 @@ class TestDisplacements(unittest.TestCase):
         Adspl = self._A(displ[:, 0])
         avgdisplT = np.sum(Adspl*weights)
 
-        self.assertAlmostEqual(avgvolT, avgdisplT, 1)
+        self.assertSmallRelativeError(avgvolT, avgdisplT, 1e-1)
 
 if __name__ == "__main__":
 

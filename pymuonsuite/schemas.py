@@ -220,8 +220,10 @@ MuonHarmonicSchema = Schema({
     # Type of source file for phonon modes
     Optional('phonon_source_type', default='castep'):
     validate_all_of('castep', 'dftb+'),
+    # Temperature for displacement generation
+    Optional('displace_T', default=0): float,
     # Temperature for averaging
-    Optional('average_T', default=0): float,
+    Optional('average_T', default=None): float,
     # Calculation parameters
     # Path to script file to copy in all folders
     Optional('script_file', default=None):

@@ -139,6 +139,7 @@ def create_spinpol_dftbp_calculator(calc=None, param_set='3ob-3-1',
     args['Hamiltonian_SpinPolarisation_InitialSpins_SpinPerAtom'] = 1
 
     calc.parameters.update(args)
+    calc.do_forces = True
 
     return calc
 
@@ -180,6 +181,7 @@ def read_output_dftbp(folder, avgprop='hyperfine'):
 def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
                                    mu_symbol='H:mu', grid_n=20, sigma_n=3,
                                    avgprop='hyperfine', calculator='castep',
+                                   displace_T=0,
                                    phonon_source_file=None,
                                    phonon_source_type='castep',
                                    **kwargs):
@@ -276,11 +278,11 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     # Now create the distribution scheme
     if method == 'independent':
         displsch = IndependentDisplacements(ph_evals, ph_evecs, masses,
-                                            mu_index)
-        displsch.recalc_displacements(n=grid_n, sigma_n=sigma_n)
+                                            mu_index, sigma_n)
     elif method == 'montecarlo':
         displsch = MonteCarloDisplacements(ph_evals, ph_evecs, masses)
-        displsch.recalc_displacements(n=grid_n, T=kwargs['average_T'])
+
+    displsch.recalc_displacements(n=grid_n, T=displace_T)
 
     # Make it a collection
     pos = cell.get_positions()
@@ -304,17 +306,15 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     # Get a calculator
     if calculator == 'castep':
         writer_function = castep_write_input
-        if avgprop == 'hyperfine':
-            calc = create_hfine_castep_calculator(mu_symbol=mu_symbol,
-                                                  calc=cell.calc,
-                                                  param_file=kwargs['castep_param'],
-                                                  kpts=kwargs['k_points_grid'])
+        calc = create_hfine_castep_calculator(mu_symbol=mu_symbol,
+                                              calc=cell.calc,
+                                              param_file=kwargs['castep_param'],
+                                              kpts=kwargs['k_points_grid'])
     elif calculator == 'dftb+':
         writer_function = dftb_write_input
         kpts = kwargs['k_points_grid'] if kwargs['dftb_pbc'] else None
-        if avgprop == 'hyperfine':
-            calc = create_spinpol_dftbp_calculator(
-                param_set=kwargs['dftb_set'], kpts=kpts)
+        calc = create_spinpol_dftbp_calculator(
+            param_set=kwargs['dftb_set'], kpts=kpts)
 
     displaced_coll = AtomsCollection(displaced_cells)
     displaced_coll.info['displacement_scheme'] = displsch
