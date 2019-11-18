@@ -120,3 +120,50 @@ Parameter file: {param}
             f.write('\n--------------------------\n\n')
 
         f.write('\n==========================\n\n')
+
+
+def write_phonon_report(args, params, phdata):
+
+    with open(params['name'] + '_phonons.txt', 'w') as f:
+
+        f.write("""
+    ****************************
+    |                          |
+    |         MUAIRSS          |
+    |    ASE Phonons report    |
+    |                          |
+    ****************************
+
+    Name: {name}
+    Date: {date}
+    Structure file: {structs}
+    Parameter file: {param}
+
+    *******************
+
+    """.format(name=params['name'], date=datetime.now(), 
+               structs=args.structure_file,
+               param=args.parameter_file))
+
+        # Write k-point path
+        f.write('K-point Path: \n')
+        for kp in phdata.path:
+            f.write('\t{0}\n'.format(kp))
+
+        f.write('\n\n------------------\n\n')
+
+        for i, kp in enumerate(phdata.path):
+            f.write('K-point {0}: {1}\n\n'.format(i+1, kp))        
+            # Write frequencies        
+            f.write('\tFrequencies (cm^-1): \n')
+            for j, om in enumerate(phdata.frequencies[i]):
+                f.write('\t{0}\t{1}\n'.format(j+1, om))
+
+            f.write('\n\tDisplacements: \n')
+            for j, m in enumerate(phdata.modes[i]):
+                f.write('\t\tMode {0}:\n'.format(j+1))
+                f.write('\t\tAtom x\t\t\t y\t\t\t z\n')
+                for k, d in enumerate(m):
+                    d = np.real(d)
+                    f.write('\t\t{0}\t{1: .6f}\t{2: .6f}\t{3: .6f}\n'.format(k+1, *d))
+

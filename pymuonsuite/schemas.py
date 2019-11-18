@@ -242,6 +242,9 @@ MuonHarmonicSchema = Schema({
 })
 
 AsePhononsSchema = Schema({
+    # Name
+    Optional('name', default=None):
+    validate_str,
     # Phonon k-points
     Optional('phonon_kpoint_grid', default=[1, 1, 1]):
     validate_int3,
@@ -255,9 +258,9 @@ AsePhononsSchema = Schema({
     # Whether to turn on periodic boundary conditions
     Optional('pbc', default=True):
     validate_bool,
-    # Name of output file to save
-    Optional('output_file', default=None):
-    validate_str,
+    # Force clean existing phonon files of the same name
+    Optional('force_clean', default=False):
+    validate_bool
 })
 
 # Parameter file schema and defaults

@@ -17,6 +17,7 @@ from pymuonsuite.quantum.vibrational.average import (muon_vibrational_average_wr
                                                      muon_vibrational_average_read)
 from pymuonsuite.schemas import (load_input_file, MuonHarmonicSchema,
                                  AsePhononsSchema)
+from pymuonsuite.io.output import write_phonon_report
 
 
 def nq_entry():
@@ -65,6 +66,10 @@ def asephonons_entry():
     # Load parameters
     params = load_input_file(args.parameter_file, AsePhononsSchema)
 
+    fname, fext = os.path.splitext(args.structure_file)
+    if params['name'] is None:
+        params['name'] = fname
+
     # Load structure
     a = io.read(args.structure_file)
     # Create a Dftb calculator
@@ -83,17 +88,18 @@ def asephonons_entry():
         ph_kpts = None
     a.set_calculator(calc)
     phdata = ase_phonon_calc(a, kpoints=ph_kpts,
-                             ftol=params['force_tol'])
+                             ftol=params['force_tol'], 
+                             force_clean=params['force_clean'], 
+                             name=params['name'])
+
 
     # Save optimised structure
-    fname, fext = os.path.splitext(args.structure_file)
-    io.write(fname + '_opt' + fext, phdata.structure)
+    io.write(params['name'] + '_opt' + fext, phdata.structure)
 
     # And write out the phonons
-    outf = params['output_file']
-    if outf is None:
-        outf = fname + '_opt.phonons.pkl'
+    outf = params['name'] + '_opt.phonons.pkl'
     pickle.dump(phdata, open(outf, 'wb'))
+    write_phonon_report(args, params, phdata)
 
 
 if __name__ == "__main__":
