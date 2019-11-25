@@ -21,6 +21,7 @@ class TestDisplacements(unittest.TestCase):
     # Create mock eigenvalues and eigenvectors
     evals = (np.ones(3)*cnst.hbar/cnst.u/(2*np.pi*cnst.c) *
              1e18)  # Value calculated to give a sigma of 1 Ang
+    evals[1:] = 1e10
     evecs = np.eye(3)[:, None, :]
     masses = np.ones(1)
 
@@ -114,7 +115,7 @@ class TestDisplacements(unittest.TestCase):
 
         self.assertSmallRelativeError(avgvolT, avgdisplT, 1e-2)
 
-    def test_montecarlo(self):
+    def testMontecarlo(self):
 
         scheme = MonteCarloDisplacements(self.evals, self.evecs,
                                          self.masses)
@@ -136,11 +137,19 @@ class TestDisplacements(unittest.TestCase):
         avgvolT = self._A_expect(5, 51, scheme._sigmas*1e10/cnst.u**0.5, xi)
 
         displ = scheme.recalc_displacements(n=100000, T=T)
-        weights = scheme.recalc_weights()
+        weights = scheme.recalc_weights(T=T)
         Adspl = self._A(displ[:, 0])
         avgdisplT = np.sum(Adspl*weights)
 
         self.assertSmallRelativeError(avgvolT, avgdisplT, 1e-1)
+
+        # Reweighed
+        weights = scheme.recalc_weights()
+        Adspl = self._A(displ[:, 0])
+        avgdisplRW = np.sum(Adspl*weights)
+
+        self.assertSmallRelativeError(avgvol, avgdisplRW, 1e-1)
+
 
 if __name__ == "__main__":
 

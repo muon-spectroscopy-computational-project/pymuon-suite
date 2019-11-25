@@ -355,7 +355,20 @@ class MonteCarloDisplacements(DisplacementScheme):
 
         self._Tw = T
 
-        self._w = np.ones(self._n)/self._n
+        if (self._Tw > self._Td):
+            print('WARNING: reweighing temperature is higher than displacement'
+                  ' temperature in MonteCarlo displacements scheme.'
+                  ' This is likely to cause major errors on averages.')
+
+        tfacw = _wnumSigmaEnhance(self._evals, self._Tw)
+        tfacd = _wnumSigmaEnhance(self._evals, self._Td)
+
+        sd_sw = (tfacw/tfacd)**0.5
+        dz = self._dq/self._sigmas[None, self._modes]
+        qw = sd_sw[None, self._modes]*np.exp(dz**2 *
+                                             (tfacd-tfacw)[None, self._modes])
+
+        self._w = np.prod(qw, axis=1)/self._n
 
         return self.weights
 
