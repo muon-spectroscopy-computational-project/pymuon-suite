@@ -51,15 +51,16 @@ class DisplacementScheme(object):
     will use it as a template to implement the actual schemes.
     """
 
-    def __init__(self, evals, evecs, masses, cut_imaginary=True):
+    def __init__(self, evals, evecs, masses, evals_threshold=1e-3):
 
         evals = np.real(evals)
         evecs = np.real(evecs)
         masses = np.array(masses)
 
-        if (evals <= 0).any():
-            if cut_imaginary:
-                print('Warning: removing imaginary frequency eigenmodes')
+        if (evals <= max(0, evals_threshold)).any():
+            if evals_threshold > 0:
+                print('Warning: removing eigenmodes with frequency '
+                      '< {0}'.format(evals_threshold))
                 evals_i = np.where(evals > 0)[0]
                 evals = evals[evals_i]
                 evecs = evecs[evals_i]
