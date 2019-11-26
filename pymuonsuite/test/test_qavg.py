@@ -21,6 +21,7 @@ class TestDisplacements(unittest.TestCase):
     # Create mock eigenvalues and eigenvectors
     evals = (np.ones(3)*cnst.hbar/cnst.u/(2*np.pi*cnst.c) *
              1e18)  # Value calculated to give a sigma of 1 Ang
+
     evecs = np.eye(3)[:, None, :]
     masses = np.ones(1)
 
