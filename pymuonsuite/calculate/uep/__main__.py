@@ -15,7 +15,7 @@ from scipy.optimize import minimize
 from scipy import constants as cnst
 
 
-from pymuonsuite.schemas import UEPSchema, load_input_file
+from pymuonsuite.schemas import UEPOptSchema, load_input_file
 from pymuonsuite.calculate.uep.charged import ChargeDistribution
 
 _header = """
@@ -142,7 +142,7 @@ def geomopt_entry():
                         help="Input YAML file for the calculation")
     args = parser.parse_args()
 
-    params = load_input_file(args.input, UEPSchema)
+    params = load_input_file(args.input, UEPOptSchema)
 
     seedpath = os.path.splitext(args.input)[0]
     seedname = os.path.split(seedpath)[1]

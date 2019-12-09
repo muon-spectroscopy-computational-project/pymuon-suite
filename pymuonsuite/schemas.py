@@ -263,25 +263,30 @@ AsePhononsSchema = Schema({
     validate_bool
 })
 
-# Parameter file schema and defaults
+# Shared schema for all UEP calculations
 UEPSchema = Schema({
-    # Starting position for muon (absolute coordinates)
-    Optional('mu_pos', default=[0.0, 0.0, 0.0]):
-    validate_vec3,
     # Path from which to load the charge density
     Optional('chden_path', default=''):
     validate_str,
     # Seedname for the charge density calculation
     Optional('chden_seed', default=None):
     validate_str,
+    # Gaussian Width factor for ionic potential
+    Optional('gw_factor', default=5.0):
+    float,
+})
+
+# UEP muon position optimisation
+UEPOptSchema = UEPSchema.schema.copy()
+UEPOptSchema.update({
+    # Starting position for muon (absolute coordinates)
+    Optional('mu_pos', default=[0.0, 0.0, 0.0]):
+    validate_vec3,
     # Maximum number of geometry optimisation steps
     Optional('geom_steps', default=30):
     int,
     # Tolerance on optimisation
     Optional('opt_tol', default=1e-5):
-    float,
-    # Gaussian Width factor for ionic potential
-    Optional('gw_factor', default=5.0):
     float,
     # Optimisation method
     Optional('opt_method', default='trust-exact'):
@@ -293,4 +298,29 @@ UEPSchema = Schema({
     # Save pickled output
     Optional('save_pickle', default=True):
     bool
+})
+UEPOptSchema = Schema(UEPOptSchema)
+
+# UEP plotting
+UEPPlotSchema = UEPSchema.schema.copy()
+UEPPlotSchema.update({
+    """ Specifications for paths.
+    Possible formats:
+    - [[crystallographic direction], [starting point], length, number of points]
+    - [[starting point], [end point], number of points],
+    - [starting atom, end atom, number of points]
+    """
+    Optional('line_plots', default=[]):
+    list
+    """ Specifications for planes.
+    Possible formats:
+    - [[crystallographic plane], [center point], width, height, 
+        points along width, points along height]
+    - [[corner 1], [corner 2], [corner 3], 
+        points along width, points along height]
+    - [corner atom 1, corner atom 2, corner atom 3,
+       points along width, points along height]
+    """
+    Optional('plane_plots', default=[]):
+    list
 })
