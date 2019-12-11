@@ -304,23 +304,21 @@ UEPOptSchema = Schema(UEPOptSchema)
 # UEP plotting
 UEPPlotSchema = UEPSchema.schema.copy()
 UEPPlotSchema.update({
-    """ Specifications for paths.
-    Possible formats:
-    - [[crystallographic direction], [starting point], length, number of points]
-    - [[starting point], [end point], number of points],
-    - [starting atom, end atom, number of points]
-    """
+    # Specifications for paths.
+    # Possible formats:
+    # - [[crystallographic direction], [starting point], length, number of points]
+    # - [[starting point], [end point], number of points],
+    # - [starting atom, end atom, number of points]
     Optional('line_plots', default=[]):
-    list
-    """ Specifications for planes.
-    Possible formats:
-    - [[crystallographic plane], [center point], width, height, 
-        points along width, points along height]
-    - [[corner 1], [corner 2], [corner 3], 
-        points along width, points along height]
-    - [corner atom 1, corner atom 2, corner atom 3,
-       points along width, points along height]
-    """
+    list,
+    # Specifications for planes.
+    # Possible formats:
+    # - [[crystallographic plane], [center point], width, height, 
+    #     points along width, points along height]
+    # - [[corner 1], [corner 2], [corner 3], 
+    #     points along width, points along height]
+    # - [corner atom 1, corner atom 2, corner atom 3,
+    #    points along width, points along height]
     Optional('plane_plots', default=[]):
     list
 })
