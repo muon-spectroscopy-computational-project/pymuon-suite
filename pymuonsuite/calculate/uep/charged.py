@@ -21,7 +21,7 @@ from pymuonsuite.io.castep import parse_castep_ppots
 
 # Coulomb constant
 _cK = 1.0/(4.0*np.pi*cnst.epsilon_0)
-# Convert dipolar couplings to Tesla.
+# Convert dipolar couplings to Tesla
 _dipT = (cnst.mu_0/(4*np.pi)*cnst.physical_constants['Bohr magneton'][0]*1e30 *
          abs(cnst.physical_constants['electron g factor'][0]))
 # Convert Fermi contact term to Tesla
