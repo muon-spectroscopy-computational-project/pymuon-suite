@@ -313,8 +313,6 @@ UEPPlotSchema.update({
     list,
     # Specifications for planes.
     # Possible formats:
-    # - [[crystallographic plane], [center point], width, height, 
-    #     points along width, points along height]
     # - [[corner 1], [corner 2], [corner 3], 
     #     points along width, points along height]
     # - [corner atom 1, corner atom 2, corner atom 3,

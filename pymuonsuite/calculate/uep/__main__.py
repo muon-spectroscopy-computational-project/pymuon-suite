@@ -37,13 +37,17 @@ Calculations started on {0}
 """.format(datetime.datetime.now())
 
 
+def _make_chdistr(params):
+    return ChargeDistribution(seedname=params['chden_seed'],
+                              path=params['chden_path'],
+                              gw_fac=params['gw_factor'])
+
+
 def geomopt(params, outf=None):
 
     t0 = datetime.datetime.now()
 
-    chdistr = ChargeDistribution(seedname=params['chden_seed'],
-                                 path=params['chden_path'],
-                                 gw_fac=params['gw_factor'])
+    chdistr = _make_chdistr(params)
 
     a = chdistr.atoms
     m = params['particle_mass']
@@ -135,8 +139,91 @@ def geomopt(params, outf=None):
 
     return results
 
+
+def _interpret_line(ldef, cell, pos):
+    # Interpret a line definition for plotting
+    # The final format has to be:
+    # [[starting point], [end point], number of points]
+
+    # Get a signature
+    sig = ''.join(['l' if type(l) is list else 'n' for l in ldef])
+    if sig == 'lln':
+        p0 = np.array(ldef[0])
+        p1 = np.array(ldef[1])
+        n = int(ldef[2])
+    elif sig == 'llnn':
+        p0 = np.array(ldef[1])
+        v = np.dot(ldef[0], cell)
+        v /= np.linalg.norm(v)
+        p1 = p0 + ldef[2]*v
+        n = int(ldef[3])
+    elif sig == 'nnn':
+        p0 = np.array(pos[ldef[0]])
+        p1 = np.array(pos[ldef[1]])
+        n = int(ldef[2])
+    else:
+        raise ValueError('Invalid line definition in input file')
+
+    return [p0, p1, n]
+
+
+def _interpret_plane(pdef, cell, pos):
+    # Interpret a plane definition for plotting
+    # The final format has to be:
+    # [[corner 1], [corner 2], [corner 3],
+    #  points along width, points along height]
+
+    # Get a signature
+    sig = ''.join(['l' if type(l) is list else 'n' for l in pdef])
+
+    if sig == 'lllnn':
+        p0 = np.array(pdef[0])
+        p1 = np.array(pdef[1])
+        p2 = np.array(pdef[2])
+        nw = int(pdef[3])
+        nh = int(pdef[4])
+    elif sig == 'nnnnn':
+        p0 = pos[pdef[0]]
+        p1 = pos[pdef[1]]
+        p2 = pos[pdef[2]]
+        nw = int(pdef[3])
+        nh = int(pdef[4])
+    else:
+        raise ValueError('Invalid plane definition in input file')
+
+    return [p0, p1, p2, nw, nh]
+
+
 def plot(params, prefix='uepplot'):
-    pass
+
+    chdistr = _make_chdistr(params)
+
+    a = chdistr.atoms
+    cell = a.get_cell()
+    pos = a.get_positions()
+
+    # Plot lines
+    for i, ldef in enumerate(params['line_plots']):
+        ldef = _interpret_line(ldef, cell, pos)
+        # Make a range
+        lrange = np.linspace(0, 1.0, ldef[2])
+        lrange = (ldef[0][None]*(1-lrange)[:, None] +
+                  ldef[1][None]*lrange[:, None])
+        V, Ve, Vi = chdistr.V(lrange)
+        rho, rhoe, rhoi = chdistr.rho(lrange)
+        r = np.linalg.norm(lrange-lrange[0], axis=1)
+
+        outf = open('{0}.line.{1}.dat'.format(prefix, i+1), 'w')
+        for j, x in enumerate(r):
+            outf.write('\t'.join(map(str,
+                                 [x, V[j], Ve[j], Vi[j],
+                                  rho[j], rhoe[j], rhoi[j]])) + '\n')
+        outf.close()
+
+    for pdef in params['plane_plots']:
+        pdef = _interpret_plane(pdef, cell, pos)
+        print(pdef)
+
 
 def geomopt_entry():
     parser = ap.ArgumentParser()
@@ -175,6 +262,7 @@ def plot_entry():
         params['chden_seed'] = seedname  # Default is the same
 
     plot(params, seedname)
+
 
 if __name__ == "__main__":
     geomopt_entry()
