@@ -36,6 +36,8 @@ class PEPChargeDistribution(ChargeDistribution):
         super(PEPChargeDistribution, self).__init__(seedname, gw_fac, path)
 
         # Partition the charges using the Becke method
+        # Becke, A. D. ‘A multicenter numerical integration scheme for polyatomic molecules’ 
+        # J. Chem. Phys. 1988, 88, p 2547-2553. http://dx.doi.org/10.1063/1.454033
         xyz = self._elec_den.xyz
         maxR = max_distance_in_cell(self.cell)
         scell = minimum_supcell(maxR, self.cell)
