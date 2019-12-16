@@ -15,7 +15,7 @@ from scipy.optimize import minimize
 from scipy import constants as cnst
 
 
-from pymuonsuite.schemas import UEPOptSchema, load_input_file
+from pymuonsuite.schemas import UEPOptSchema, UEPPlotSchema, load_input_file
 from pymuonsuite.calculate.uep.charged import ChargeDistribution
 
 _header = """
@@ -135,6 +135,8 @@ def geomopt(params, outf=None):
 
     return results
 
+def plot(params, prefix='uepplot'):
+    pass
 
 def geomopt_entry():
     parser = ap.ArgumentParser()
@@ -157,6 +159,22 @@ def geomopt_entry():
     if params['save_pickle']:
         pickle.dump(results, open(seedpath + '.uep.pkl', 'wb'))
 
+
+def plot_entry():
+    parser = ap.ArgumentParser()
+    parser.add_argument('input', type=str,
+                        help="Input YAML file for the calculation")
+    args = parser.parse_args()
+
+    params = load_input_file(args.input, UEPPlotSchema)
+
+    seedpath = os.path.splitext(args.input)[0]
+    seedname = os.path.split(seedpath)[1]
+
+    if params['chden_seed'] is None:
+        params['chden_seed'] = seedname  # Default is the same
+
+    plot(params, seedname)
 
 if __name__ == "__main__":
     geomopt_entry()
