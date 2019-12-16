@@ -206,9 +206,9 @@ def plot(params, prefix='uepplot'):
     for i, ldef in enumerate(params['line_plots']):
         ldef = _interpret_line(ldef, cell, pos)
         # Make a range
+        dx = ldef[1]-ldef[0]
         lrange = np.linspace(0, 1.0, ldef[2])
-        lrange = (ldef[0][None]*(1-lrange)[:, None] +
-                  ldef[1][None]*lrange[:, None])
+        lrange = dx*lrange[:, None]+ldef[0]
         V, Ve, Vi = chdistr.V(lrange)
         rho, rhoe, rhoi = chdistr.rho(lrange)
         r = np.linalg.norm(lrange-lrange[0], axis=1)
@@ -216,14 +216,36 @@ def plot(params, prefix='uepplot'):
         outf = open('{0}.line.{1}.dat'.format(prefix, i+1), 'w')
         for j, x in enumerate(r):
             outf.write('\t'.join(map(str,
-                                 [x, V[j], Ve[j], Vi[j],
-                                  rho[j], rhoe[j], rhoi[j]])) + '\n')
+                                     [x, V[j], Ve[j], Vi[j],
+                                      rho[j], rhoe[j], rhoi[j]])) + '\n')
         outf.close()
 
-    for pdef in params['plane_plots']:
+    for i, pdef in enumerate(params['plane_plots']):
         pdef = _interpret_plane(pdef, cell, pos)
-        print(pdef)
+        dx = pdef[1]-pdef[0]
+        dy = pdef[2]-pdef[0]
+        lxrange = np.linspace(0, 1.0, pdef[3])
+        lxrange = dx*lxrange[:, None] + pdef[0]
+        lyrange = np.linspace(0, 1.0, pdef[4])
+        lyrange = dy*lyrange[:, None]
+        lxyrange = (lxrange[:, None, :]+lyrange[None, :, :])
 
+        dynorm = dy - np.dot(dy, dx)*dx/np.linalg.norm(dx)**2
+        outf = open('{0}.plane.{1}.dat'.format(prefix, i+1), 'w')
+
+        for j, lrange in enumerate(lxyrange):
+            rx = np.dot(lrange, dx)/np.linalg.norm(dx)
+            ry = np.dot(lrange, dynorm)/np.linalg.norm(dynorm)
+            V, Ve, Vi = chdistr.V(lrange)
+            rho, rhoe, rhoi = chdistr.rho(lrange)
+            for k, (x, y) in enumerate(zip(rx, ry)):
+                outf.write('\t'.join(map(str,
+                                         [x, y, V[k], Ve[k], Vi[k],
+                                          rho[k], rhoe[k], rhoi[k]]))
+                           + '\n')
+            outf.write('\n')
+
+        outf.close()
 
 def geomopt_entry():
     parser = ap.ArgumentParser()
