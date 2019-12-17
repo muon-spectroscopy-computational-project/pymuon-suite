@@ -273,7 +273,7 @@ UEPSchema = Schema({
     validate_str,
     # Gaussian Width factor for ionic potential
     Optional('gw_factor', default=5.0):
-    float,
+    float
 })
 
 # UEP muon position optimisation
@@ -313,7 +313,7 @@ UEPPlotSchema.update({
     list,
     # Specifications for planes.
     # Possible formats:
-    # - [[corner 1], [corner 2], [corner 3], 
+    # - [[corner 1], [corner 2], [corner 3],
     #     points along width, points along height]
     # - [corner atom 1, corner atom 2, corner atom 3,
     #    points along width, points along height]

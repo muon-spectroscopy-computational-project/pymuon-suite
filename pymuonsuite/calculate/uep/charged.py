@@ -14,6 +14,7 @@ import os
 import numpy as np
 from ase import io
 from scipy import constants as cnst
+from ase.data import atomic_numbers, covalent_radii
 from parsefmt.fmtreader import FMTReader
 
 from pymuonsuite.utils import make_process_slices
@@ -38,6 +39,7 @@ class ChargeDistribution(object):
 
         self._elec_den = FMTReader(seedpath + '.den_fmt')
         self._struct = io.read(seedpath + '.castep')
+
         ppots = parse_castep_ppots(seedpath + '.castep')
 
         # Override by also grabbing any pseudopotentials found in the .cell
@@ -47,7 +49,7 @@ class ChargeDistribution(object):
         try:
             cppot = io.read(seedpath + '.cell').calc.cell.species_pot.value
         except IOError:
-            pass # If not available, ignore this
+            pass  # If not available, ignore this
         if cppot is not None:
             ppf = [l.split() for l in cppot.split('\n') if l]
             for el, pppath in ppf:
@@ -102,15 +104,16 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
         self._Ve_G = 4*np.pi/Gnorm_fixed**2*(self._rhoe_G / vol)
 
         # Now on to doing the same for ionic components
-        self._rhoi_G = (q[None, None, None, :] *
-                        np.exp(-1.0j*np.sum(self._g_grid[:, :, :, :, None] *
-                                            pos.T[:, None, None, None, :],
-                                            axis=0) -
-                               0.5*(gw[None, None, None, :] *
-                                    Gnorm[:, :, :, None])**2))
+        self._rhoi_G = self._g_grid[0]*0.j
+        for i, p in enumerate(pos):
+            self._rhoi_G += (q[i] *
+                             np.exp(-1.0j*np.sum(self._g_grid[:, :, :, :] *
+                                                p[:, None, None, None],
+                                                axis=0) -
+                                   0.5*(gw[i] * Gnorm)**2))
 
         pregrid = (4*np.pi/Gnorm_fixed**2*1.0/vol)
-        self._Vi_G = (pregrid[:, :, :, None] * self._rhoi_G)
+        self._Vi_G = (pregrid*self._rhoi_G)
 
         # Is there any data on spin polarization?
         self._spinpol = False
@@ -176,9 +179,8 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
             ftk = np.exp(1.0j*np.tensordot(self._g_grid, p[s].T, axes=(0, 0)))
             rhoe[s] = np.real(np.sum(self._rhoe_G[:, :, :, None]*ftk,
                                      axis=(0, 1, 2)))
-            rhoi[s] = np.real(np.sum(self._rhoi_G[:, :, :, :, None] *
-                                     ftk[:, :, :, None],
-                                     axis=(0, 1, 2, 3)))
+            rhoi[s] = np.real(np.sum(self._rhoi_G[:, :, :, None] * ftk,
+                                     axis=(0, 1, 2)))
 
         # Convert units to e/Ang^3
         rhoe /= self._vol
@@ -208,9 +210,8 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
             Ve[s] = np.real(np.sum(self._Ve_G[:, :, :, None]*ftk,
                                    axis=(0, 1, 2)))
             # Now add the ionic one
-            Vi[s] = np.real(np.sum(self._Vi_G[:, :, :, :, None] *
-                                   ftk[:, :, :, None],
-                                   axis=(0, 1, 2, 3)))
+            Vi[s] = np.real(np.sum(self._Vi_G[:, :, :, None]*ftk,
+                                   axis=(0, 1, 2)))
 
         Ve *= _cK*cnst.e*1e10  # Moving to SI units
         Vi *= _cK*cnst.e*1e10
@@ -242,9 +243,8 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
                 np.sum(self._Ve_G[None, :, :, :, None]*dftk,
                        axis=(1, 2, 3))).T
             # Now add the ionic one
-            dVi[s] = np.real(np.sum(self._Vi_G[None, :, :, :, :, None] *
-                                    dftk[:, :, :, :, None],
-                                    axis=(1, 2, 3, 4))).T
+            dVi[s] = np.real(np.sum(self._Vi_G[None, :, :, :, None] * dftk,
+                                    axis=(1, 2, 3))).T
 
         dVe *= _cK*cnst.e*1e20  # Moving to SI units
         dVi *= _cK*cnst.e*1e20
@@ -279,9 +279,9 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
                 np.sum(self._Ve_G[None, None, :, :, :, None]*d2ftk,
                        axis=(2, 3, 4))).T
             # Now add the ionic one
-            d2Vi[s] = np.real(np.sum(self._Vi_G[None, None, :, :, :, :, None] *
-                                     d2ftk[:, :, :, :, :, None],
-                                     axis=(2, 3, 4, 5))).T
+            d2Vi[s] = np.real(np.sum(self._Vi_G[None, None, :, :, :, None] *
+                                     d2ftk,
+                                     axis=(2, 3, 4))).T
 
         d2Ve *= _cK*cnst.e*1e30  # Moving to SI units
         d2Vi *= _cK*cnst.e*1e30

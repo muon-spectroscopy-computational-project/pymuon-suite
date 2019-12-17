@@ -247,6 +247,7 @@ def plot(params, prefix='uepplot'):
 
         outf.close()
 
+
 def geomopt_entry():
     parser = ap.ArgumentParser()
     parser.add_argument('input', type=str,
