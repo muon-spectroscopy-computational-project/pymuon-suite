@@ -47,6 +47,8 @@ if __name__ == '__main__':
                    'pymuonsuite.muairss:main'),
                   ('pm-uep-opt = '
                    'pymuonsuite.calculate.uep.__main__:geomopt_entry'),
+                  ('pm-uep-plot = '
+                   'pymuonsuite.calculate.uep.__main__:plot_entry'),
                   ('pm-nq = '
                    'pymuonsuite.quantum.__main__:nq_entry'),
                   ('pm-asephonons = '

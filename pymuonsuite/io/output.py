@@ -34,6 +34,17 @@ def write_tensors(tensors, filename, symbols):
 
 def write_cluster_report(args, params, clusters):
 
+    if params['clustering_method'] == 'hier':
+        clustinfo = """
+Clustering method: Hierarchical
+    t = {t}
+""".format(t=params['clustering_hier_t'])
+    elif params['clustering_method'] == 'kmeans':
+        clustinfo = """
+Clustering method: k-Means
+    k = {k}
+""".format(k=params['clustering_kmeans_k'])
+
     with open(params['name'] + '_clusters.txt', 'w') as f:
 
         f.write("""
@@ -48,11 +59,12 @@ Name: {name}
 Date: {date}
 Structure file(s): {structs}
 Parameter file: {param}
+{clustinfo}
 
 *******************
 
 """.format(name=params['name'], date=datetime.now(), structs=args.structures,
-           param=args.parameter_file))
+           param=args.parameter_file, clustinfo=clustinfo))
 
         for name, cdata in clusters.items():
 
@@ -90,6 +102,9 @@ Parameter file: {param}
                     fdat.write('\t'.join(map(str, [i+1, len(g),
                                                    Emin, Eavg, Estd])) + '\n')
 
+                    f.write('\n\tMinimum energy structure: {0}\n'.format(
+                        coll[np.argmin(E)].structures[0].info['name']))
+
                     f.write('\n\n\tStructure list:')
 
                     for j, s in enumerate(coll):
@@ -120,3 +135,50 @@ Parameter file: {param}
             f.write('\n--------------------------\n\n')
 
         f.write('\n==========================\n\n')
+
+
+def write_phonon_report(args, params, phdata):
+
+    with open(params['name'] + '_phonons.txt', 'w') as f:
+
+        f.write("""
+    ****************************
+    |                          |
+    |         MUAIRSS          |
+    |    ASE Phonons report    |
+    |                          |
+    ****************************
+
+    Name: {name}
+    Date: {date}
+    Structure file: {structs}
+    Parameter file: {param}
+
+    *******************
+
+    """.format(name=params['name'], date=datetime.now(),
+               structs=args.structure_file,
+               param=args.parameter_file))
+
+        # Write k-point path
+        f.write('K-point Path: \n')
+        for kp in phdata.path:
+            f.write('\t{0}\n'.format(kp))
+
+        f.write('\n\n------------------\n\n')
+
+        for i, kp in enumerate(phdata.path):
+            f.write('K-point {0}: {1}\n\n'.format(i+1, kp))
+            # Write frequencies
+            f.write('\tFrequencies (cm^-1): \n')
+            for j, om in enumerate(phdata.frequencies[i]):
+                f.write('\t{0}\t{1}\n'.format(j+1, om))
+
+            f.write('\n\tDisplacements: \n')
+            for j, m in enumerate(phdata.modes[i]):
+                f.write('\t\tMode {0}:\n'.format(j+1))
+                f.write('\t\tAtom x\t\t\t y\t\t\t z\n')
+                for k, d in enumerate(m):
+                    d = np.real(d)
+                    f.write(
+                        '\t\t{0}\t{1: .6f}\t{2: .6f}\t{3: .6f}\n'.format(k+1, *d))

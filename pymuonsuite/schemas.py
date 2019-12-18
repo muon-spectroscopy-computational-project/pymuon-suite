@@ -220,8 +220,10 @@ MuonHarmonicSchema = Schema({
     # Type of source file for phonon modes
     Optional('phonon_source_type', default='castep'):
     validate_all_of('castep', 'dftb+'),
+    # Temperature for displacement generation
+    Optional('displace_T', default=0): float,
     # Temperature for averaging
-    Optional('average_T', default=0): float,
+    Optional('average_T', default=None): float,
     # Calculation parameters
     # Path to script file to copy in all folders
     Optional('script_file', default=None):
@@ -240,6 +242,9 @@ MuonHarmonicSchema = Schema({
 })
 
 AsePhononsSchema = Schema({
+    # Name
+    Optional('name', default=None):
+    validate_str,
     # Phonon k-points
     Optional('phonon_kpoint_grid', default=[1, 1, 1]):
     validate_int3,
@@ -253,30 +258,35 @@ AsePhononsSchema = Schema({
     # Whether to turn on periodic boundary conditions
     Optional('pbc', default=True):
     validate_bool,
-    # Name of output file to save
-    Optional('output_file', default=None):
-    validate_str,
+    # Force clean existing phonon files of the same name
+    Optional('force_clean', default=False):
+    validate_bool
 })
 
-# Parameter file schema and defaults
+# Shared schema for all UEP calculations
 UEPSchema = Schema({
-    # Starting position for muon (absolute coordinates)
-    Optional('mu_pos', default=[0.0, 0.0, 0.0]):
-    validate_vec3,
     # Path from which to load the charge density
     Optional('chden_path', default=''):
     validate_str,
     # Seedname for the charge density calculation
     Optional('chden_seed', default=None):
     validate_str,
+    # Gaussian Width factor for ionic potential
+    Optional('gw_factor', default=5.0):
+    float
+})
+
+# UEP muon position optimisation
+UEPOptSchema = UEPSchema.schema.copy()
+UEPOptSchema.update({
+    # Starting position for muon (absolute coordinates)
+    Optional('mu_pos', default=[0.0, 0.0, 0.0]):
+    validate_vec3,
     # Maximum number of geometry optimisation steps
     Optional('geom_steps', default=30):
     int,
     # Tolerance on optimisation
     Optional('opt_tol', default=1e-5):
-    float,
-    # Gaussian Width factor for ionic potential
-    Optional('gw_factor', default=5.0):
     float,
     # Optimisation method
     Optional('opt_method', default='trust-exact'):
@@ -289,3 +299,25 @@ UEPSchema = Schema({
     Optional('save_pickle', default=True):
     bool
 })
+UEPOptSchema = Schema(UEPOptSchema)
+
+# UEP plotting
+UEPPlotSchema = UEPSchema.schema.copy()
+UEPPlotSchema.update({
+    # Specifications for paths.
+    # Possible formats:
+    # - [[crystallographic direction], [starting point], length, number of points]
+    # - [[starting point], [end point], number of points],
+    # - [starting atom, end atom, number of points]
+    Optional('line_plots', default=[]):
+    list,
+    # Specifications for planes.
+    # Possible formats:
+    # - [[corner 1], [corner 2], [corner 3],
+    #     points along width, points along height]
+    # - [corner atom 1, corner atom 2, corner atom 3,
+    #    points along width, points along height]
+    Optional('plane_plots', default=[]):
+    list
+})
+UEPPlotSchema = Schema(UEPPlotSchema)

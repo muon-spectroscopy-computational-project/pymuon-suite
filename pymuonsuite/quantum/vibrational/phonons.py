@@ -29,7 +29,7 @@ ASEPhononData = namedtuple('ASEPhononData',
 
 
 def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
-                    ftol=0.01, force_clean=False):
+                    ftol=0.01, force_clean=False, name='asephonon'):
     """Calculate phonon modes of a molecule using ASE and a given calculator.
     The system will be geometry optimized before calculating the modes. A
     report of the phonon modes will be written to a file and arrays of the
@@ -63,9 +63,9 @@ def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
     # Calculate phonon modes
     vib_pbc = (kpoints is not None)
     if vib_pbc:
-        vib = Phonons(struct, calc)
+        vib = Phonons(struct, calc, name=name)
     else:
-        vib = Vibrations(struct)
+        vib = Vibrations(struct, name=name)
     if force_clean:
         vib.clean()
     vib.run()
