@@ -16,7 +16,7 @@ import numpy as np
 import scipy.constants as cnst
 from soprano.collection import AtomsCollection
 from pymuonsuite.quantum.vibrational.phonons import get_major_emodes
-from pymuonsuite.quantum.vibrational.harmonic import harmonicRho
+from pymuonsuite.quantum.vibrational.harmonic import harmonic_rho
 
 # Cm^-1 to rad/s
 _wnum2om = 2*np.pi*1e2*cnst.c

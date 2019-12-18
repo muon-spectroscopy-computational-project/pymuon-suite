@@ -12,8 +12,8 @@ import scipy.constants as cnst
 
 from pymuonsuite.quantum.vibrational.schemes import (
     IndependentDisplacements, MonteCarloDisplacements)
-from pymuonsuite.quantum.vibrational.harmonic import (harmonicRho,
-                                                      harmonicRhoSum)
+from pymuonsuite.quantum.vibrational.harmonic import (harmonic_rho,
+                                                      harmonic_rho_sum)
 
 
 class TestDisplacements(unittest.TestCase):
@@ -50,8 +50,8 @@ class TestDisplacements(unittest.TestCase):
         m = cnst.u
         om = 1e20*cnst.hbar/m
 
-        rhos = harmonicRhoSum(x, m, om)
-        rhot = harmonicRho(x, m, om)
+        rhos = harmonic_rho_sum(x, m, om)
+        rhot = harmonic_rho(x, m, om)
 
         self.assertAlmostEqual(np.trapz(rhos, x), 1)
         self.assertAlmostEqual(np.trapz(rhot, x), 1)
@@ -61,8 +61,8 @@ class TestDisplacements(unittest.TestCase):
         # Now with non-zero temperature...
         T = 0.7*cnst.hbar*om/cnst.k
 
-        rhos = harmonicRhoSum(x, m, om, T)
-        rhot = harmonicRho(x, m, om, T)
+        rhos = harmonic_rho_sum(x, m, om, T)
+        rhot = harmonic_rho(x, m, om, T)
 
         self.assertAlmostEqual(np.trapz(rhos, x), 1)
         self.assertAlmostEqual(np.trapz(rhot, x), 1)
