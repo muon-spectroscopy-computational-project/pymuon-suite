@@ -71,8 +71,21 @@ parameter_sets = {
 
 
 class DFTBArgs(object):
+    """DFTBArgs
+
+    Class generating automatically arguments for an ASE DFTB+ calculator.
+    """
 
     def __init__(self, name):
+        """Initialise a DFTBArgs object
+
+        Initialise a DFTBArgs object given the name of a parametrisation set
+        of choice.
+
+        Arguments:
+            name {str} -- Name of chosen parametrisation set. Currently
+                          acceptable values are 3ob-3-1, pbc-0-3.
+        """
         self._name = name
         self._args = parameter_sets[name]
         self._path = os.path.join(os.path.dirname(__file__), name)
@@ -106,6 +119,21 @@ class DFTBArgs(object):
         return self._path
 
     def set_optional(self, name=None, value=False):
+        """Set optional properties
+
+        Set optional argument files for the given parametrization set on or 
+        off.
+        If called without any argument, prints out the optional arguments
+        available.
+
+        Keyword Arguments:
+            name {str} -- Optional argument file to set (default: {None})
+            value {bool} -- If True, include the optional arguments 
+                            (default: {False})
+
+        Raises:
+            KeyError -- The optional file is not available
+        """
         if name is None:
             print("Optional files available:")
             print('\n'.join(self._optdict.keys()))

@@ -1,5 +1,4 @@
-"""
-hfine.py
+"""hfine.py
 
 Computing hyperfine couplings for atomic structures with localised dipole
 moments

@@ -1,5 +1,4 @@
-"""
-charged.py
+"""charged.py
 
 ChargeDistribution class for Unperturbed Electrostatic Potential
 """
