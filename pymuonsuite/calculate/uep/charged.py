@@ -31,8 +31,38 @@ _fermiT = (2.0/3.0*cnst.mu_0*cnst.physical_constants['Bohr magneton'][0]*1e30 *
 
 
 class ChargeDistribution(object):
+    """ChargeDistribution
+
+    An object storing a distribution of electronic and ionic charges in a
+    unit cell, and using it to compute the electrostatic potential. Currently
+    needs a CASTEP .den_fmt file as input.
+    Ions are described approximately as Gaussian distributions of positive
+    charge Z-e_core, where e_core is the number of core electrons included
+    in the pseudopotential.
+    """
 
     def __init__(self, seedname, gw_fac=3, path=''):
+        """Initialise a ChargeDistrbution object.
+
+        Initialise a ChargeDistribution object with CASTEP output files.
+
+        Arguments:
+            seedname {str} -- The seedname of the CASTEP output files
+                              (.den_fmt and .castep) used to load the data.
+
+        Keyword Arguments:
+            gw_fac {number} -- Factor used to divide the Gaussian width used
+                               for the ions. The final width will be the
+                               radius of the pseudopotential divided by this.
+                               (default: {3})
+            path {str} -- Path in which the CASTEP output files can be found.
+                          (default: {''})
+
+        Raises:
+            RuntimeError -- CASTEP pseudopotentials were not found
+        """
+
+        this = 3
 
         # Load the electronic density
         seedpath = os.path.join(path, seedname)
@@ -80,11 +110,11 @@ class ChargeDistribution(object):
             q = np.array([ppots[el][0] for el in elems])
             gw = np.array([ppots[el][1]/gw_fac for el in elems])
         except KeyError:
-            raise RuntimeError("""Some or all CASTEP pseudopotentials were not found.
-UEP calculation can not go on. Please notice that at the moment only ultrasoft
-pseudopotentials are supported, and if not generated automatically, they must
-be possible to retrieve using the paths in the SPECIES_POT block of the .cell file.
-""")
+            raise RuntimeError("""Some or all CASTEP pseudopotentials were not
+found. UEP calculation can not go on. Please notice that at the moment only
+ultrasoft pseudopotentials are supported, and if not generated automatically,
+they must be possible to retrieve using the paths in the SPECIES_POT block of
+the .cell file.""")
 
         # Here we find the Fourier components of the potential due to
         # the valence electrons
@@ -108,9 +138,9 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
         for i, p in enumerate(pos):
             self._rhoi_G += (q[i] *
                              np.exp(-1.0j*np.sum(self._g_grid[:, :, :, :] *
-                                                p[:, None, None, None],
-                                                axis=0) -
-                                   0.5*(gw[i] * Gnorm)**2))
+                                                 p[:, None, None, None],
+                                                 axis=0) -
+                                    0.5*(gw[i] * Gnorm)**2))
 
         pregrid = (4*np.pi/Gnorm_fixed**2*1.0/vol)
         self._Vi_G = (pregrid*self._rhoi_G)
@@ -161,6 +191,25 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
         return self._spinpol
 
     def rho(self, p, max_process_p=20):
+        """Charge density
+
+        Compute charge density at a point or list of points, total and
+        split by electronic and ionic contributions.
+
+        Arguments:
+            p {np.ndarray} -- List of points to compute charge density at.
+
+        Keyword Arguments:
+            max_process_p {number} -- Max number of points processed at once.
+                                      Lower to trade off speed for memory
+                                      (default: {20})
+
+        Returns:
+            np.ndarray -- Total charge density
+            np.ndarray -- Electronic charge density
+            np.ndarray -- Ionic charge density
+        """
+
         # Return charge density at a point or list of points
         p = np.array(p)
         if len(p.shape) == 1:
@@ -190,6 +239,25 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
         return rho, rhoe, rhoi
 
     def V(self, p, max_process_p=20):
+        """Potential
+
+        Compute electrostatic potential at a point or list of points,
+        total and split by electronic and ionic contributions.
+
+        Arguments:
+            p {np.ndarray} -- List of points to compute potential at.
+
+        Keyword Arguments:
+            max_process_p {number} -- Max number of points processed at once.
+                                      Lower to trade off speed for memory
+                                      (default: {20})
+
+        Returns:
+            np.ndarray -- Total potential
+            np.ndarray -- Electronic potential
+            np.ndarray -- Ionic potential
+        """
+
         # Return potential at a point or list of points
         p = np.array(p)
         if len(p.shape) == 1:
@@ -221,6 +289,25 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
         return V, Ve, Vi
 
     def dV(self, p, max_process_p=20):
+        """Potential gradient
+
+        Compute electrostatic potential gradient at a point or list of
+        points, total and split by electronic and ionic contributions.
+
+        Arguments:
+            p {np.ndarray} -- List of points to compute potential gradient at.
+
+        Keyword Arguments:
+            max_process_p {number} -- Max number of points processed at once.
+                                      Lower to trade off speed for memory
+                                      (default: {20})
+
+        Returns:
+            np.ndarray -- Total potential gradient
+            np.ndarray -- Electronic potential gradient
+            np.ndarray -- Ionic potential gradient
+        """
+
         # Return potential gradient at a point or list of points
         p = np.array(p)
         if len(p.shape) == 1:
@@ -254,6 +341,25 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
         return dV, dVe, dVi
 
     def d2V(self, p, max_process_p=20):
+        """Potential Hessian
+
+        Compute electrostatic potential Hessian at a point or list of
+        points, total and split by electronic and ionic contributions.
+
+        Arguments:
+            p {np.ndarray} -- List of points to compute potential Hessian at.
+
+        Keyword Arguments:
+            max_process_p {number} -- Max number of points processed at once.
+                                      Lower to trade off speed for memory
+                                      (default: {20})
+
+        Returns:
+            np.ndarray -- Total potential Hessian
+            np.ndarray -- Electronic potential Hessian
+            np.ndarray -- Ionic potential Hessian
+        """
+
         # Return potential Hessian at a point or a list of points
 
         p = np.array(p)
@@ -291,6 +397,35 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
         return d2V, d2Ve, d2Vi
 
     def Hfine(self, p, contact=False, max_process_p=20):
+                """Hyperfine tensor
+
+        Compute hyperfine tensor at a point or list of points. Only possible
+        for electronic densities including spin polarisation.
+
+        Arguments:
+            p {np.ndarray} -- List of points to compute hyperfine tensor at.
+
+        Keyword Arguments:
+            contact {bool} -- If True, include Fermi contact term
+                              (default: {False})
+            max_process_p {number} -- Max number of points processed at once.
+                                      Lower to trade off speed for memory
+                                      (default: {20})
+
+        Returns:
+            np.ndarray -- Total hyperfine tensor
+            np.ndarray -- Electronic hyperfine tensor
+            np.ndarray -- Ionic hyperfine tensor
+
+        Raises:
+            RuntimeError -- If the electronic density is not spin polarised.
+        """
+
+
+        if not self.has_spin():
+            raise RuntimeError('Can not compute hyperfine tensor without'
+                               ' spin polarised electronic density')
+
         # Return hyperfine tensors at a point or a list of points
         p = np.array(p)
         if len(p.shape) == 1:
@@ -307,7 +442,8 @@ be possible to retrieve using the paths in the SPECIES_POT block of the .cell fi
             # Fourier transform kernel
             ftk = np.exp(1.0j*np.tensordot(self._g_grid, p[s].T, axes=(0, 0)))
             # Compute the electronic potential
-            HT[s] = np.real(np.sum(self._dip_G[:, :, :, :, :, None]*ftk[None, None],
+            HT[s] = np.real(np.sum(self._dip_G[:, :, :, :, :, None] *
+                                   ftk[None, None],
                                    axis=(2, 3, 4))).T
             # And Fermi contact term
             if contact:
