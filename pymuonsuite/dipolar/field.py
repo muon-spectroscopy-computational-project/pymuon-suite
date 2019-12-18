@@ -19,17 +19,6 @@ from soprano.calculate.powder import ZCW, SHREWD, TriAvg
 from soprano.properties.nmr.utils import _get_isotope_data, _dip_constant
 from pymuonsuite.constants import m_gamma
 
-# try:
-#     from numba import jit
-# except ImportError:
-#     warnings.warn('Numba not found - install for boost in performance')
-
-#     def jit(nopython=True):
-#         def dummy(f):
-#             def wrapf(*args, **kwargs):
-#                 return f(*args, **kwargs)
-#             return wrapf
-#         return dummy
 
 # Dipolar line functions
 
