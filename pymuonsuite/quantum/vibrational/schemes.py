@@ -61,7 +61,7 @@ class DisplacementScheme(object):
             if evals_threshold > 0:
                 print('Warning: removing eigenmodes with frequency '
                       '< {0}'.format(evals_threshold))
-                evals_i = np.where(evals > 0)[0]
+                evals_i = np.where(evals > evals_threshold)[0]
                 evals = evals[evals_i]
                 evecs = evecs[evals_i]
             else:
