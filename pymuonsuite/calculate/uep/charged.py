@@ -396,7 +396,7 @@ the .cell file.""")
         return d2V, d2Ve, d2Vi
 
     def Hfine(self, p, contact=False, max_process_p=20):
-                """Hyperfine tensor
+        """Hyperfine tensor
 
         Compute hyperfine tensor at a point or list of points. Only possible
         for electronic densities including spin polarisation.
@@ -419,7 +419,6 @@ the .cell file.""")
         Raises:
             RuntimeError -- If the electronic density is not spin polarised.
         """
-
 
         if not self.has_spin():
             raise RuntimeError('Can not compute hyperfine tensor without'
