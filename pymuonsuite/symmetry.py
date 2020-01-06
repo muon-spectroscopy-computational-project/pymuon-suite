@@ -8,7 +8,7 @@ import numpy as np
 from ase import io
 import argparse as ap
 from soprano.utils import silence_stdio
-from soprano.properties.symmetry import WyckoffPoints
+from soprano.properties.symmetry import (SymmetryDataset, WyckoffPoints)
 
 
 def print_symmetry_report():
@@ -21,10 +21,15 @@ def print_symmetry_report():
     with silence_stdio():
         a = io.read(args.structure)
 
+    symdata = SymmetryDataset.get(a)
     wpoints = WyckoffPoints.get(a)
     fpos = a.get_scaled_positions()
 
     print("Wyckoff points symmetry report for {0}".format(args.structure))
+    print("Space Group International Symbol: "
+          "{0}".format(symdata['international']))
+    print("Space Group Hall Number: "
+          "{0}".format(symdata['hall_number']))
     print("Absolute\t\t\tFractional\t\tHessian constraints")
 
     # List any Wyckoff point that does not already have an atom in it
