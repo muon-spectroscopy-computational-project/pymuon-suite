@@ -191,9 +191,9 @@ def create_muairss_dftb_calculator(a, params={}, calc=None):
 
     if params['dftb_pbc']:
         calc = Dftb(kpts=params['k_points_grid'],
-                    run_manyDftb_steps=True, **args)
+                    **args)
     else:
-        calc = Dftb(run_manyDftb_steps=True, **args)
+        calc = Dftb(**args)
 
     return calc
 

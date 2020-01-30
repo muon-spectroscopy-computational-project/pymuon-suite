@@ -45,7 +45,7 @@ def dftb_write_input(a, folder, calc=None, name=None, script=None):
 
     if not isinstance(a.calc, Dftb):
         a = a.copy()
-        calc = Dftb(label=name, atoms=a, run_manyDftb_steps=True)
+        calc = Dftb(label=name, atoms=a)
         a.set_calculator(calc)
 
     a.calc.label = name
@@ -221,10 +221,10 @@ def save_muonconf_dftb(a, folder, params, dftbargs={}):
 
     if params['dftb_pbc']:
         dcalc = Dftb(label=name, atoms=a,
-                     kpts=params['k_points_grid'],
-                     run_manyDftb_steps=True, **args)
+                     kpts=params['k_points_grid'], 
+                     **args)
     else:
-        dcalc = Dftb(label=name, atoms=a, run_manyDftb_steps=True, **args)
+        dcalc = Dftb(label=name, atoms=a, **args)
 
     dcalc.directory = folder
     dcalc.write_input(a)
