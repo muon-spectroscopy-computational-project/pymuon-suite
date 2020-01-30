@@ -116,7 +116,8 @@ dep/*
 examples/random-search/muon-airss-out/*
 examples/random-search/merged.cif
 examples/uep/*
-!examples/uep/Si2.yaml
+!examples/uep/Si2-opt.yaml
+!examples/uep/Si2-plot.yaml
 !examples/uep/Si2/Si2*
 examples/quantum/*
 !examples/quantum/ethyleneMu.xyz

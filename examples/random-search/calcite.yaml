@@ -3,3 +3,6 @@ calculator: dftb+
 dftb_set:   3ob-3-1
 poisson_r:  1.2
 out_folder: calcite-muairss
+clustering_hier_t: 0.4
+clustering_save_min: True
+

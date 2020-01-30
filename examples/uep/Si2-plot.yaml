@@ -1,0 +1,5 @@
+chden_path: Si2
+chden_seed: Si2
+gw_factor:  10.0
+line_plots:
+- [[1, 1, 1], [0,0,0], 4, 200]
