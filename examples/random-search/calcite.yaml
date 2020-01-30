@@ -2,3 +2,4 @@ name:       calcite
 calculator: dftb+
 dftb_set:   3ob-3-1
 poisson_r:  1.2
+out_folder: calcite-muairss
