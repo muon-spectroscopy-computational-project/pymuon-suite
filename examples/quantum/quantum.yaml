@@ -1,7 +1,8 @@
 cell_file:          ethyleneMu_opt.xyz
-phonon_source_file: ethylene_phonons.pkl
+phonon_source_file: ethyleneMu_opt.phonons.pkl
 phonon_source_type: dftb+
 calculator:         dftb+
+avgprop:            charge
 write_allconf:      true
 dftb_pbc:           false
 grid_n:             10

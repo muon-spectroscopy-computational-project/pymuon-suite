@@ -328,7 +328,6 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
                                   avgprop='hyperfine', average_T=0,
                                   average_file='averages.dat',
                                   **kwargs):
-
     # Open the structure file
     cell = io.read(cell_file)
     path = os.path.split(cell_file)[0]
