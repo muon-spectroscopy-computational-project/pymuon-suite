@@ -8,6 +8,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from ase import io
 import numpy as np
 from datetime import datetime
 
@@ -104,6 +105,13 @@ Parameter file: {param}
 
                     f.write('\n\tMinimum energy structure: {0}\n'.format(
                         coll[np.argmin(E)].structures[0].info['name']))
+
+                    # Save minimum energy structure
+                    if params['clustering_save_min']:
+                        fname = ('{0}_min_cluster_'
+                                 '{1}.{2}'.format(params['name'], i+1,
+                                                  params['clustering_save_format']))
+                        io.write(fname, coll[np.argmin(E)].structures[0])
 
                     f.write('\n\n\tStructure list:')
 

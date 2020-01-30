@@ -181,7 +181,13 @@ MuAirssSchema = Schema({
     float,
     # Number of clusters for k-means clustering
     Optional('clustering_kmeans_k', default=4):
-    int
+    int,
+    # Whether to save the minimum energy structures for each cluster
+    Optional('clustering_save_min', default=False):
+    bool,
+    # Format to use to save the minimum energy structures for each cluster
+    Optional('clustering_save_format', default='cif'):
+    validate_str
 })
 
 # Parameter file schema and defaults
