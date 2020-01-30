@@ -14,6 +14,7 @@ from __future__ import unicode_literals
 import os
 import glob
 import shutil
+import warnings
 from copy import deepcopy
 
 import numpy as np
@@ -353,6 +354,15 @@ def muairss_cluster(struct, collection, params, name=None):
     clusters = {}
 
     for calc, ccoll in collection.items():
+        # First, filter out all failed results
+        def calc_filter(a):
+            return a.calc is not None
+
+        n = len(ccoll)
+        ccoll = ccoll.filter(calc_filter)
+        if len(ccoll) < n:
+            warnings.warn('Calculation failed for {0} structures'.format(n-len(ccoll)))
+
         # Start by extracting the muon positions
         genes = [Gene('energy', 1, {}),
                  Gene('defect_asymmetric_fpos', 1,

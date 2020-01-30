@@ -84,7 +84,12 @@ def dftb_read_input(folder):
             calc.atoms_input = atoms
             calc.directory = folder
             calc.do_forces = True
-            calc.read_results()
+            try:
+                calc.read_results()
+            except:
+                # Failed for ANY reason
+                atoms.set_calculator(None)
+                return atoms
 
         energy = calc.get_potential_energy()
         forces = calc.get_forces()
