@@ -167,7 +167,7 @@ def parse_castep_mass_block(mass_block):
     u = 1
     if len(mass_tokens) > 0 and len(mass_tokens[0]) == 1:
         try:
-            u = units[mass_tokens[0][0]]
+            u = units[mass_tokens[0][0].lower()]
         except KeyError:
             raise CastepError('Invalid mass unit in species_mass block')
 
@@ -232,7 +232,7 @@ def parse_castep_gamma_block(gamma_block):
     u = 1
     if len(gamma_tokens) > 0 and len(gamma_tokens[0]) == 1:
         try:
-            u = units[gamma_tokens[0][0]]
+            u = units[gamma_tokens[0][0].lower()]
         except KeyError:
             raise CastepError('Invalid gamma unit in species_gamma block')
 
