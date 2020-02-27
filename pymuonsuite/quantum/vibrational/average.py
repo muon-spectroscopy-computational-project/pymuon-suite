@@ -58,7 +58,11 @@ def read_castep_gamma_phonons(seed, path='.'):
     and try again.""")
 
     # Parse CASTEP phonon data into casteppy object
-    pd = PhononData(seed, path=path)
+    try:
+        pd = PhononData(seed, path=path)
+    except TypeError:
+        # This happens in newer versions of Euphonic
+        pd = PhononData.from_castep(seed, path=path)        
     # Convert frequencies back to cm-1
     pd.convert_e_units('1/cm')
     # Get phonon frequencies+modes
