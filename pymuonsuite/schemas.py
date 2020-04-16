@@ -104,8 +104,9 @@ MuAirssSchema = Schema({
     Optional('name', default='struct'):
     validate_str,
     # Calculator to generate structure files for. Must be a comma seperated
-    # list of values. Currently supported calculators are CASTEP and DFTB+. Can
-    # also pass all as an option to generate files for all calculators.
+    # list of values. Currently supported calculators are CASTEP, DFTB+ and 
+    # UEP. Can also pass all as an option to generate files for all 
+    # calculators.
     Optional('calculator', default='dftb+'):
     validate_all_of('castep', 'dftb+', 'uep', 'all'),
     # Command to use to run CASTEP.
@@ -148,8 +149,8 @@ MuAirssSchema = Schema({
     # of three integers or a 3x3 matrix of integers. For a single number a
     # diagonal matrix will be generated with the integer repeated on the
     # diagonals. For a list of three numbers a diagonal matrix will be
-    # generated where the digonal elements are set to the list. A matrix will
-    # be used directly as is. Default is a 3x3 indentity matrix.
+    # generated where the diagonal elements are set to the list. A matrix will
+    # be used directly as is. Default is a 3x3 identity matrix.
     Optional('supercell', default=1):
     validate_supercell,
     # List of three integer k-points. Default is [1,1,1].
