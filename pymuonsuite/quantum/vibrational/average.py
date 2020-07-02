@@ -345,6 +345,7 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
 
     displaced_coll = AtomsCollection.load_tree(sname + '_displaced',
                                                reader_function,
+                                               safety_check=2,
                                                opt_args={
                                                    'avgprop': avgprop
                                                })

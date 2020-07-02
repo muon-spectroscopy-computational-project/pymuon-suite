@@ -41,10 +41,11 @@ def nq_entry():
     else:
         try:
             muon_vibrational_average_read(**params)
-        except IOError:
-            print('\nCould not find displaced structure folder: '
-                  'maybe you wanted to run with the -w option'
-                  ' to write it?\n')
+        except IOError as e:
+            print('Read/write error: {0}'.format(e))
+            print('\nThis could mean it was impossible to find the displaced '
+                  'structure folder: maybe you wanted to run with the '
+                  '-w option to write it?\n')
 
 
 def asephonons_entry():
@@ -88,10 +89,9 @@ def asephonons_entry():
         ph_kpts = None
     a.set_calculator(calc)
     phdata = ase_phonon_calc(a, kpoints=ph_kpts,
-                             ftol=params['force_tol'], 
-                             force_clean=params['force_clean'], 
+                             ftol=params['force_tol'],
+                             force_clean=params['force_clean'],
                              name=params['name'])
-
 
     # Save optimised structure
     io.write(params['name'] + '_opt' + fext, phdata.structure)
