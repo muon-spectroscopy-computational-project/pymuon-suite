@@ -8,7 +8,11 @@ import numpy as np
 import scipy.constants as cnst
 from soprano.utils import (minimum_supcell, supcell_gridgen,
                            minimum_periodic)
-from soprano.properties.nmr.utils import _get_isotope_data
+try:
+    from soprano.nmr.utils import _get_isotope_data
+except ImportError:
+    # Older versions
+    from soprano.properties.nmr.utils import _get_isotope_data
 
 from pymuonsuite import constants as mu_cnst
 
