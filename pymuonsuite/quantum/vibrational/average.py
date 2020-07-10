@@ -27,7 +27,7 @@ from soprano.collection import AtomsCollection
 from pymuonsuite import constants
 from pymuonsuite.io.castep import (parse_castep_masses, castep_write_input,
                                    add_to_castep_block)
-from pymuonsuite.io.dftb import (dftb_write_input, load_muonconf_dftb,
+from pymuonsuite.io.dftb import (dftb_write_input, dftb_read_input,
                                  parse_spinpol_dftb)
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
@@ -62,7 +62,7 @@ def read_castep_gamma_phonons(seed, path='.'):
         pd = PhononData(seed, path=path)
     except TypeError:
         # This happens in newer versions of Euphonic
-        pd = PhononData.from_castep(seed, path=path)        
+        pd = PhononData.from_castep(seed, path=path)
     # Convert frequencies back to cm-1
     pd.convert_e_units('1/cm')
     # Get phonon frequencies+modes
@@ -97,7 +97,7 @@ def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None, param_file=None,
     calc.cell.species_gamma = add_to_castep_block(gamma_block, mu_symbol,
                                                   constants.m_gamma, 'gamma')
 
-    calc.cell.kpoint_mp_grid = kpts
+    calc.cell.kpoint_mp_grid = ' '.join(map(str, kpts))
 
     if param_file is not None:
         calc.param = read_param(param_file).param
@@ -167,7 +167,7 @@ def read_output_castep(folder, avgprop='hyperfine'):
 def read_output_dftbp(folder, avgprop='hyperfine'):
 
     # Read a DFTB+ file in the given folder, and then the required property
-    a = load_muonconf_dftb(folder)
+    a = dftb_read_input(folder)
     a.info['name'] = os.path.split(folder)[-1]
 
     if avgprop == 'hyperfine':
