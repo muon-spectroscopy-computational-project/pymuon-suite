@@ -83,7 +83,8 @@ def read_castep_gamma_phonons(seed, path='.'):
     return evals[gamma_i], evecs[gamma_i]
 
 
-def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None, param_file=None,
+def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None,
+                                   param_file=None,
                                    kpts=[1, 1, 1]):
     """Create a calculator containing all the necessary parameters
     for a hyperfine calculation."""
@@ -182,7 +183,8 @@ def read_output_dftbp(folder, avgprop='hyperfine'):
     return a
 
 
-def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
+def muon_vibrational_average_write(cell_file, method='independent',
+                                   mu_index=-1,
                                    mu_symbol='H:mu', grid_n=20, sigma_n=3,
                                    avgprop='hyperfine', calculator='castep',
                                    displace_T=0,
@@ -310,10 +312,10 @@ def muon_vibrational_average_write(cell_file, method='independent', mu_index=-1,
     # Get a calculator
     if calculator == 'castep':
         writer_function = castep_write_input
+        param, kpts = kwargs['castep_param'], kwargs['k_points_grid']
         calc = create_hfine_castep_calculator(mu_symbol=mu_symbol,
                                               calc=cell.calc,
-                                              param_file=kwargs['castep_param'],
-                                              kpts=kwargs['k_points_grid'])
+                                              param_file=param, kpts=kpts)
     elif calculator == 'dftb+':
         writer_function = dftb_write_input
         kpts = kwargs['k_points_grid'] if kwargs['dftb_pbc'] else None
@@ -366,7 +368,8 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
     # New shape
     N = len(displaced_coll)
     shape = tuple([slice(N)] + [None]*(len(to_avg.shape)-1))
-    avg = np.sum(displsch.weights[shape]*to_avg, axis=0)
+    weights = displsch.weights[shape]
+    avg = np.sum(weights*to_avg, axis=0)
 
     # Print output report
     with open(average_file, 'w') as f:
@@ -390,5 +393,7 @@ All values, by configuration:
 
         """.format(property=avgname, cell=cell_file,
                    scheme=displsch, avg=avg, vals='\n'.join([
-                       '{0}\n{1}\n'.format(i, v)
+                       'Conf: {0} (Weight = {1})\n{2}\n'.format(i,
+                                                                weights[i],
+                                                                v)
                        for i, v in enumerate(to_avg)])))
