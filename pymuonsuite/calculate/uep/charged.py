@@ -106,8 +106,8 @@ class ChargeDistribution(object):
         elems = self._struct.get_chemical_symbols()
         pos = self._struct.get_positions()
         try:
-            q = np.array([ppots[el][0] for el in elems])
-            gw = np.array([ppots[el][1]/gw_fac for el in elems])
+            self._q = np.array([ppots[el][0] for el in elems])
+            self._gw = np.array([ppots[el][1]/gw_fac for el in elems])
         except KeyError:
             raise RuntimeError("""Some or all CASTEP pseudopotentials were not
 found. UEP calculation can not go on. Please notice that at the moment only
@@ -118,10 +118,10 @@ the .cell file.""")
         # Here we find the Fourier components of the potential due to
         # the valence electrons
         self._rho = self._elec_den.data[:, :, :, 0]
-        if not np.isclose(np.average(self._rho), sum(q), 1e-4):
+        if not np.isclose(np.average(self._rho), sum(self._q), 1e-4):
             raise RuntimeError('Cell is not neutral')
         # Put the minus sign for electrons
-        self._rho *= -sum(q)/np.sum(self._rho)  # Normalise charge
+        self._rho *= -sum(self._q)/np.sum(self._rho)  # Normalise charge
         self._rhoe_G = np.fft.fftn(self._rho)
         Gnorm = np.linalg.norm(self._g_grid, axis=0)
         Gnorm_fixed = np.where(Gnorm > 0, Gnorm, np.inf)
@@ -135,11 +135,11 @@ the .cell file.""")
         # Now on to doing the same for ionic components
         self._rhoi_G = self._g_grid[0]*0.j
         for i, p in enumerate(pos):
-            self._rhoi_G += (q[i] *
+            self._rhoi_G += (self._q[i] *
                              np.exp(-1.0j*np.sum(self._g_grid[:, :, :, :] *
                                                  p[:, None, None, None],
                                                  axis=0) -
-                                    0.5*(gw[i] * Gnorm)**2))
+                                    0.5*(self._gw[i] * Gnorm)**2))
 
         pregrid = (4*np.pi/Gnorm_fixed**2*1.0/vol)
         self._Vi_G = (pregrid*self._rhoi_G)
@@ -160,6 +160,11 @@ the .cell file.""")
             self._dip_G *= self._spin_G/(self._vol*np.prod(self._spin.shape))
             # Convert to Tesla.
             self._dip_G *= _dipT
+
+        # Now, Thomas-Fermi energy
+        tfint = np.sum(abs(self._rho/self._vol)**(5/3)*self._vol)
+        C = 0.3*cnst.hbar**2/cnst.m_e*(3*np.pi**2)**(2/3)/cnst.e*1e20
+        self._thomasFermiE = C*tfint
 
     @property
     def atoms(self):
@@ -188,6 +193,10 @@ the .cell file.""")
     @property
     def has_spin(self):
         return self._spinpol
+
+    @property
+    def thomasFermiE(self):
+        return self._thomasFermiE
 
     def rho(self, p, max_process_p=20):
         """Charge density
