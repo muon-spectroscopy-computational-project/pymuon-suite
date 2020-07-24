@@ -124,6 +124,12 @@ class DisplacementScheme(object):
     def Tw(self):
         return self._Tw
 
+    @property
+    def E(self):
+        # Total displacement energies
+        q = self.displacements_q
+        return np.sum(0.5*q**2*(_wnum2om*self.evals[None, :])**2, axis=1)/cnst.e
+
     def save(self, file):
         pickle.dump(self, open(file, 'w'))
 
@@ -202,6 +208,13 @@ class IndependentDisplacements(DisplacementScheme):
     def sigma_n(self):
         return self._sigma_n
 
+    @property
+    def E(self):
+        # Total displacement energies
+        q = self.displacements_q
+        return np.sum(0.5*q**2*(_wnum2om*self.major_evals[None, :])**2,
+                      axis=1)/cnst.e
+
     def recalc_displacements(self, n=20, T=0):
 
         self._Td = T
@@ -210,24 +223,27 @@ class IndependentDisplacements(DisplacementScheme):
         dz = np.linspace(-self.sigma_n, self.sigma_n, n)
 
         sx = self.major_sigmas
-        self._dq = np.zeros((3*n, 3))
+
+        # We need also the central configuration,
+        # so depending on whether n is even or odd
+        # we get two different situations
+        self._dq = np.zeros((3*n+1, 3))
         for i in range(3):
-            self._dq[n*i:n*(i+1), i] = dz*sx[i]
+            self._dq[n*i+1:n*(i+1)+1, i] = dz*sx[i]
+
+        if n % 2 == 1:
+            ci = int((n-1)/2)
+            # Remove the superfluous zeroes
+            self._dq = np.delete(self._dq, np.arange(3)*n+ci+1,
+                                 axis=0)
+
 
         # Turn these into position displacements
         dx = np.dot(self._dq, self.major_evecs)
         dx *= 1e10/self.masses[self.i]**0.5
 
-        # We need also the central configuration,
-        # so depending on whether n is even or odd
-        # we get two different situations
-        self._dx = np.zeros((3*n+1, self._N, 3))
-        self._dx[1:, self.i, :] = dx
-        if n % 2 == 1:
-            ci = int((n-1)/2)
-            # Remove the superfluous zeroes
-            self._dx = np.delete(self._dx, np.arange(3)*n+ci+1,
-                                 axis=0)
+        self._dx = np.zeros((len(dx), self._N, 3))
+        self._dx[:, self.i, :] = dx
 
         return self.displacements
 

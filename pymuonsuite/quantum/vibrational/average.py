@@ -22,6 +22,7 @@ from ase.calculators.castep import Castep
 from ase.calculators.dftb import Dftb
 from soprano.utils import seedname
 from soprano.collection import AtomsCollection
+from soprano.properties.basic import CalcEnergy
 
 # Internal imports
 from pymuonsuite import constants
@@ -370,6 +371,15 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
     shape = tuple([slice(N)] + [None]*(len(to_avg.shape)-1))
     weights = displsch.weights[shape]
     avg = np.sum(weights*to_avg, axis=0)
+    
+    Ephonon = displsch.E
+    Ecalc = np.array(CalcEnergy.get(displaced_coll))
+    # Refer both to their first values...
+    Ephonon -= Ephonon[0]
+    Ecalc -= Ecalc[0]
+
+    # Error?
+    Eerr = np.average((Ephonon[1:]-Ecalc[1:])**2)**0.5
 
     # Print output report
     with open(average_file, 'w') as f:
@@ -387,12 +397,16 @@ Averaged value:
 
 {avg}
 
+Average energy error of harmonic approximation:
+
+{Eerr:.2f} eV
+
 All values, by configuration:
 
 {vals}
 
         """.format(property=avgname, cell=cell_file,
-                   scheme=displsch, avg=avg, vals='\n'.join([
+                   scheme=displsch, avg=avg, Eerr=Eerr, vals='\n'.join([
                        'Conf: {0} (Weight = {1})\n{2}\n'.format(i,
                                                                 displsch.weights[i],
                                                                 v)
