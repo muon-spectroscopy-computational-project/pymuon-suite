@@ -394,6 +394,6 @@ All values, by configuration:
         """.format(property=avgname, cell=cell_file,
                    scheme=displsch, avg=avg, vals='\n'.join([
                        'Conf: {0} (Weight = {1})\n{2}\n'.format(i,
-                                                                weights[i],
+                                                                displsch.weights[i],
                                                                 v)
                        for i, v in enumerate(to_avg)])))

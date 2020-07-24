@@ -13,6 +13,7 @@ import os
 import numpy as np
 from ase import io
 from scipy import constants as cnst
+from ase.calculators.singlepoint import SinglePointCalculator
 from ase.data import atomic_numbers, covalent_radii
 from parsefmt.fmtreader import FMTReader
 
@@ -168,7 +169,10 @@ the .cell file.""")
 
     @property
     def atoms(self):
-        return self._struct.copy()
+        a = self._struct.copy()
+        E, F = self._struct.get_potential_energy(), self._struct.get_forces()
+        a.calc = SinglePointCalculator(atoms=a, energy=E, forces=F)
+        return a
 
     @property
     def cell(self):

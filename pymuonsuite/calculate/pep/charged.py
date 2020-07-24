@@ -35,9 +35,11 @@ class PEPChargeDistribution(ChargeDistribution):
 
         super().__init__(seedname, gw_fac, path)
 
-        # Partition the charges using the Becke method
-        # Becke, A. D. ‘A multicenter numerical integration scheme for polyatomic molecules’
-        # J. Chem. Phys. 1988, 88, p 2547-2553. http://dx.doi.org/10.1063/1.454033
+        """
+        Partition the charges using the Becke method
+        Becke, A. D. ‘A multicenter numerical integration scheme for polyatomic molecules’
+        J. Chem. Phys. 1988, 88, p 2547-2553. http://dx.doi.org/10.1063/1.454033
+        """
         xyz = self._elec_den.xyz
         maxR = max_distance_in_cell(self.cell)
         scell = minimum_supcell(maxR, self.cell)
@@ -57,7 +59,8 @@ class PEPChargeDistribution(ChargeDistribution):
             for j in range(yn):
                 rA[i, j, :, :] = np.amin(np.linalg.norm(xyz[:, i, j, :, None,
                                                             None]
-                                                        - scgion[:, None, :, :],
+                                                        - scgion[:, None,
+                                                                 :, :],
                                                         axis=0), axis=-1)
 
         rAB = np.linalg.norm(pos[:, :, None]-pos[:, None, :], axis=0)
@@ -91,19 +94,27 @@ class PEPChargeDistribution(ChargeDistribution):
         pos = self.atoms.get_positions()
         for i, p in enumerate(pos):
             self._rhoipart_G[:, :, :, i] = (self._q[i] *
-                                        np.exp(-1.0j*np.sum(self._g_grid[:, :, :, :] *
-                                                            p[:, None, None, None],
-                                                            axis=0) -
-                                               0.5*(self._gw[i] * Gnorm)**2))
+                                            np.exp(-1.0j*np.sum(self._g_grid[:, :, :, :] *
+                                                                p[:, None,
+                                                                    None, None],
+                                                                axis=0) -
+                                                   0.5*(self._gw[i] * Gnorm)**2))
 
         # # Now compute interaction energy of ions
-        # self._rhoion_G = self._rhopart_G + self._rhoi_G
-        # self._Vion_G = self._Vpart_G+self._Vi_G
+        self._rhotot_G = self._rhoe_G + self._rhoi_G
+        self._Vtot_G = self._Ve_G + self._Vi_G
 
-        # self._ionE = np.real(np.sum(self._rhoion_G *
-        #                             np.conj(np.sum(self._Vion_G, axis=-1)
-        #                                     )[:, :, :, None])
-        #                      )*_cK*cnst.e*1e10
+        for r in (self._rhoe_G, self._rhoi_G):
+            for v in (self._Ve_G, self._Vi_G):
+                print(np.real(np.sum(r *
+                                     np.conj(np.sum(v, axis=-1)
+                                             ))
+                              )*_cK*cnst.e*1e10)
+                
+        self._ionE = np.real(np.sum(self._rhotot_G *
+                                    np.conj(np.sum(self._Vtot_G, axis=-1)
+                                            ))
+                             )*_cK*cnst.e*1e10
 
     # Commented out right now as it does not work
     # def ionE(self, dr=None):
