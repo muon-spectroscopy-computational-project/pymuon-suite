@@ -10,14 +10,17 @@ from __future__ import unicode_literals
 
 import os
 import pickle
+import numpy as np
 import argparse as ap
 
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.average import (muon_vibrational_average_write,
-                                                     muon_vibrational_average_read)
+                                                     muon_vibrational_average_read,
+                                                     create_spinpol_dftbp_calculator)
 from pymuonsuite.schemas import (load_input_file, MuonHarmonicSchema,
                                  AsePhononsSchema)
 from pymuonsuite.io.output import write_phonon_report
+from pymuonsuite.quantum.vibrational.utils import apply_muon_mass
 
 
 def nq_entry():
@@ -73,20 +76,33 @@ def asephonons_entry():
 
     # Load structure
     a = io.read(args.structure_file)
+    # Apply mass
+    a, mu_index = apply_muon_mass(a, params['mu_symbol'], params['mu_index'])
     # Create a Dftb calculator
     dargs = DFTBArgs(params['dftb_set'])
+
     # Is it periodic?
     if params['pbc']:
-        a.set_pbc(True)
-        calc = Dftb(atoms=a, label='asephonons',
-                    kpts=params['kpoint_grid'],
-                    **dargs.args)
+        # Only valid if there's a good cell!
+        if np.linalg.det(a.get_cell()) == 0:
+            # Cell parameters are dependent or zero!
+            raise RuntimeError('Can not apply Periodic Boundary Conditions'
+                               ' to system with non-independent lattice '
+                               'parameters. Set pbc: false in the YAML file'
+                               ' or fix the lattice parameters in the cell')
+        # calc = Dftb(atoms=a, label='asephonons',
+        #             kpts=params['kpoint_grid'],
+        #             **dargs.args)
+        calc = create_spinpol_dftbp_calculator(param_set=params['dftb_set'],
+                                               kpts=params['kpoint_grid'])
         ph_kpts = params['phonon_kpoint_grid']
     else:
         a.set_pbc(False)
-        calc = Dftb(atoms=a, label='asephonons',
-                    **dargs.args)
+        # calc = Dftb(atoms=a, label='asephonons',
+        #             **dargs.args)
+        calc = create_spinpol_dftbp_calculator(param_set=params['dftb_set'])
         ph_kpts = None
+    calc.label = 'asephonons'
     a.set_calculator(calc)
     phdata = ase_phonon_calc(a, kpoints=ph_kpts,
                              ftol=params['force_tol'],

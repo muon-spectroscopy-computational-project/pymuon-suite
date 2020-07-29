@@ -237,7 +237,6 @@ class IndependentDisplacements(DisplacementScheme):
             self._dq = np.delete(self._dq, np.arange(3)*n+ci+1,
                                  axis=0)
 
-
         # Turn these into position displacements
         dx = np.dot(self._dq, self.major_evecs)
         dx *= 1e10/self.masses[self.i]**0.5
@@ -358,10 +357,9 @@ class MonteCarloDisplacements(DisplacementScheme):
             (self._sigmas/tfac**0.5)[None, self._modes]
 
         # Turn these into position displacements
-        dx = self._dq[:, self._modes, None, None] * \
-            self._evecs[None, self._modes]
-        dx = np.sum(dx, axis=1)
-        dx *= 1e10/self.masses[None, :, None]**0.5
+        dx = np.tensordot(self._dq[:, self._modes], self._evecs[self._modes],
+                          axes=(1, 0))
+        dx *= 1e10/self.masses[None,:,None]**0.5
 
         self._dx = dx
 

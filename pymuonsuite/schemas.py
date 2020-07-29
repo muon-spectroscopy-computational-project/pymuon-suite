@@ -255,6 +255,11 @@ AsePhononsSchema = Schema({
     # Phonon k-points
     Optional('phonon_kpoint_grid', default=[1, 1, 1]):
     validate_int3,
+    # Index of muon in cell
+    Optional('mu_index', default=-1): int,
+    # If using Castep custom species, custom species of muon (supersedes index
+    # if present in cell)
+    Optional('mu_symbol', default='H:mu'): validate_str,
     # K-points used for DFTB+ calculation
     Optional('kpoint_grid', default=[1, 1, 1]): validate_int3,
     # Force tolerance for optimisation

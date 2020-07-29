@@ -4,12 +4,6 @@ average.py
 Quantum vibrational averages
 """
 
-# Python 2-to-3 compatibility code
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import os
 import glob
 import pickle
@@ -35,7 +29,7 @@ from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,
                                                      MonteCarloDisplacements)
 from pymuonsuite.calculate.hfine import compute_hfine_mullpop
-
+from pymuonsuite.quantum.vibrational.utils import apply_muon_mass
 
 class MuonAverageError(Exception):
     pass
@@ -226,24 +220,8 @@ def muon_vibrational_average_write(cell_file, method='independent',
 
     cell.info['name'] = sname
 
-    # Fetch species
-    try:
-        species = cell.get_array('castep_custom_species')
-    except KeyError:
-        species = np.array(cell.get_chemical_symbols())
-
-    mu_indices = np.where(species == mu_symbol)[0]
-    if len(mu_indices) > 1:
-        raise MuonAverageError(
-            'More than one muon found in the system')
-    elif len(mu_indices) == 1:
-        mu_index = mu_indices[0]
-    else:
-        species = list(species)
-        species[mu_index] = mu_symbol
-        species = np.array(species)
-
-    cell.set_array('castep_custom_species', species)
+    cell, mu_index = apply_muon_mass(cell, mu_symbol, mu_index)
+    masses = cell.get_masses()
 
     # Load the phonons
     if phonon_source_type == 'castep':
@@ -272,15 +250,6 @@ def muon_vibrational_average_write(cell_file, method='independent',
             except TypeError:
                 raise RuntimeError(('Phonon file {0} does not contain gamma '
                                     'point data').format(phonon_source_file))
-
-    # Fetch masses
-    try:
-        masses = parse_castep_masses(cell)
-    except AttributeError:
-        # Just fall back on ASE standard masses if not available
-        masses = cell.get_masses()
-    masses[mu_index] = constants.m_mu_amu
-    cell.set_masses(masses)
 
     # Now create the distribution scheme
     if method == 'independent':
@@ -378,6 +347,9 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
     Ephonon -= Ephonon[0]
     Ecalc -= Ecalc[0]
 
+    print(Ephonon)
+    print(Ecalc)
+
     # Error?
     Eerr = np.average((Ephonon[1:]-Ecalc[1:])**2)**0.5
 
@@ -397,7 +369,7 @@ Averaged value:
 
 {avg}
 
-Average energy error of harmonic approximation:
+Root mean square energy error of harmonic approximation:
 
 {Eerr:.2f} eV
 

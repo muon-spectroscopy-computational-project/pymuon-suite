@@ -29,7 +29,7 @@ ASEPhononData = namedtuple('ASEPhononData',
 
 
 def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
-                    ftol=0.01, force_clean=False, name='asephonon'):
+                    ftol=0.01, force_clean=0, name='asephonon'):
     """Calculate phonon modes of a molecule using ASE and a given calculator.
     The system will be geometry optimized before calculating the modes. A
     report of the phonon modes will be written to a file and arrays of the
@@ -43,8 +43,9 @@ def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
     |                           do a Vibration modes calculation (default is [1,1,1])
     |   ftol (float):           Tolerance for geometry optimisation (default
     |                           is 0.01 eV/Ang)
-    |   force_clean (bool):     If True, force a deletion of all phonon files 
-    |                           and recalculate them
+    |   force_clean (int):      If 0, don't delete any files. If 1, delete any
+    |                           files already present, but leave the ones 
+    |                           generated in this run. If 2, delete both.
     | Returns:
     |   evals (float[k-points][modes]):          Eigenvalues of phonon modes
     |   evecs (float[k-points][modes][ions][3]): Eigenvectors of phonon modes
@@ -57,7 +58,7 @@ def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
     struct = struct.copy()
     calc.atoms = struct
     struct.set_calculator(calc)
-    dyn = BFGS(struct, trajectory='geom_opt.traj')
+    dyn = BFGS(struct, trajectory=None)
     dyn.run(fmax=ftol)
 
     # Calculate phonon modes
@@ -66,7 +67,7 @@ def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
         vib = Phonons(struct, calc, name=name)
     else:
         vib = Vibrations(struct, name=name)
-    if force_clean:
+    if force_clean > 0:
         vib.clean()
     vib.run()
     if vib_pbc:
@@ -79,6 +80,9 @@ def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
         # One axis added since it's like the gamma point
         evals = np.real(vib.get_energies()[None])
         evecs = np.array([vib.get_mode(i) for i in range(3*N)])[None]
+
+    if force_clean == 2:
+        vib.clean()
 
     # eV to cm^-1
     evals *= ((cnst.electron_volt/cnst.h)/cnst.c)/100.0
