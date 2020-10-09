@@ -234,9 +234,9 @@ def save_muairss_collection(struct, params, batch_path=''):
     dc.info['muairss_params'] = dict(params)
 
     # Output folder
-    out_path = os.path.join(batch_path, params['out_folder'])
+    out_path = safe_create_folder(os.path.join(batch_path, params['out_folder']))
 
-    if not safe_create_folder(out_path):
+    if not out_path:
         raise RuntimeError('Could not create folder {0}')
 
     # Now save in the appropriate format
