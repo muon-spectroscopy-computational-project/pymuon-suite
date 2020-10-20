@@ -58,12 +58,8 @@ def read_castep_gamma_phonons(seed, path='.'):
     and try again.""")
 
     # Parse CASTEP phonon data into casteppy object
-    try:
-        pd = QpointPhononModes(os.path.join(path, seed + '.phonon'))
-    except TypeError:
-        # This happens in newer versions of Euphonic
-        pd = QpointPhononModes.from_castep(os.path.join(path,
-                                           seed + '.phonon'))
+    pd = QpointPhononModes.from_castep(os.path.join(path,
+                                       seed + '.phonon'))
     # Convert frequencies back to cm-1
     pd.frequencies_unit = '1/cm'
     # Get phonon frequencies+modes
