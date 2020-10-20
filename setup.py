@@ -37,7 +37,7 @@ if __name__ == '__main__':
               'spglib>0.8',
               'soprano>=0.8.7',
               'parse-fmt>=0.5',
-              'euphonic=0.3.2'
+              'euphonic==0.3.2'
           ],
           package_data={'pymuonsuite': sk_pkgdata},
           entry_points={
