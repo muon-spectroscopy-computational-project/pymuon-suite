@@ -46,7 +46,7 @@ def read_castep_gamma_phonons(seed, path='.'):
     """
 
     try:
-        from euphonic.data.phonon import PhononData
+        from euphonic import QpointPhononModes
     except ImportError:
         raise ImportError("""
     Can't use castep phonon interface due to Euphonic not being installed.
@@ -58,16 +58,13 @@ def read_castep_gamma_phonons(seed, path='.'):
     and try again.""")
 
     # Parse CASTEP phonon data into casteppy object
-    try:
-        pd = PhononData(seed, path=path)
-    except TypeError:
-        # This happens in newer versions of Euphonic
-        pd = PhononData.from_castep(seed, path=path)
+    pd = QpointPhononModes.from_castep(os.path.join(path,
+                                       seed + '.phonon'))
     # Convert frequencies back to cm-1
-    pd.convert_e_units('1/cm')
+    pd.frequencies_unit = '1/cm'
     # Get phonon frequencies+modes
-    evals = np.array(pd.freqs.magnitude)
-    evecs = np.array(pd.eigenvecs)
+    evals = np.array(pd.frequencies.magnitude)
+    evecs = np.array(pd.eigenvectors)
 
     # Only grab the gamma point!
     gamma_i = None
