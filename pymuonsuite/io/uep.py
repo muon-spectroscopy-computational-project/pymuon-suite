@@ -14,6 +14,64 @@ from ase import Atoms
 from scipy.constants import physical_constants as pcnst
 
 
+class ReadWriteUEP(object):
+
+    def read(self, folder, name=None, atoms=None):
+        if name is None:
+            name = os.path.split(folder)[-1]
+
+        calc = UEPCalculator(label=name, path=folder)
+
+        try:
+            calc.read()
+        except Exception as e:
+            print("Error: could not find UEP file in {0}".format(folder))
+            return
+
+        a = Atoms('H', positions=[calc._x_opt])
+
+        if atoms is not None:
+            a = atoms + a
+
+        a.info['name'] = name
+        a.set_calculator(calc)
+        calc.atoms = a
+
+        return a
+
+    def write(self, a, folder, params={},script=None, calc=None, calc_type="muairss"):
+
+        calc = self.create_calculator(a, folder, params, calc)
+
+        calc.write_input()
+
+        if script is not None:
+            stxt = open(script).read()
+            stxt = stxt.format(seedname=name)
+            with open(os.path.join(folder, 'script.sh'), 'w') as sf:
+                sf.write(stxt)
+
+    def create_calculator(self, a, folder, params={}, calc=None):
+
+        if not isinstance(calc, UEPCalculator):
+            calc = UEPCalculator(atoms=a, chden=params['uep_chden'])
+        else:
+            dummy = UEPCalculator(chden=params['uep_chden'])
+            calc.chden_path = dummy.chden_path
+            calc.chden_seed = dummy.chden_seed
+
+        if not params['charged']:
+            raise RuntimeError("Can't use UEP method for neutral system")
+
+        calc.label = params['name']
+        calc.path = folder
+        calc.gw_factor = params['uep_gw_factor']
+        calc.geom_steps = params['geom_steps']
+        calc.opt_tol = params['geom_force_tol']
+
+        return calc
+
+
 class UEPCalculator(object):
     """Mock 'calculator' used to store info to set up a UEP calculation"""
 
@@ -149,10 +207,11 @@ def uep_write_input(a, folder, calc=None, name=None, script=None):
         with open(os.path.join(folder, 'script.sh'), 'w') as sf:
             sf.write(stxt)
 
+
 def uep_read_input(folder, name=None, atoms=None):
 
     if name is None:
-        name = os.path.split(folder)[-1]        
+        name = os.path.split(folder)[-1]
 
     calc = UEPCalculator(label=name, path=folder)
     calc.read()
