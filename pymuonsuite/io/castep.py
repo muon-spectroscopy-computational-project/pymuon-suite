@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import re
 import os
 import yaml
+import glob
 import numpy as np
 import scipy.constants as cnst
 from ase import Atoms
@@ -14,10 +15,236 @@ from ase import io
 from ase.io.castep import write_param
 from ase.calculators.castep import Castep
 from soprano.selection import AtomSelection
+from soprano.utils import seedname
 
-
+from pymuonsuite import constants
 from pymuonsuite.utils import list_to_string
 from pymuonsuite.utils import find_ipso_hydrogen
+from pymuonsuite.io.magres import parse_hyperfine_magres
+
+
+class ReadWriteCastep():
+
+    def read(self, folder, sname=None, calc_type="GEOM_OPT",
+             avg_prop="hyperfine"):
+        """Reads Castep output files.
+
+        | Args:
+        |   folder (str):           Path to folder from which to read files.
+        |   sname (str):            Seedname to save the files with. If not
+        |                           given, use the name of the folder.
+        |   calc_type (str):        Castep task performed:
+        |                           "GEOM_OPT" or "MAGRES"
+        |   avg_prop (str):         Property being averaged in case of reading
+        |                           "MAGRES"
+        """
+
+        if calc_type == "GEOM_OPT":
+            try:
+                self.read_castep(folder, sname)
+                return self.atoms
+            except AttributeError as e:
+                print("No castep files were found in {}.".format(folder))
+
+        elif calc_type == "MAGRES":
+            try:
+                self.read_castep(folder, sname)
+                if avg_prop == "hyperfine":
+                    self.read_castep_hyperfine_magres(folder, sname)
+                return self.atoms
+            except AttributeError as e:
+                print("No castep files were found in {}.".format(folder))
+
+        elif calc_type == "PHONONS":
+            return self.read_castep_gamma_phonons(folder, sname)
+
+    def read_castep(self, folder, sname=None):
+        try:
+            if sname is not None:
+                cfile = os.path.join(folder, sname + '.castep')
+            else:
+                cfile = glob.glob(os.path.join(folder, '*.castep'))[0]
+                sname = seedname(cfile)
+            self.atoms = io.read(cfile)
+            self.atoms.info['name'] = sname
+            return self.atoms
+        except (IndexError, OSError):
+            print("No .castep files found in {}.".format(folder))
+
+    def read_castep_hyperfine_magres(self, folder, sname=None):
+        try:
+            if sname is not None:
+                mfile = os.path.join(folder, sname + '.magres')
+            else:
+                mfile = glob.glob(os.path.join(folder, '*.magres'))[0]
+            m = parse_hyperfine_magres(mfile)
+            self.atoms.arrays.update(m.arrays)
+        except (IndexError, OSError):
+            print("No .magres files found in {}.".format(folder))
+        except AttributeError:  # occurs when self.atoms doesn't exist
+            print("Cannot read .magres file without\
+ reading .castep file first.")
+
+    def read_castep_gamma_phonons(self, folder, sname=None):
+        """Parse CASTEP phonon data into a casteppy object,
+        and return eigenvalues and eigenvectors at the gamma point.
+        """
+        try:
+            from euphonic import QpointPhononModes
+        except ImportError:
+            raise ImportError("""
+        Can't use castep phonon interface due to Euphonic not being installed.
+        Please download and install Euphonic from Github:
+
+        HTTPS:  https://github.com/pace-neutrons/Euphonic.git
+        SSH:    git@github.com:pace-neutrons/Euphonic.git
+
+        and try again.""")
+
+        # Parse CASTEP phonon data into casteppy object
+        #
+        try:
+            if sname is not None:
+                pd = QpointPhononModes.from_castep(os.path.join(folder,
+                                                   sname + '.phonon'))
+            else:
+                pd = QpointPhononModes.from_castep(glob.glob(
+                                    os.path.join(folder, '*.phonon'))[0])
+            # Convert frequencies back to cm-1
+            pd.frequencies_unit = '1/cm'
+            # Get phonon frequencies+modes
+            evals = np.array(pd.frequencies.magnitude)
+            evecs = np.array(pd.eigenvectors)
+
+            # Only grab the gamma point!
+            gamma_i = None
+            for i, q in enumerate(pd.qpts):
+                if np.isclose(q, [0, 0, 0]).all():
+                    gamma_i = i
+                    break
+
+            if gamma_i is None:
+                raise MuonAverageError('Could not find gamma point phonons in'
+                                       ' CASTEP phonon file')
+
+            return evals[gamma_i], evecs[gamma_i]
+        except (IndexError, OSError):
+            print("No .phonon files found in {}.".format(folder))
+
+    def write(self, a, folder, sname=None, script=None,
+              params={}, calc=None, calc_type="GEOM_OPT"):
+
+        """Writes input files for an Atoms object with a Castep
+        calculator.
+
+        | Args:
+        |   a (ase.Atoms):          Atoms object to write. Can have a Castep
+        |                           calculator attached to carry cell/param
+        |                           keywords.
+        |   folder (str):           Path to save the input files to.
+        |   sname (str):            Seedname to save the files with. If not
+        |                           given, use the name of the folder.
+        |   script (str):           Path to a file containing a submission
+        |                           script to copy to the input folder. The
+        |                           script can contain the argument
+        |                           {seedname} in curly braces, and it will
+        |                           be appropriately replaced.
+        |   params (dict)           Contains muon symbol, parameter file,
+        |                           k_points_grid.
+        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+        |                           present, the pre-existent one will
+        |                           be ignored.
+        |   calc_type (str):        Castep task which will be performed:
+        |                           "GEOM_OPT" or "MAGRES"
+        """
+
+        if sname is None:
+            sname = os.path.split(folder)[-1]  # Same as folder name
+
+        if calc is not None and isinstance(calc, Castep):
+            calc = deepcopy(calc)
+        else:
+            calc = None
+
+        calc = self.create_castep_calculator(params, calc, calc_type)
+        a.set_calculator(calc)
+
+        io.write(os.path.join(folder, sname + '.cell'),
+                 a, magnetic_moments='initial')
+        write_param(os.path.join(folder, sname + '.param'),
+                    a.calc.param, force_write=True)
+
+        if script is not None:
+            stxt = open(script).read()
+            stxt = stxt.format(seedname=name)
+            with open(os.path.join(folder, 'script.sh'), 'w') as sf:
+                sf.write(stxt)
+
+            #  make this before making the calc classes
+
+    def create_castep_calculator(self, params={}, calc=None, calc_type=None):
+        if calc is None:
+            calc = Castep()
+
+        mu_symbol = params.get('mu_symbol', 'H:mu')
+
+        # Start by ensuring that the muon mass and gyromagnetic ratios are
+        # included
+        gamma_block = calc.cell.species_gamma.value
+        calc.cell.species_gamma = add_to_castep_block(gamma_block, mu_symbol,
+                                                      constants.m_gamma,
+                                                      'gamma')
+        mass_block = calc.cell.species_mass.value
+        calc.cell.species_mass = add_to_castep_block(mass_block, mu_symbol,
+                                                     constants.m_mu_amu,
+                                                     'mass')
+
+        # Now assign the k-points
+        calc.cell.kpoint_mp_grid = list_to_string(
+            params.get('k_points_grid', [1, 1, 1]))
+
+        # Read the parameters
+        pfile = params.get('castep_param', None)
+        if pfile is not None:
+            calc.param = read_param(params['castep_param']).param
+
+        if calc_type == "MAGRES":
+            self.create_hfine_castep_calculator(calc)
+        elif calc_type == "GEOM_OPT":
+            self.create_geom_opt_castep_calculator(calc, params)
+
+        self.calc = calc
+
+        return calc
+
+    def create_hfine_castep_calculator(self, calc):
+        """Update calculator to contain all the necessary parameters
+        for a hyperfine calculation."""
+
+        calc.param.task = 'Magres'
+        calc.param.magres_task = 'Hyperfine'
+
+        return calc
+
+    def create_geom_opt_castep_calculator(self, calc, params={}):
+        """Update calculator to contain all the necessary parameters
+        for a geometry optimization."""
+
+        # Remove cell constraints if they exist
+        calc.cell.cell_constraints = None
+        calc.cell.fix_all_cell = True   # Necessary for older CASTEP versions
+
+        calc.param.charge = params.get('charged', False)*1.0
+
+        # Remove symmetry operations if they exist
+        calc.cell.symmetry_ops.value = None
+
+        calc.param.task = 'GeometryOptimization'
+        calc.param.geom_max_iter = params.get('geom_steps', 30)
+        calc.param.geom_force_tol = params.get('geom_force_tol', 0.05)
+        calc.param.max_scf_cycles = params.get('max_scc_steps', 30)
+
+        return calc
 
 
 class CastepError(Exception):
