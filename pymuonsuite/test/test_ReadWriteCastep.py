@@ -60,10 +60,8 @@ class TestReadWriteCastep(unittest.TestCase):
         params = {"mu_symbol": "mu", "k_points_grid": [2, 2, 2]}
         folder = _TESTDATA_DIR  # does not contain any castep files
         reader = ReadWriteCastep()
-        calc_geom_opt = reader.create_castep_calculator(params,
-                                                        calc_type="GEOM_OPT")
-        calc_magres = reader.create_castep_calculator(params,
-                                                      calc_type="MAGRES")
+        calc_geom_opt = reader.create_calculator(params, calc_type="GEOM_OPT")
+        calc_magres = reader.create_calculator(params, calc_type="MAGRES")
 
         # Tests that the calculators have the correct tasks set:
         self.assertEqual(calc_geom_opt.param.task.value,

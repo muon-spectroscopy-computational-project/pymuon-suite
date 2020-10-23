@@ -23,7 +23,7 @@ from pymuonsuite.utils import find_ipso_hydrogen
 from pymuonsuite.io.magres import parse_hyperfine_magres
 
 
-class ReadWriteCastep():
+class ReadWriteCastep(object):
 
     def read(self, folder, sname=None, calc_type="GEOM_OPT",
              avg_prop="hyperfine"):
@@ -166,7 +166,7 @@ class ReadWriteCastep():
         else:
             calc = None
 
-        calc = self.create_castep_calculator(params, calc, calc_type)
+        calc = self.create_calculator(params, calc, calc_type)
         a.set_calculator(calc)
 
         io.write(os.path.join(folder, sname + '.cell'),
@@ -182,7 +182,7 @@ class ReadWriteCastep():
 
             #  make this before making the calc classes
 
-    def create_castep_calculator(self, params={}, calc=None, calc_type=None):
+    def create_calculator(self, params={}, calc=None, calc_type=None):
         if calc is None:
             calc = Castep()
 
