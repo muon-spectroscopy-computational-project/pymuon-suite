@@ -18,6 +18,8 @@ from pymuonsuite.utils import BackupFile
 from pymuonsuite.calculate.hfine import compute_hfine_mullpop
 from pymuonsuite import constants
 
+from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
+
 
 class ReadWriteDFTB(object):
 
@@ -107,7 +109,7 @@ class ReadWriteDFTB(object):
                 raise RuntimeError(('Phonon file {0} does not contain gamma '
                                     'point data').format(phonon_source_file))
 
-    def write(self, a, folder, sname,
+    def write(self, a, folder, sname=None,
               params={'dftb_set': '3ob-3-1', 'k_points_grid': None},
               calc=None, calc_type="GEOM_OPT", script=None):
 
@@ -126,29 +128,63 @@ class ReadWriteDFTB(object):
         |                           given, use the name of the folder.
         """
 
-        if sname is None:
-            sname = os.path.split(folder)[-1]  # Same as folder name
+        if calc_type == "PHONONS":
+            self.write_phonons(a, params)
 
-        if calc is not None:
-            a.calc = calc
+        else:
+            if sname is None:
+                sname = os.path.split(folder)[-1]  # Same as folder name
 
-        if not isinstance(a.calc, Dftb):
-            a = a.copy()
-            calc = Dftb(label=sname, atoms=a)
+            if calc is not None:
+                a.calc = calc
 
-        calc = self.create_calculator(calc, calc_type, params)
-        print("PRODUCED CALC:", calc)
+            if not isinstance(a.calc, Dftb):
+                a = a.copy()
+                calc = Dftb(label=sname, atoms=a)
 
+            calc = self.create_calculator(calc, calc_type, params)
+            print("PRODUCED CALC:", calc)
+
+            a.set_calculator(calc)
+            a.calc.label = sname
+            a.calc.directory = folder
+            a.calc.write_input(a)
+
+            if script is not None:
+                stxt = open(script).read()
+                stxt = stxt.format(seedname=sname)
+                with open(os.path.join(folder, 'script.sh'), 'w') as sf:
+                    sf.write(stxt)
+
+    def write_phonons(self, a, params):
+        from pymuonsuite.data.dftb_pars import DFTBArgs
+
+        dargs = DFTBArgs(params['dftb_set'])
+        # Is it periodic?
+        if params['pbc']:
+            a.set_pbc(True)
+            calc = Dftb(atoms=a, label='asephonons',
+                        kpts=params['kpoint_grid'],
+                        **dargs.args)
+            ph_kpts = params['phonon_kpoint_grid']
+        else:
+            a.set_pbc(False)
+            calc = Dftb(atoms=a, label='asephonons',
+                        **dargs.args)
+            ph_kpts = None
         a.set_calculator(calc)
-        a.calc.label = sname
-        a.calc.directory = folder
-        a.calc.write_input(a)
+        phdata = ase_phonon_calc(a, kpoints=ph_kpts,
+                                 ftol=params['force_tol'],
+                                 force_clean=params['force_clean'],
+                                 name=params['name'])
 
-        if script is not None:
-            stxt = open(script).read()
-            stxt = stxt.format(seedname=sname)
-            with open(os.path.join(folder, 'script.sh'), 'w') as sf:
-                sf.write(stxt)
+        # Save optimised structure
+        io.write(params['name'] + '_opt' + fext, phdata.structure)
+
+        # And write out the phonons
+        outf = params['name'] + '_opt.phonons.pkl'
+        pickle.dump(phdata, open(outf, 'wb'))
+        write_phonon_report(args, params, phdata)
 
     def create_calculator(self, calc=None, calc_type="muairss", params={'dftb_set': '3ob-3-1', 'k_points_grid': None, 'dftb_optionals': []}):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
@@ -163,7 +199,7 @@ class ReadWriteDFTB(object):
 
         elif calc_type == "spinpol":
             calc = self.create_spinpol_dftbp_calculator(args, params)
-        
+
         else:
             calc = None
 
