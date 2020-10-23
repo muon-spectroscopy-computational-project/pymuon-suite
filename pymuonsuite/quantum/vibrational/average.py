@@ -358,7 +358,10 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
             to_avg.append(a.get_array('hyperfine')[mu_i])
         elif avgprop == 'charge':
             # Used mostly as test
-            to_avg.append(a.get_charges()[mu_i])
+            try:
+                to_avg.append(a.get_charges()[mu_i])
+            except RuntimeError:
+                raise(IOError)
 
     to_avg = np.array(to_avg)
     displsch.recalc_weights(T=average_T)
