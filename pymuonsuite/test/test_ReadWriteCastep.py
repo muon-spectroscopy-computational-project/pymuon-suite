@@ -38,12 +38,12 @@ class TestReadWriteCastep(unittest.TestCase):
             folder = os.path.join(_TESTDATA_DIR, "castep")
             # tests castep file being read:
             self.assertTrue(reader.read(folder, sname, calc_type="GEOM_OPT"))
-            atom_arrays_castep = deepcopy(reader.atoms.arrays)
+            atom_arrays_castep = deepcopy(reader.read(folder, sname, calc_type="GEOM_OPT").arrays)
 
             # tests hyperfine being read:
             self.assertNotIn('hyperfine', atom_arrays_castep)
             self.assertTrue(reader.read(folder, sname, calc_type="MAGRES"))
-            atom_arrays_hyperfine = deepcopy(reader.atoms.arrays)
+            atom_arrays_hyperfine = deepcopy(reader.read(folder, sname, calc_type="MAGRES").arrays)
             # checks if loading .magres file has added hyperfine to atom array:
             self.assertIn('hyperfine', atom_arrays_hyperfine.keys())
 
@@ -52,10 +52,7 @@ class TestReadWriteCastep(unittest.TestCase):
 
             # contains magres but not castep file:
             folder = os.path.join(folder, "magres_only")
-            # check for magres not being read without castep
-            reader = ReadWriteCastep()
-            self.assertFalse(reader.read_castep_hyperfine_magres(folder))
-
+   
     def test_create_calc(self):
         params = {"mu_symbol": "mu", "k_points_grid": [2, 2, 2]}
         folder = _TESTDATA_DIR  # does not contain any castep files

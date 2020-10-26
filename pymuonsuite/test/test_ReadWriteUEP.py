@@ -22,12 +22,12 @@ _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
 _TESTSAVE_DIR = os.path.join(_TEST_DIR, "test_save")
 
 
-class TestReadWriteCastep(unittest.TestCase):
+class TestReadWriteUEP(unittest.TestCase):
 
     def test_read(self):
         seednames = ['srtio3_1']
         for sname in seednames:
-            folder = _TESTDATA_DIR  # does not contain any castep files
+            folder = _TESTDATA_DIR  # does not contain any uep files
             reader = ReadWriteUEP()
             # test that we do not get any result for trying to read
             # an empty folder:

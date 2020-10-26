@@ -14,7 +14,9 @@ from ase.io.castep import read_param
 
 from pymuonsuite.utils import list_to_string
 from pymuonsuite.io.dftb import ReadWriteDFTB
-from pymuonsuite.schemas import load_input_file, MuAirssSchema
+from pymuonsuite.schemas import load_input_file, MuAirssSchema, AsePhononsSchema
+
+import argparse as ap
 
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -34,8 +36,7 @@ class TestReadWriteDFTB(unittest.TestCase):
             self.assertFalse(reader.read(folder, avg_prop=None))
             self.assertFalse(reader.read(folder, avg_prop="hyperfine"))
 
-
-            folder = os.path.join(_TESTDATA_DIR, "dftb")
+            folder = os.path.join(_TESTDATA_DIR, "dftb2")
             # tests castep file being read:
             self.assertTrue(reader.read(folder))
             atom_arrays = deepcopy(reader.read(folder).arrays)
@@ -47,6 +48,7 @@ class TestReadWriteDFTB(unittest.TestCase):
             # checks if added hyperfine to atom array:
             self.assertIn('hyperfine', atom_arrays_hyperfine.keys())
 
+            folder = os.path.join(_TESTDATA_DIR, "dftb")
             # tests phonons being read:
             self.assertTrue(reader.read(folder, sname, calc_type="PHONONS"))
             # can't read phonons without a seed name
@@ -78,7 +80,7 @@ class TestReadWriteDFTB(unittest.TestCase):
 
         # read in cell file to get atom
 
-        input_folder = _TESTDATA_DIR
+        input_folder = os.path.join(_TESTDATA_DIR, "dftb")
         output_folder = _TESTSAVE_DIR
 
         atoms = io.read(os.path.join(_TESTDATA_DIR, "srtio3.cell"))
@@ -91,7 +93,27 @@ class TestReadWriteDFTB(unittest.TestCase):
         self.assertEqual(atoms, atoms2)
 
         # test phonons output:
-        reader.write(atoms, output_folder,params = params, calc_type="PHONONS")
+        
+        os.chdir(input_folder)
+        print("FOLDER: ", input_folder)
+        atoms = io.read(os.path.join(input_folder, "ethyleneMu.xyz"))
+        params = load_input_file("phonons.yaml", AsePhononsSchema)
+
+        cell_file = "ethyleneMu.xyz"
+        param_file = "phonons.yaml"
+        sys.argv[1:] = [cell_file, param_file]
+
+        parser = ap.ArgumentParser(description="Compute phonon modes with ASE and"
+                               " DFTB+ for reuse in quantum effects "
+                               "calculations.")
+        parser.add_argument('structure_file', type=str,
+                            help="Structure for which to compute the phonons")
+        parser.add_argument('parameter_file', type=str,
+                            help="YAML file containing relevant input parameters")
+
+        args = parser.parse_args()
+
+        reader.write(atoms, input_folder, params=params, calc_type="PHONONS", args = args)
 
         # TODO:
         # More tests of write outputs being correct
