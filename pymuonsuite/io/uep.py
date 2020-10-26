@@ -16,11 +16,11 @@ from scipy.constants import physical_constants as pcnst
 
 class ReadWriteUEP(object):
 
-    def read(self, folder, name=None, atoms=None):
-        if name is None:
-            name = os.path.split(folder)[-1]
+    def read(self, folder, sname=None, atoms=None, calc_type="muairss"):
+        if sname is None:
+            sname = os.path.split(folder)[-1]
 
-        calc = UEPCalculator(label=name, path=folder)
+        calc = UEPCalculator(label=sname, path=folder)
 
         try:
             calc.read()
@@ -33,13 +33,13 @@ class ReadWriteUEP(object):
         if atoms is not None:
             a = atoms + a
 
-        a.info['name'] = name
+        a.info['name'] = sname
         a.set_calculator(calc)
         calc.atoms = a
 
         return a
 
-    def write(self, a, folder, params={},script=None, calc=None, calc_type="muairss"):
+    def write(self, a, folder, params={}, script=None, calc=None, calc_type="muairss"):
 
         calc = self.create_calculator(a, folder, params, calc)
 
