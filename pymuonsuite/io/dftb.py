@@ -19,6 +19,7 @@ from pymuonsuite.calculate.hfine import compute_hfine_mullpop
 from pymuonsuite import constants
 
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
+from pymuonsuite.io.output import write_phonon_report
 
 
 class ReadWriteDFTB(object):
@@ -77,7 +78,7 @@ class ReadWriteDFTB(object):
 
                 atoms.calc = calc
 
-            if avg_prop == 'hyperfine':
+            if calc_type == "MAGRES" and avg_prop == 'hyperfine':
                 try:
                     pops = parse_spinpol_dftb(folder)
                     hfine = []
@@ -111,7 +112,7 @@ class ReadWriteDFTB(object):
 
     def write(self, a, folder, sname=None,
               params={'dftb_set': '3ob-3-1', 'k_points_grid': None},
-              calc=None, calc_type="GEOM_OPT", script=None):
+              calc=None, calc_type="GEOM_OPT", script=None, args=None):
 
         """Writes input files for an Atoms object with a Dftb+
         calculator.
@@ -129,7 +130,7 @@ class ReadWriteDFTB(object):
         """
 
         if calc_type == "PHONONS":
-            self.write_phonons(a, params)
+            self.write_phonons(a, params, args)
 
         else:
             if sname is None:
@@ -156,7 +157,7 @@ class ReadWriteDFTB(object):
                 with open(os.path.join(folder, 'script.sh'), 'w') as sf:
                     sf.write(stxt)
 
-    def write_phonons(self, a, params):
+    def write_phonons(self, a, params, args):
         from pymuonsuite.data.dftb_pars import DFTBArgs
 
         dargs = DFTBArgs(params['dftb_set'])
@@ -177,6 +178,8 @@ class ReadWriteDFTB(object):
                                  ftol=params['force_tol'],
                                  force_clean=params['force_clean'],
                                  name=params['name'])
+
+        fext = os.path.splitext(args.structure_file)[-1]
 
         # Save optimised structure
         io.write(params['name'] + '_opt' + fext, phdata.structure)
