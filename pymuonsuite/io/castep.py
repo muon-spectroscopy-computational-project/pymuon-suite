@@ -21,12 +21,12 @@ from pymuonsuite import constants
 from pymuonsuite.utils import list_to_string
 from pymuonsuite.utils import find_ipso_hydrogen
 from pymuonsuite.io.magres import parse_hyperfine_magres
+from pymuonsuite.io.readwrite import ReadWrite
 
 
 class ReadWriteCastep(object):
 
-    def read(self, folder, sname=None, calc_type="GEOM_OPT",
-             avg_prop="hyperfine"):
+    def read(self, folder, sname=None, calc_type="GEOM_OPT", avg_prop="hyperfine"):
         """Reads Castep output files.
 
         | Args:
@@ -41,17 +41,17 @@ class ReadWriteCastep(object):
 
         if calc_type == "GEOM_OPT":
             try:
-                self.read_castep(folder, sname)
-                return self.atoms
+                atoms = self.read_castep(folder, sname)
+                return atoms
             except AttributeError as e:
                 print("No castep files were found in {}.".format(folder))
 
         elif calc_type == "MAGRES":
             try:
-                self.read_castep(folder, sname)
+                atoms = self.read_castep(folder, sname)
                 if avg_prop == "hyperfine":
-                    self.read_castep_hyperfine_magres(folder, sname)
-                return self.atoms
+                    self.read_castep_hyperfine_magres(atoms, folder, sname)
+                return atoms
             except AttributeError as e:
                 print("No castep files were found in {}.".format(folder))
 
@@ -65,25 +65,22 @@ class ReadWriteCastep(object):
             else:
                 cfile = glob.glob(os.path.join(folder, '*.castep'))[0]
                 sname = seedname(cfile)
-            self.atoms = io.read(cfile)
-            self.atoms.info['name'] = sname
-            return self.atoms
+            atoms = io.read(cfile)
+            atoms.info['name'] = sname
+            return atoms
         except (IndexError, OSError):
             print("No .castep files found in {}.".format(folder))
 
-    def read_castep_hyperfine_magres(self, folder, sname=None):
+    def read_castep_hyperfine_magres(self, atoms, folder, sname=None):
         try:
             if sname is not None:
                 mfile = os.path.join(folder, sname + '.magres')
             else:
                 mfile = glob.glob(os.path.join(folder, '*.magres'))[0]
             m = parse_hyperfine_magres(mfile)
-            self.atoms.arrays.update(m.arrays)
+            atoms.arrays.update(m.arrays)
         except (IndexError, OSError):
             print("No .magres files found in {}.".format(folder))
-        except AttributeError:  # occurs when self.atoms doesn't exist
-            print("Cannot read .magres file without\
- reading .castep file first.")
 
     def read_castep_gamma_phonons(self, folder, sname=None):
         """Parse CASTEP phonon data into a casteppy object,
@@ -563,3 +560,4 @@ def add_to_castep_block(cblock, symbol, value, blocktype='mass'):
         cblock += '{0} {1}\n'.format(k, v)
 
     return cblock
+
