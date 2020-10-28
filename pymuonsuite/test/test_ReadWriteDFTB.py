@@ -43,8 +43,9 @@ class TestReadWriteDFTB(unittest.TestCase):
 
             # tests hyperfine being read:
             self.assertNotIn('hyperfine', atom_arrays)
-            self.assertTrue(reader.read(folder, avg_prop="hyperfine"))
-            atom_arrays_hyperfine = deepcopy(reader.read(folder, avg_prop="hyperfine").arrays)
+            self.assertTrue(reader.read(folder, calc_type="MAGRES", avg_prop="hyperfine"))
+            atom_arrays_hyperfine = deepcopy(reader.read(folder, calc_type="MAGRES", avg_prop="hyperfine").arrays)
+            print(atom_arrays_hyperfine)
             # checks if added hyperfine to atom array:
             self.assertIn('hyperfine', atom_arrays_hyperfine.keys())
 
@@ -60,10 +61,10 @@ class TestReadWriteDFTB(unittest.TestCase):
                   'dftb_optionals': [], 'geom_steps': 500,
                   "max_scc_steps": 20, "charged": False, "dftb_pbc": False}
         folder = _TESTDATA_DIR  # does not contain any castep files
-        reader = ReadWriteDFTB()
+        reader = ReadWriteDFTB(params=params)
         #self.assertFalse(reader.create_calculator(params=params))
-        calc_geom_opt = reader.create_calculator(params = params, calc_type="muairss")
-        calc_magres = reader.create_calculator(params = params, calc_type="spinpol")
+        calc_geom_opt = reader.create_calculator(calc_type="muairss")
+        calc_magres = reader.create_calculator(calc_type="spinpol")
         self.assertTrue(calc_geom_opt)
         self.assertTrue(calc_magres)
 
@@ -86,8 +87,8 @@ class TestReadWriteDFTB(unittest.TestCase):
         atoms = io.read(os.path.join(_TESTDATA_DIR, "srtio3.cell"))
 
         # test writing geom_opt output
-        reader = ReadWriteDFTB()
-        reader.write(atoms, output_folder, sname="srtio3_geom_opt", params=params, calc_type="muairss")
+        reader = ReadWriteDFTB(params=params)
+        reader.write(atoms, output_folder, sname="srtio3_geom_opt", calc_type="muairss")
         atoms2 = reader.read(output_folder, avg_prop=None)
         self.assertTrue(reader.read(output_folder, avg_prop=None))
         self.assertEqual(atoms, atoms2)
@@ -113,7 +114,7 @@ class TestReadWriteDFTB(unittest.TestCase):
 
         args = parser.parse_args()
 
-        reader.write(atoms, input_folder, params=params, calc_type="PHONONS", args = args)
+        reader.write(atoms, input_folder, calc_type="PHONONS", args = args)
 
         # TODO:
         # More tests of write outputs being correct

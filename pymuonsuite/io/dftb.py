@@ -23,6 +23,34 @@ from pymuonsuite.io.output import write_phonon_report
 
 
 class ReadWriteDFTB(object):
+    def __init__(self, calc=None, script=None, params={}):
+        '''
+        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+        |                           present, the pre-existent one will
+        |                           be ignored.
+        |   params (dict)           Contains muon symbol, parameter file,
+        |                           k_points_grid.
+        |   script (str):           Path to a file containing a submission
+        |                           script to copy to the input folder. The
+        |                           script can contain the argument
+        |                           {seedname} in curly braces, and it will
+        |                           be appropriately replaced.
+        '''
+        self.script = script
+        self.params = params
+        self.__calc = calc
+        if calc is not None and self.params != {}:
+            self.create_calculator()
+
+    def set_script(self, script):
+        '''
+        |   script (str):           Path to a file containing a submission
+        |                           script to copy to the input folder. The
+        |                           script can contain the argument
+        |                           {seedname} in curly braces, and it will
+        |                           be appropriately replaced.
+        '''
+        self.script = script
 
     def read(self, folder, sname=None, calc_type=None, avg_prop=None):
         # dftb doesn't do seednames
@@ -110,9 +138,8 @@ class ReadWriteDFTB(object):
                 raise RuntimeError(('Phonon file {0} does not contain gamma '
                                     'point data').format(phonon_source_file))
 
-    def write(self, a, folder, sname=None,
-              params={'dftb_set': '3ob-3-1', 'k_points_grid': None},
-              calc=None, calc_type="GEOM_OPT", script=None, args=None):
+    def write(self, a, folder, sname=None, calc_type="GEOM_OPT", args=None): 
+        #params = {'dftb_set': '3ob-3-1', 'k_points_grid': None}
 
         """Writes input files for an Atoms object with a Dftb+
         calculator.
@@ -122,106 +149,105 @@ class ReadWriteDFTB(object):
         |                           calculator attached to carry
         |                           arguments.
         |   folder (str):           Path to save the input files to.
-        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
-        |                           present, the pre-existent one will
-        |                           be ignored.
-        |   name (str):             Seedname to save the files with. If not
+        |   sname (str):             Seedname to save the files with. If not
         |                           given, use the name of the folder.
         """
 
         if calc_type == "PHONONS":
-            self.write_phonons(a, params, args)
+            self.write_phonons(a, args)
 
         else:
             if sname is None:
                 sname = os.path.split(folder)[-1]  # Same as folder name
 
-            if calc is not None:
-                a.calc = calc
+            if self.__calc is not None:
+                a.calc = self.__calc
 
             if not isinstance(a.calc, Dftb):
                 a = a.copy()
-                calc = Dftb(label=sname, atoms=a)
+                self.__calc = Dftb(label=sname, atoms=a)
 
-            calc = self.create_calculator(calc, calc_type, params)
-            print("PRODUCED CALC:", calc)
+            self.create_calculator()
+            print("PRODUCED CALC:", self.__calc)
 
-            a.set_calculator(calc)
+            a.set_calculator(self.__calc)
             a.calc.label = sname
             a.calc.directory = folder
             a.calc.write_input(a)
 
-            if script is not None:
-                stxt = open(script).read()
+            if self.script is not None:
+                stxt = open(self.script).read()
                 stxt = stxt.format(seedname=sname)
                 with open(os.path.join(folder, 'script.sh'), 'w') as sf:
                     sf.write(stxt)
 
-    def write_phonons(self, a, params, args):
+    def write_phonons(self, a, args):
         from pymuonsuite.data.dftb_pars import DFTBArgs
 
-        dargs = DFTBArgs(params['dftb_set'])
+        dargs = DFTBArgs(self.params['dftb_set'])
         # Is it periodic?
-        if params['pbc']:
+        if self.params['pbc']:
             a.set_pbc(True)
-            calc = Dftb(atoms=a, label='asephonons',
-                        kpts=params['kpoint_grid'],
+            self.__calc = Dftb(atoms=a, label='asephonons',
+                        kpts=self.params['kpoint_grid'],
                         **dargs.args)
-            ph_kpts = params['phonon_kpoint_grid']
+            ph_kpts = self.params['phonon_kpoint_grid']
         else:
             a.set_pbc(False)
-            calc = Dftb(atoms=a, label='asephonons',
+            self.__calc = Dftb(atoms=a, label='asephonons',
                         **dargs.args)
             ph_kpts = None
-        a.set_calculator(calc)
+        a.set_calculator(self.__calc)
         phdata = ase_phonon_calc(a, kpoints=ph_kpts,
-                                 ftol=params['force_tol'],
-                                 force_clean=params['force_clean'],
-                                 name=params['name'])
+                                 ftol=self.params['force_tol'],
+                                 force_clean=self.params['force_clean'],
+                                 name=self.params['name'])
 
         fext = os.path.splitext(args.structure_file)[-1]
 
         # Save optimised structure
-        io.write(params['name'] + '_opt' + fext, phdata.structure)
+        io.write(self.params['name'] + '_opt' + fext, phdata.structure)
 
         # And write out the phonons
-        outf = params['name'] + '_opt.phonons.pkl'
+        outf = self.params['name'] + '_opt.phonons.pkl'
         pickle.dump(phdata, open(outf, 'wb'))
-        write_phonon_report(args, params, phdata)
+        print("ARGS: ", args )
+        print("PH ", phdata)
+        write_phonon_report(args, self.params, phdata)
 
-    def create_calculator(self, calc=None, calc_type="muairss", params={'dftb_set': '3ob-3-1', 'k_points_grid': None, 'dftb_optionals': []}):
+    def create_calculator(self, calc_type="muairss"): #params={'dftb_set': '3ob-3-1', 'k_points_grid': None, 'dftb_optionals': []}):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
 
-        if not isinstance(calc, Dftb):
+        if not isinstance(self.__calc, Dftb):
             args = {}
         else:
-            args = calc.todict()
+            args = self.__calc.todict()
 
         if calc_type == "muairss":
-            calc = self.create_muairss_dftb_calculator(args, params)
+            self.__calc = self.create_muairss_dftb_calculator(args)
 
         elif calc_type == "spinpol":
-            calc = self.create_spinpol_dftbp_calculator(args, params)
+            self.__calc = self.create_spinpol_dftbp_calculator(args)
 
         else:
-            calc = None
+            self.__calc = None
 
-        return calc
+        return self.__calc
 
-    def create_muairss_dftb_calculator(self, args={}, params={'dftb_set': '3ob-3-1',
-                                        'k_points_grid': None, 'geom_force_tol': 0.01}):
+    def create_muairss_dftb_calculator(self, args={}): #params={'dftb_set': '3ob-3-1',
+                                        #'k_points_grid': None, 'geom_force_tol': 0.01}):
 
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
 
-        dargs = DFTBArgs(params['dftb_set'])
+        dargs = DFTBArgs(self.params['dftb_set'])
         print("dargs: ", dargs)
 
-        for opt in params['dftb_optionals']:
+        for opt in self.params['dftb_optionals']:
             try:
                 dargs.set_optional(opt, True)
             except KeyError:
                 print(('WARNING: optional DFTB+ file {0} not available for {1}'
-                    ' parameter set, skipping').format(opt, params['dftb_set'])
+                    ' parameter set, skipping').format(opt, self.params['dftb_set'])
                     )
 
         args.update(dargs.args)
@@ -232,28 +258,28 @@ class ReadWriteDFTB(object):
         args['Driver_Masses_Mass_Atoms'] = '-1'
         args['Driver_Masses_Mass_MassPerAtom [amu]'] = str(constants.m_mu_amu)
 
-        args['Driver_MaxForceComponent [eV/AA]'] = params['geom_force_tol']
-        args['Driver_MaxSteps'] = params['geom_steps']
-        args['Driver_MaxSccIterations'] = params['max_scc_steps']
-        args['Hamiltonian_Charge'] = 1.0 if params['charged'] else 0.0
+        args['Driver_MaxForceComponent [eV/AA]'] = self.params['geom_force_tol']
+        args['Driver_MaxSteps'] = self.params['geom_steps']
+        args['Driver_MaxSccIterations'] = self.params['max_scc_steps']
+        args['Hamiltonian_Charge'] = 1.0 if self.params['charged'] else 0.0
 
-        if params['dftb_pbc']:
-            calc = Dftb(kpts=params['k_points_grid'],
+        if self.params['dftb_pbc']:
+            self.__calc = Dftb(kpts=self.params['k_points_grid'],
                         **args)
         else:
-            calc = Dftb(**args)
+            self.__calc = Dftb(**args)
 
-        print("CALC:", calc)
+        print("CALC:", self.__calc)
 
-        return calc
+        return self.__calc
 
-    def create_spinpol_dftbp_calculator(self, calc=None, params={'dftb_set': '3ob-3-1',
-                                        'k_points_grid': None}):
+    def create_spinpol_dftbp_calculator(self, args): #, calc=None, params={'dftb_set': '3ob-3-1',
+                                        #'k_points_grid': None}):
         """Create a calculator containing all necessary parameters for a DFTB+
         SCC spin polarised calculation"""
         from pymuonsuite.data.dftb_pars import DFTBArgs
         # Create the arguments
-        dargs = DFTBArgs(params['dftb_set'])
+        dargs = DFTBArgs(self.params['dftb_set'])
         # Make it spin polarised
         try:
             dargs.set_optional('spinpol.json', True)
@@ -269,15 +295,15 @@ class ReadWriteDFTB(object):
         args['Hamiltonian_SpinPolarisation_InitialSpins_Atoms'] = '-1'
         args['Hamiltonian_SpinPolarisation_InitialSpins_SpinPerAtom'] = 1
 
-        if params['k_points_grid'] is not None:
-            calc = Dftb(kpts=params['k_points_grid'],
+        if self.params['k_points_grid'] is not None:
+            self.__calc = Dftb(kpts=self.params['k_points_grid'],
                         **args)
         else:
-            calc = Dftb(**args)
+            self.__calc = Dftb(**args)
 
-        calc.do_forces = True
+        self.__calc.do_forces = True
 
-        return calc
+        return self.__calc
 
 
 def dftb_write_input(a, folder, calc=None, name=None, script=None):
