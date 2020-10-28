@@ -31,43 +31,46 @@ class TestReadWriteCastep(unittest.TestCase):
             reader = ReadWriteCastep()
             # test that we do not get any result for trying to read
             # an empty folder:
-            self.assertFalse(reader.read(folder, sname, calc_type="GEOM_OPT"))
-            self.assertFalse(reader.read(folder, sname, calc_type="MAGRES"))
-            self.assertFalse(reader.read(folder, sname, calc_type="PHONONS"))
+            self.assertFalse(reader.read(folder, sname))
 
             folder = os.path.join(_TESTDATA_DIR, "castep")
             # tests castep file being read:
-            self.assertTrue(reader.read(folder, sname, calc_type="GEOM_OPT"))
-            atom_arrays_castep = deepcopy(reader.read(folder, sname, calc_type="GEOM_OPT").arrays)
+            self.assertTrue(reader.read(folder, sname))
+            atoms = reader.read(folder, sname)
+            atom_arrays_castep = deepcopy(reader.read(folder, sname).arrays)
 
-            # tests hyperfine being read:
-            self.assertNotIn('hyperfine', atom_arrays_castep)
-            self.assertTrue(reader.read(folder, sname, calc_type="MAGRES"))
-            atom_arrays_hyperfine = deepcopy(reader.read(folder, sname, calc_type="MAGRES").arrays)
+            #checks if phonon info has been loaded into atom object:
+            self.assertIn('ph_evecs', atoms.info.keys())
+            self.assertIn('ph_evals', atoms.info.keys())
+
+            # # tests hyperfine being read:
             # checks if loading .magres file has added hyperfine to atom array:
-            self.assertIn('hyperfine', atom_arrays_hyperfine.keys())
+            self.assertIn('hyperfine', atoms.arrays.keys())
 
             # tests phonons being read:
-            self.assertTrue(reader.read(folder, sname, calc_type="PHONONS"))
+            self.assertTrue(reader.read(folder, sname))
 
-            # contains magres but not castep file:
-            folder = os.path.join(folder, "magres_only")
-   
     def test_create_calc(self):
-        params = {"mu_symbol": "mu", "k_points_grid": [2, 2, 2]}
-        folder = _TESTDATA_DIR  # does not contain any castep files
-        reader = ReadWriteCastep()
-        calc_geom_opt = reader.create_calculator(params, calc_type="GEOM_OPT")
-        calc_magres = reader.create_calculator(params, calc_type="MAGRES")
+        params = {"mu_symbol": "mu", "k_points_grid": [7, 7, 7]}
+        folder = os.path.join(_TESTDATA_DIR, "castep")  # does not contain any castep files
+        reader = ReadWriteCastep(params=params)
+        calc = reader.create_calculator()
+        self.assertTrue(calc)
+        calc_geom = reader.update_calculator("GEOM_OPT")
+        self.assertTrue(calc_geom)
+
+        self.assertEqual(calc_geom.param.task.value,
+                  "GeometryOptimization")
+
+        calc_magres = reader.update_calculator(calc_type="MAGRES")
 
         # Tests that the calculators have the correct tasks set:
-        self.assertEqual(calc_geom_opt.param.task.value,
-                         "GeometryOptimization")
+
         self.assertEqual(calc_magres.param.task.value, "Magres")
         self.assertEqual(calc_magres.param.magres_task.value, "Hyperfine")
 
         # Tests that k_points_grid gets set in both calculators
-        self.assertEqual(calc_geom_opt.cell.kpoint_mp_grid.value,
+        self.assertEqual(calc_geom.cell.kpoint_mp_grid.value,
                          list_to_string(params['k_points_grid']))
         self.assertEqual(calc_magres.cell.kpoint_mp_grid.value,
                          list_to_string(params['k_points_grid']))
@@ -82,13 +85,14 @@ class TestReadWriteCastep(unittest.TestCase):
 
         # test writing geom_opt output
         reader = ReadWriteCastep()
+        print(atoms.calc)
         reader.write(atoms, output_folder, sname="srtio3_geom_opt",
-                     calc_type="GEOM_OPT")
+                        calc_type="GEOM_OPT")
 
         reader.write(atoms, output_folder, sname="srtio3_magres",
                      calc_type="MAGRES")
 
-        # read back in and check that atom locations are preserved
+        # # read back in and check that atom locations are preserved
         geom_opt_atoms = io.read(os.path.join(output_folder,
                                  "srtio3_geom_opt.cell"))
         magres_atoms = io.read(os.path.join(output_folder,
@@ -98,7 +102,7 @@ class TestReadWriteCastep(unittest.TestCase):
         equal = atoms.positions == magres_atoms.positions
         self.assertTrue(equal.all())
 
-        # Test if parameters file have correct tasks:
+        # # Test if parameters file have correct tasks:
         geom_params = read_param(os.path.join(output_folder,
                                  "srtio3_geom_opt.param"))
         magres_params = read_param(os.path.join(output_folder,

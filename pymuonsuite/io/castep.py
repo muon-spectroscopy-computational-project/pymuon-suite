@@ -10,6 +10,9 @@ import yaml
 import glob
 import numpy as np
 import scipy.constants as cnst
+
+from copy import deepcopy
+
 from ase import Atoms
 from ase import io
 from ase.io.castep import write_param
@@ -24,39 +27,63 @@ from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.io.readwrite import ReadWrite
 
 
-class ReadWriteCastep(object):
+class ReadWriteCastep(ReadWrite):
+    def __init__(self, calc=None, script=None, params={}):
+        '''
+        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+        |                           present, the pre-existent one will
+        |                           be ignored.
+        |   params (dict)           Contains muon symbol, parameter file,
+        |                           k_points_grid.
+        |   script (str):           Path to a file containing a submission
+        |                           script to copy to the input folder. The
+        |                           script can contain the argument
+        |                           {seedname} in curly braces, and it will
+        |                           be appropriately replaced.
+        '''
+        self.script = script
+        self.params = params
+        self.__calc = calc
+        if calc is not None and self.params != {}:
+            self.create_calculator()
 
-    def read(self, folder, sname=None, calc_type="GEOM_OPT", avg_prop="hyperfine"):
+    def set_params(self, params):
+        '''
+        |   params (dict)           Contains muon symbol, parameter file,
+        |                           k_points_grid.
+        '''
+        self.params = params
+        # if the params have been changed, the calc has to be remade
+        # from scratch:
+        self.__calc = None
+        self.create_calculator()
+
+    def set_script(self, script):
+        '''
+        |   script (str):           Path to a file containing a submission
+        |                           script to copy to the input folder. The
+        |                           script can contain the argument
+        |                           {seedname} in curly braces, and it will
+        |                           be appropriately replaced.
+        '''
+        self.script = script
+
+    def read(self, folder, sname=None):
         """Reads Castep output files.
 
         | Args:
         |   folder (str):           Path to folder from which to read files.
         |   sname (str):            Seedname to save the files with. If not
         |                           given, use the name of the folder.
-        |   calc_type (str):        Castep task performed:
-        |                           "GEOM_OPT" or "MAGRES"
-        |   avg_prop (str):         Property being averaged in case of reading
-        |                           "MAGRES"
         """
 
-        if calc_type == "GEOM_OPT":
-            try:
-                atoms = self.read_castep(folder, sname)
-                return atoms
-            except AttributeError as e:
-                print("No castep files were found in {}.".format(folder))
-
-        elif calc_type == "MAGRES":
-            try:
-                atoms = self.read_castep(folder, sname)
-                if avg_prop == "hyperfine":
-                    self.read_castep_hyperfine_magres(atoms, folder, sname)
-                return atoms
-            except AttributeError as e:
-                print("No castep files were found in {}.".format(folder))
-
-        elif calc_type == "PHONONS":
-            return self.read_castep_gamma_phonons(folder, sname)
+        try:
+            atoms = self.read_castep(folder, sname)
+            self.read_castep_hyperfine_magres(atoms, folder, sname)
+            self.read_castep_gamma_phonons(atoms, folder, sname)
+            return atoms
+        except AttributeError as e:
+            print("No castep files were found in {}.".format(folder))
 
     def read_castep(self, folder, sname=None):
         try:
@@ -82,7 +109,7 @@ class ReadWriteCastep(object):
         except (IndexError, OSError):
             print("No .magres files found in {}.".format(folder))
 
-    def read_castep_gamma_phonons(self, folder, sname=None):
+    def read_castep_gamma_phonons(self, atoms, folder, sname=None):
         """Parse CASTEP phonon data into a casteppy object,
         and return eigenvalues and eigenvectors at the gamma point.
         """
@@ -124,12 +151,13 @@ class ReadWriteCastep(object):
                 raise MuonAverageError('Could not find gamma point phonons in'
                                        ' CASTEP phonon file')
 
-            return evals[gamma_i], evecs[gamma_i]
+            atoms.info['ph_evals'] = evals[gamma_i]
+            atoms.info['ph_evecs'] = evecs[gamma_i]
+
         except (IndexError, OSError):
             print("No .phonon files found in {}.".format(folder))
 
-    def write(self, a, folder, sname=None, script=None,
-              params={}, calc=None, calc_type="GEOM_OPT"):
+    def write(self, a, folder, sname=None, calc_type="GEOM_OPT"):
 
         """Writes input files for an Atoms object with a Castep
         calculator.
@@ -141,16 +169,6 @@ class ReadWriteCastep(object):
         |   folder (str):           Path to save the input files to.
         |   sname (str):            Seedname to save the files with. If not
         |                           given, use the name of the folder.
-        |   script (str):           Path to a file containing a submission
-        |                           script to copy to the input folder. The
-        |                           script can contain the argument
-        |                           {seedname} in curly braces, and it will
-        |                           be appropriately replaced.
-        |   params (dict)           Contains muon symbol, parameter file,
-        |                           k_points_grid.
-        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
-        |                           present, the pre-existent one will
-        |                           be ignored.
         |   calc_type (str):        Castep task which will be performed:
         |                           "GEOM_OPT" or "MAGRES"
         """
@@ -158,90 +176,116 @@ class ReadWriteCastep(object):
         if sname is None:
             sname = os.path.split(folder)[-1]  # Same as folder name
 
-        if calc is not None and isinstance(calc, Castep):
-            calc = deepcopy(calc)
-        else:
-            calc = None
+        self.__calc = deepcopy(self.__calc)
 
-        calc = self.create_calculator(params, calc, calc_type)
-        a.set_calculator(calc)
+        if isinstance(a.calc, Castep):
+            self.__calc = deepcopy(a.calc)
+            self.create_calculator()
+
+        if self.__calc is None:
+            self.create_calculator()
+
+        self.update_calculator(calc_type)
+        a.set_calculator(self.__calc)
 
         io.write(os.path.join(folder, sname + '.cell'),
                  a, magnetic_moments='initial')
         write_param(os.path.join(folder, sname + '.param'),
                     a.calc.param, force_write=True)
 
-        if script is not None:
-            stxt = open(script).read()
-            stxt = stxt.format(seedname=name)
+        if self.script is not None:
+            stxt = open(self.script).read()
+            stxt = stxt.format(seedname=sname)
             with open(os.path.join(folder, 'script.sh'), 'w') as sf:
                 sf.write(stxt)
 
-            #  make this before making the calc classes
-
-    def create_calculator(self, params={}, calc=None, calc_type=None):
-        if calc is None:
+    def create_calculator(self):
+        if self.__calc is not None and isinstance(self.__calc, Castep):
+            calc = deepcopy(self.__calc)
+        else:
             calc = Castep()
 
-        mu_symbol = params.get('mu_symbol', 'H:mu')
+        mu_symbol = self.params.get('mu_symbol', 'H:mu')
 
         # Start by ensuring that the muon mass and gyromagnetic ratios are
         # included
         gamma_block = calc.cell.species_gamma.value
-        calc.cell.species_gamma = add_to_castep_block(gamma_block, mu_symbol,
-                                                      constants.m_gamma,
-                                                      'gamma')
-        mass_block = calc.cell.species_mass.value
-        calc.cell.species_mass = add_to_castep_block(mass_block, mu_symbol,
-                                                     constants.m_mu_amu,
-                                                     'mass')
+        if gamma_block is None:
+            calc.cell.species_gamma = add_to_castep_block(gamma_block, mu_symbol,
+                                                        constants.m_gamma,
+                                                        'gamma')
+
+            mass_block = calc.cell.species_mass.value
+            calc.cell.species_mass = add_to_castep_block(mass_block, mu_symbol,
+                                                        constants.m_mu_amu,
+                                                        'mass')
 
         # Now assign the k-points
         calc.cell.kpoint_mp_grid = list_to_string(
-            params.get('k_points_grid', [1, 1, 1]))
+            self.params.get('k_points_grid', [1, 1, 1]))
 
         # Read the parameters
-        pfile = params.get('castep_param', None)
+        pfile = self.params.get('castep_param', None)
         if pfile is not None:
-            calc.param = read_param(params['castep_param']).param
+            calc.param = read_param(self.params['castep_param']).param
 
+        self.__calc = calc
+
+        return self.__calc
+
+    def update_calculator(self, calc_type):
         if calc_type == "MAGRES":
-            self.create_hfine_castep_calculator(calc)
+            self.create_hfine_castep_calculator()
         elif calc_type == "GEOM_OPT":
-            self.create_geom_opt_castep_calculator(calc, params)
+            self.create_geom_opt_castep_calculator()
 
-        self.calc = calc
+        return self.__calc
 
-        return calc
-
-    def create_hfine_castep_calculator(self, calc):
+    def create_hfine_castep_calculator(self):
         """Update calculator to contain all the necessary parameters
         for a hyperfine calculation."""
 
-        calc.param.task = 'Magres'
-        calc.param.magres_task = 'Hyperfine'
+        # Remove settings for geom_opt calculator:
+        self.__calc.param.geom_max_iter = None
+        self.__calc.param.geom_force_tol = None
+        self.__calc.param.max_scf_cycles = None
+        self.__calc.param.write_cell_structure = None
+        self.__calc.param.charge = None
+        self.__calc.cell.fix_all_cell = None
 
-        return calc
+        pfile = self.params.get('castep_param', None)
+        if pfile is not None:
+            calc.param = read_param(self.params['castep_param']).param
 
-    def create_geom_opt_castep_calculator(self, calc, params={}):
+        self.__calc.param.task = 'Magres'
+        self.__calc.param.magres_task = 'Hyperfine'
+
+        return self.__calc
+
+    def create_geom_opt_castep_calculator(self):
         """Update calculator to contain all the necessary parameters
         for a geometry optimization."""
 
-        # Remove cell constraints if they exist
-        calc.cell.cell_constraints = None
-        calc.cell.fix_all_cell = True   # Necessary for older CASTEP versions
 
-        calc.param.charge = params.get('charged', False)*1.0
+        # Remove cell constraints if they exist
+        self.__calc.cell.cell_constraints = None
+        self.__calc.cell.fix_all_cell = True   # Necessary for older CASTEP versions
+
+        self.__calc.param.charge = self.params.get('charged', False)*1.0
 
         # Remove symmetry operations if they exist
-        calc.cell.symmetry_ops.value = None
+        self.__calc.cell.symmetry_ops.value = None
 
-        calc.param.task = 'GeometryOptimization'
-        calc.param.geom_max_iter = params.get('geom_steps', 30)
-        calc.param.geom_force_tol = params.get('geom_force_tol', 0.05)
-        calc.param.max_scf_cycles = params.get('max_scc_steps', 30)
+        self.__calc.param.task = 'GeometryOptimization'
+        self.__calc.param.geom_max_iter = self.params.get('geom_steps', 30)
+        self.__calc.param.geom_force_tol = self.params.get('geom_force_tol', 0.05)
+        self.__calc.param.max_scf_cycles = self.params.get('max_scc_steps', 30)
+        self.__calc.param.write_cell_structure = True # outputs -out.cell file
 
-        return calc
+        # Remove settings for magres calculator:
+        self.__calc.param.magres_task = None
+
+        return self.__calc
 
 
 class CastepError(Exception):
@@ -560,4 +604,3 @@ def add_to_castep_block(cblock, symbol, value, blocktype='mass'):
         cblock += '{0} {1}\n'.format(k, v)
 
     return cblock
-
