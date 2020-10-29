@@ -28,11 +28,8 @@ from pymuonsuite.io.readwrite import ReadWrite
 
 
 class ReadWriteCastep(ReadWrite):
-    def __init__(self, calc=None, script=None, params={}):
+    def __init__(self, params={}, script=None, calc=None):
         '''
-        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
-        |                           present, the pre-existent one will
-        |                           be ignored.
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
         |   script (str):           Path to a file containing a submission
@@ -40,6 +37,9 @@ class ReadWriteCastep(ReadWrite):
         |                           script can contain the argument
         |                           {seedname} in curly braces, and it will
         |                           be appropriately replaced.
+        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+        |                           present, the pre-existent one will
+        |                           be ignored.
         '''
         self.script = script
         self.params = params

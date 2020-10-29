@@ -13,11 +13,29 @@ import subprocess as sp
 from ase import Atoms
 from ase import io
 from scipy.constants import physical_constants as pcnst
+from pymuonsuite.io.readwrite import ReadWrite
 
 
-class ReadWriteUEP(object):
-    def __init__(self, script=None, params={}):
+class ReadWriteUEP(ReadWrite):
+    def __init__(self, params={}, script=None):
         self.script = script
+        self.params = params
+
+    def set_script(self, script):
+        '''
+        |   script (str):           Path to a file containing a submission
+        |                           script to copy to the input folder. The
+        |                           script can contain the argument
+        |                           {seedname} in curly braces, and it will
+        |                           be appropriately replaced.
+        '''
+        self.script = script
+
+    def set_params(self, params):
+        '''
+        |   params (dict)           Contains muon symbol, parameter file,
+        |                           k_points_grid.
+        '''
         self.params = params
 
     def read(self, folder, sname=None):

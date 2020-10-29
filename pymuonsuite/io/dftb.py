@@ -21,14 +21,12 @@ from pymuonsuite import constants
 
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.io.output import write_phonon_report
+from pymuonsuite.io.readwrite import ReadWrite
 
 
-class ReadWriteDFTB(object):
-    def __init__(self, calc=None, script=None, params={}):
+class ReadWriteDFTB(ReadWrite):
+    def __init__(self, params={}, script=None, calc=None):
         '''
-        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
-        |                           present, the pre-existent one will
-        |                           be ignored.
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
         |   script (str):           Path to a file containing a submission
@@ -36,9 +34,12 @@ class ReadWriteDFTB(object):
         |                           script can contain the argument
         |                           {seedname} in curly braces, and it will
         |                           be appropriately replaced.
+        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+        |                           present, the pre-existent one will
+        |                           be ignored.
         '''
         self.script = script
-        self.params = params
+        self.params = params #TODO: should these be validated with a schema?
         self.__calc = calc
         if calc is not None and self.params != {}:
             self.create_calculator()
@@ -235,7 +236,6 @@ class ReadWriteDFTB(object):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
 
         dargs = DFTBArgs(self.params['dftb_set'])
-        print("dargs: ", dargs)
 
         for opt in self.params['dftb_optionals']:
             try:
@@ -263,8 +263,6 @@ class ReadWriteDFTB(object):
                         **args)
         else:
             self.__calc = Dftb(**args)
-
-        print("CALC:", self.__calc)
 
         return self.__calc
 
