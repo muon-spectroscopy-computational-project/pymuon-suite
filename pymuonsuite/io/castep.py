@@ -178,11 +178,9 @@ class ReadWriteCastep(ReadWrite):
 
         self.__calc = deepcopy(self.__calc)
 
-        if isinstance(a.calc, Castep):
-            self.__calc = deepcopy(a.calc)
-            self.create_calculator()
-
         if self.__calc is None:
+            if isinstance(a.calc, Castep):
+                self.__calc = deepcopy(a.calc)
             self.create_calculator()
 
         self.update_calculator(calc_type)
