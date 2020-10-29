@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import os
 import json
 import pickle
+import glob
 
 import numpy as np
 
@@ -52,7 +53,7 @@ class ReadWriteDFTB(object):
         '''
         self.script = script
 
-    def read(self, folder, sname=None, calc_type=None, avg_prop=None):
+    def read(self, folder, sname=None):
         # dftb doesn't do seednames
         """Read a DFTB+ output non-destructively.
 
@@ -63,65 +64,61 @@ class ReadWriteDFTB(object):
         atoms (ase.Atoms): an atomic structure with the results attached in a
         SinglePointCalculator
         """
-        if calc_type == "PHONONS":
+
+        try:
+            atoms = io.read(os.path.join(folder, 'geo_end.gen'))
+        except IOError as e:
+            print('Read/write error: {0}'.format(e))
+            return
+
+        atoms.info['name'] = os.path.split(folder)[-1]
+        results_file = os.path.join(folder, "results.tag")
+        if os.path.isfile(results_file):
+            # DFTB+ was used to perform the optimisation
+            temp_file = os.path.join(folder, "results.tag.bak")
+
+            # We need to backup the results file here because
+            # .read_results() will remove the results file
+            with BackupFile(results_file, temp_file):
+                calc = Dftb(atoms=atoms)
+                calc.atoms_input = atoms
+                calc.directory = folder
+                calc.do_forces = True
+                calc.read_results()
+
+            energy = calc.get_potential_energy()
+            forces = calc.get_forces()
+            charges = calc.get_charges(atoms)
+
+            calc = SinglePointCalculator(atoms, energy=energy,
+                                        forces=forces, charges=charges)
+
+            atoms.calc = calc
+
+        try:
+            pops = parse_spinpol_dftb(folder)
+            hfine = []
+            for i in range(len(atoms)):
+                hf = compute_hfine_mullpop(atoms, pops, self_i=i, fermi=True,
+                                        fermi_neigh=True)
+                hfine.append(hf)
+            atoms.set_array('hyperfine', np.array(hfine))
+        except (IndexError, IOError) as e:
+            print('Read/write error: {0}'.format(e))
+
+        try:
             if sname is not None:
                 phonon_source_file = os.path.join(folder, sname + '.phonons.pkl')
             else:
-                print("Read error: {0}".format("Phonons filename was not given."))
-                return
-            try:
-                return self.read_dftb_phonons(phonon_source_file)
-            except IOError as e:
-                print('Read/write error: {0}'.format(e))
-                return
+                print("Phonons filename was not given, searching for any .phonons.pkl file.")
+                phonon_source_file = glob.glob(os.path.join(folder, '*.castep'))[0]
+            self.read_dftb_phonons(atoms, phonon_source_file)
+        except (IndexError, IOError) as e:
+            print('Read/write error: {0}'.format(e))
 
-        else:
-            try:
-                atoms = io.read(os.path.join(folder, 'geo_end.gen'))
-            except IOError as e:
-                print('Read/write error: {0}'.format(e))
-                return
+        return atoms
 
-            atoms.info['name'] = os.path.split(folder)[-1]
-            results_file = os.path.join(folder, "results.tag")
-            if os.path.isfile(results_file):
-                # DFTB+ was used to perform the optimisation
-                temp_file = os.path.join(folder, "results.tag.bak")
-
-                # We need to backup the results file here because
-                # .read_results() will remove the results file
-                with BackupFile(results_file, temp_file):
-                    calc = Dftb(atoms=atoms)
-                    calc.atoms_input = atoms
-                    calc.directory = folder
-                    calc.do_forces = True
-                    calc.read_results()
-
-                energy = calc.get_potential_energy()
-                forces = calc.get_forces()
-                charges = calc.get_charges(atoms)
-
-                calc = SinglePointCalculator(atoms, energy=energy,
-                                            forces=forces, charges=charges)
-
-                atoms.calc = calc
-
-            if calc_type == "MAGRES" and avg_prop == 'hyperfine':
-                try:
-                    pops = parse_spinpol_dftb(folder)
-                    hfine = []
-                    for i in range(len(atoms)):
-                        hf = compute_hfine_mullpop(atoms, pops, self_i=i, fermi=True,
-                                                fermi_neigh=True)
-                        hfine.append(hf)
-                    atoms.set_array('hyperfine', np.array(hfine))
-                except IOError as e:
-                    print('Read/write error: {0}'.format(e))
-                    return
-
-            return atoms
-
-    def read_dftb_phonons(self, phonon_source_file):
+    def read_dftb_phonons(self, atoms, phonon_source_file):
         with open(phonon_source_file, 'rb') as f:
             phdata = pickle.load(f)
             # Find the gamma point
@@ -133,7 +130,8 @@ class ReadWriteDFTB(object):
             try:
                 ph_evals = phdata.frequencies[gamma_i]
                 ph_evecs = phdata.modes[gamma_i]
-                return ph_evals, ph_evecs
+                atoms.info['ph_evals'] = ph_evals
+                atoms.info['ph_evecs'] = ph_evecs
             except TypeError:
                 raise RuntimeError(('Phonon file {0} does not contain gamma '
                                     'point data').format(phonon_source_file))
@@ -168,7 +166,6 @@ class ReadWriteDFTB(object):
                 self.__calc = Dftb(label=sname, atoms=a)
 
             self.create_calculator()
-            print("PRODUCED CALC:", self.__calc)
 
             a.set_calculator(self.__calc)
             a.calc.label = sname
@@ -211,8 +208,6 @@ class ReadWriteDFTB(object):
         # And write out the phonons
         outf = self.params['name'] + '_opt.phonons.pkl'
         pickle.dump(phdata, open(outf, 'wb'))
-        print("ARGS: ", args )
-        print("PH ", phdata)
         write_phonon_report(args, self.params, phdata)
 
     def create_calculator(self, calc_type="muairss"): #params={'dftb_set': '3ob-3-1', 'k_points_grid': None, 'dftb_optionals': []}):
