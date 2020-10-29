@@ -11,12 +11,16 @@ import yaml
 import pickle
 import subprocess as sp
 from ase import Atoms
+from ase import io
 from scipy.constants import physical_constants as pcnst
 
 
 class ReadWriteUEP(object):
+    def __init__(self, script=None, params={}):
+        self.script = script
+        self.params = params
 
-    def read(self, folder, sname=None, atoms=None, calc_type="muairss"):
+    def read(self, folder, sname=None):
         if sname is None:
             sname = os.path.split(folder)[-1]
 
@@ -28,42 +32,38 @@ class ReadWriteUEP(object):
             print("Error: could not find UEP file in {0}".format(folder))
             return
 
-        a = Atoms('H', positions=[calc._x_opt])
-
-        if atoms is not None:
-            a = atoms + a
+        a = calc.atoms + Atoms('H', positions=[calc._x_opt])
 
         a.info['name'] = sname
-        a.set_calculator(calc)
+
         calc.atoms = a
+        a.set_calculator(calc)
 
         return a
 
-    def write(self, a, folder, params={}, script=None, calc=None, calc_type="muairss"):
+    def write(self, a, folder, sname=None, calc_type=None):
 
-        calc = self.create_calculator(a, folder, params, calc)
+        if sname is None:
+            sname = os.path.split(folder)[-1]
+
+        calc = self.create_calculator(a, folder, sname)
 
         calc.write_input()
 
-        if script is not None:
-            stxt = open(script).read()
-            stxt = stxt.format(seedname=name)
+        if self.script is not None:
+            stxt = open(self.script).read()
+            stxt = stxt.format(seedname=sname)
             with open(os.path.join(folder, 'script.sh'), 'w') as sf:
                 sf.write(stxt)
 
-    def create_calculator(self, a, folder, params={}, calc=None):
+    def create_calculator(self, a, folder, sname):
+        params = self.params
 
-        if not isinstance(calc, UEPCalculator):
-            calc = UEPCalculator(atoms=a, chden=params['uep_chden'])
-        else:
-            dummy = UEPCalculator(chden=params['uep_chden'])
-            calc.chden_path = dummy.chden_path
-            calc.chden_seed = dummy.chden_seed
+        calc = UEPCalculator(atoms=a, chden=params['uep_chden'], path=folder, label=sname)
 
         if not params['charged']:
             raise RuntimeError("Can't use UEP method for neutral system")
 
-        calc.label = params['name']
         calc.path = folder
         calc.gw_factor = params['uep_gw_factor']
         calc.geom_steps = params['geom_steps']
@@ -182,6 +182,7 @@ class UEPCalculator(object):
             self._Etot = results['Etot']
             self._x_opt = results['x']
             self._fx_opt = results['fx']
+            self.atoms = results['struct']
         except FileNotFoundError:
             self.run()
             self.read()
