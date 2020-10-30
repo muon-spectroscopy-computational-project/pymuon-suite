@@ -35,9 +35,9 @@ import pymuonsuite.constants as cnst
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import (castep_write_input, castep_read_input,
-                                   add_to_castep_block)
-from pymuonsuite.io.dftb import dftb_write_input, dftb_read_input
-from pymuonsuite.io.uep import UEPCalculator, uep_write_input, uep_read_input
+                                   add_to_castep_block, ReadWriteCastep)
+from pymuonsuite.io.dftb import dftb_write_input, dftb_read_input, ReadWriteDFTB
+from pymuonsuite.io.uep import UEPCalculator, uep_write_input, uep_read_input, ReadWriteUEP
 from pymuonsuite.io.output import write_cluster_report
 
 
@@ -239,27 +239,15 @@ def save_muairss_collection(struct, params, batch_path=''):
     if not out_path:
         raise RuntimeError('Could not create folder {0}')
 
-    # Now save in the appropriate format
-    save_formats = {
-        'castep': castep_write_input,
-        'dftb+': dftb_write_input,
-        'uep': uep_write_input
+    io_formats = {
+        'castep': ReadWriteCastep(params),
+        'dftb+': ReadWriteDFTB(params),
+        'uep': ReadWriteUEP(params)
     }
 
-    # Which calculators?
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
     if 'all' in calcs:
-        calcs = save_formats.keys()
-
-    # Make the actual calculators
-    make_calcs = {
-        'castep': create_muairss_castep_calculator,
-        'dftb+': create_muairss_dftb_calculator,
-        'uep': create_muairss_uep_calculator
-    }
-
-    calcs = {c: make_calcs[c](struct, params=params, calc=struct.calc)
-             for c in calcs}
+        calcs = io_formats.keys()
 
     # Save LICENSE file for DFTB+ parameters
     if 'dftb+' in calcs:
@@ -267,10 +255,10 @@ def save_muairss_collection(struct, params, batch_path=''):
         with open(os.path.join(out_path, 'dftb.LICENSE'), 'w') as f:
             f.write(get_license())
 
-    for cname, calc in calcs.items():
+    for cname in calcs:
         calc_path = os.path.join(out_path, cname)
-        dc.save_tree(calc_path, save_formats[cname], name_root=params['name'],
-                     opt_args={'calc': calc, 'script': params['script_file']},
+        dc.save_tree(calc_path, io_formats[cname].write, name_root=params['name'],
+                     opt_args={'calc_type': "GEOM_OPT"},
                      safety_check=2)
 
 
@@ -280,9 +268,9 @@ def load_muairss_collection(struct, params, batch_path=''):
     out_path = os.path.join(batch_path, params['out_folder'])
 
     load_formats = {
-        'dftb+': dftb_read_input,
-        'castep': castep_read_input,
-        'uep': uep_read_input
+        'castep': ReadWriteCastep(),
+        'dftb+': ReadWriteDFTB(),
+        'uep': ReadWriteUEP()
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
@@ -291,15 +279,20 @@ def load_muairss_collection(struct, params, batch_path=''):
 
     loaded = {}
 
-
     for cname in calcs:
-        opt_args = {}
-        if cname == 'uep':
-            opt_args['atoms'] = struct
-
         calc_path = os.path.join(out_path, cname)
-        dc = AtomsCollection.load_tree(calc_path, load_formats[cname],
-                                       opt_args=opt_args, safety_check=2)
+
+        dc = AtomsCollection.load_tree(calc_path, load_formats[cname].read,
+                                       safety_check=2, tolerant_loading=True)
+
+        print("If greater than 10% of structures could not be loaded, \
+we advise adjusting the parameters and re-running the {0} \
+optimisation for the structures that failed.".format(cname))
+
+        total_structures = len(dc.structures)
+        if total_structures == 0:
+            return
+
         loaded[cname] = dc
 
     return loaded
@@ -368,7 +361,11 @@ def muairss_cluster(struct, collection, params, name=None):
         n = len(ccoll)
         ccoll = ccoll.filter(calc_filter)
         if len(ccoll) < n:
-            warnings.warn('Calculation failed for {0} structures'.format(n-len(ccoll)))
+            warnings.warn('Calculation failed for {0}% of structures.'
+                          ' If greater than 10% of the calculations failed,'
+                          ' we advise adjusting the parameters and re-running'
+                          ' the optimisation for the runs that failed.'.format(
+                           round((1-len(ccoll)/n)*100)))
 
         # Start by extracting the muon positions
         genes = [Gene('energy', 1, {}),
