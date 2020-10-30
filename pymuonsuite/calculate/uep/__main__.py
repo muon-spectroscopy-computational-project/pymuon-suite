@@ -11,6 +11,7 @@ import argparse as ap
 import datetime
 
 from ase import io
+from ase import Atoms
 from scipy.optimize import minimize
 from scipy import constants as cnst
 
@@ -263,11 +264,16 @@ def geomopt_entry():
         params['chden_seed'] = seedname  # Default is the same
 
     with open(seedpath + '.uep', 'w') as outf:
-        results = geomopt(params, outf)
+        try:
+            results = geomopt(params, outf)
+        except Exception as e:
+            return
 
     # Now dump results
     if params['save_pickle']:
         pickle.dump(results, open(seedpath + '.uep.pkl', 'wb'))
+        muon = Atoms('H', positions=[results['x']])
+        io.write(seedpath + '.xyz', results['struct'] + muon)
 
 
 def plot_entry():

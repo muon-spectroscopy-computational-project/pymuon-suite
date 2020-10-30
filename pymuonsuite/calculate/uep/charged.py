@@ -68,7 +68,11 @@ class ChargeDistribution(object):
         seedpath = os.path.join(path, seedname)
 
         self._elec_den = FMTReader(seedpath + '.den_fmt')
-        self._struct = io.read(seedpath + '.castep')
+        try:
+            self._struct = io.read(seedpath + '.castep')
+        except Exception as e:
+            print(seedpath + '.castep' + ' could not be read.')
+            return
 
         ppots = parse_castep_ppots(seedpath + '.castep')
 
