@@ -38,11 +38,13 @@ class ReadWriteDFTB(ReadWrite):
         |                           present, the pre-existent one will
         |                           be ignored.
         '''
+        if params == {}:
+            params = {'dftb_set': '3ob-3-1', 'k_points_grid': None,
+                      'geom_force_tol': 0.01, 'dftb_optionals': []}
+        else:
+            self.params = params
         self.script = script
-        self.params = params #TODO: should these be validated with a schema?
         self.__calc = calc
-        if calc is not None and self.params != {}:
-            self.create_calculator()
 
     def set_script(self, script):
         '''
@@ -53,6 +55,17 @@ class ReadWriteDFTB(ReadWrite):
         |                           be appropriately replaced.
         '''
         self.script = script
+
+    def set_params(self, params):
+        '''
+        |   params (dict)           Contains muon symbol, parameter file,
+        |                           k_points_grid.
+        '''
+        if params == {}:
+            params = {'dftb_set': '3ob-3-1', 'k_points_grid': None,
+                      'geom_force_tol': 0.01, 'dftb_optionals': []}
+        else:
+            self.params = params
 
     def read(self, folder, sname=None):
         # dftb doesn't do seednames
@@ -68,11 +81,17 @@ class ReadWriteDFTB(ReadWrite):
 
         try:
             atoms = io.read(os.path.join(folder, 'geo_end.gen'))
-        except IOError as e:
-            print('Read/write error: {0}'.format(e))
-            return
 
-        atoms.info['name'] = os.path.split(folder)[-1]
+        except IOError:
+            raise IOError("ERROR: No geo_end.gen file found in {}."
+                          .format(os.path.abspath(folder)))
+        except Exception as e:
+            raise IOError("ERROR: Could not read {file}, due to error: {error}"
+                          .format(file='geo_end.gen', error=e))
+        if sname is None:
+            atoms.info['name'] = os.path.split(folder)[-1]
+        else:
+            atoms.info['name'] = sname
         results_file = os.path.join(folder, "results.tag")
         if os.path.isfile(results_file):
             # DFTB+ was used to perform the optimisation
@@ -92,7 +111,7 @@ class ReadWriteDFTB(ReadWrite):
             charges = calc.get_charges(atoms)
 
             calc = SinglePointCalculator(atoms, energy=energy,
-                                        forces=forces, charges=charges)
+                                         forces=forces, charges=charges)
 
             atoms.calc = calc
 
@@ -101,21 +120,32 @@ class ReadWriteDFTB(ReadWrite):
             hfine = []
             for i in range(len(atoms)):
                 hf = compute_hfine_mullpop(atoms, pops, self_i=i, fermi=True,
-                                        fermi_neigh=True)
+                                           fermi_neigh=True)
                 hfine.append(hf)
             atoms.set_array('hyperfine', np.array(hfine))
         except (IndexError, IOError) as e:
-            print('Read/write error: {0}'.format(e))
+            print('Warning: Could not read hyperfine details due to error: '
+                  '{0}'.format(e))
 
         try:
             if sname is not None:
-                phonon_source_file = os.path.join(folder, sname + '.phonons.pkl')
+                phonon_source_file = os.path.join(folder, sname +
+                                                  '.phonons.pkl')
             else:
-                print("Phonons filename was not given, searching for any .phonons.pkl file.")
-                phonon_source_file = glob.glob(os.path.join(folder, '*.castep'))[0]
+                print("Phonons filename was not given, searching for any"
+                      " .phonons.pkl file.")
+                phonon_source_file = glob.glob(os.path.join(folder,
+                                               '*.phonons.pkl'))[0]
             self.read_dftb_phonons(atoms, phonon_source_file)
-        except (IndexError, IOError) as e:
-            print('Read/write error: {0}'.format(e))
+        except IndexError:
+            print("Warning: No .phonons.pkl files found in {}."
+                  .format(os.path.abspath(folder)))
+        except IOError:
+            print("Warning: {} could not be found."
+                  .format(phonon_source_file))
+        except Exception as e:
+            print('Warning: Could not read {file} due to error: {error}'
+                  .format(file=phonon_source_file, error=e))
 
         return atoms
 
@@ -137,8 +167,7 @@ class ReadWriteDFTB(ReadWrite):
                 raise RuntimeError(('Phonon file {0} does not contain gamma '
                                     'point data').format(phonon_source_file))
 
-    def write(self, a, folder, sname=None, calc_type="GEOM_OPT", args=None): 
-        #params = {'dftb_set': '3ob-3-1', 'k_points_grid': None}
+    def write(self, a, folder, sname=None, calc_type="GEOM_OPT", args=None):
 
         """Writes input files for an Atoms object with a Dftb+
         calculator.
@@ -164,9 +193,7 @@ class ReadWriteDFTB(ReadWrite):
 
             if not isinstance(a.calc, Dftb):
                 a = a.copy()
-                self.__calc = Dftb(label=sname, atoms=a)
-
-            self.create_calculator()
+                self.create_calculator(calc_type=calc_type)
 
             a.set_calculator(self.__calc)
             a.calc.label = sname
@@ -187,13 +214,13 @@ class ReadWriteDFTB(ReadWrite):
         if self.params['pbc']:
             a.set_pbc(True)
             self.__calc = Dftb(atoms=a, label='asephonons',
-                        kpts=self.params['kpoint_grid'],
-                        **dargs.args)
+                               kpts=self.params['kpoint_grid'],
+                               **dargs.args)
             ph_kpts = self.params['phonon_kpoint_grid']
         else:
             a.set_pbc(False)
             self.__calc = Dftb(atoms=a, label='asephonons',
-                        **dargs.args)
+                               **dargs.args)
             ph_kpts = None
         a.set_calculator(self.__calc)
         phdata = ase_phonon_calc(a, kpoints=ph_kpts,
@@ -211,7 +238,7 @@ class ReadWriteDFTB(ReadWrite):
         pickle.dump(phdata, open(outf, 'wb'))
         write_phonon_report(args, self.params, phdata)
 
-    def create_calculator(self, calc_type="muairss"): #params={'dftb_set': '3ob-3-1', 'k_points_grid': None, 'dftb_optionals': []}):
+    def create_calculator(self, calc_type="GEOM_OPT"):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
 
         if not isinstance(self.__calc, Dftb):
@@ -219,10 +246,10 @@ class ReadWriteDFTB(ReadWrite):
         else:
             args = self.__calc.todict()
 
-        if calc_type == "muairss":
+        if calc_type == "GEOM_OPT":
             self.__calc = self.create_muairss_dftb_calculator(args)
 
-        elif calc_type == "spinpol":
+        elif calc_type == "SPINPOL":
             self.__calc = self.create_spinpol_dftbp_calculator(args)
 
         else:
@@ -230,8 +257,7 @@ class ReadWriteDFTB(ReadWrite):
 
         return self.__calc
 
-    def create_muairss_dftb_calculator(self, args={}): #params={'dftb_set': '3ob-3-1',
-                                        #'k_points_grid': None, 'geom_force_tol': 0.01}):
+    def create_muairss_dftb_calculator(self, args={}):
 
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
 
@@ -241,9 +267,9 @@ class ReadWriteDFTB(ReadWrite):
             try:
                 dargs.set_optional(opt, True)
             except KeyError:
-                print(('WARNING: optional DFTB+ file {0} not available for {1}'
-                    ' parameter set, skipping').format(opt, self.params['dftb_set'])
-                    )
+                print('Warning: optional DFTB+ file {0} not available for {1}'
+                      ' parameter set, skipping').format(
+                       opt, self.params['dftb_set'])
 
         args.update(dargs.args)
         args = dargs.args
@@ -253,21 +279,21 @@ class ReadWriteDFTB(ReadWrite):
         args['Driver_Masses_Mass_Atoms'] = '-1'
         args['Driver_Masses_Mass_MassPerAtom [amu]'] = str(constants.m_mu_amu)
 
-        args['Driver_MaxForceComponent [eV/AA]'] = self.params['geom_force_tol']
+        args['Driver_MaxForceComponent [eV/AA]'] = self.params[
+                                                   'geom_force_tol']
         args['Driver_MaxSteps'] = self.params['geom_steps']
         args['Driver_MaxSccIterations'] = self.params['max_scc_steps']
         args['Hamiltonian_Charge'] = 1.0 if self.params['charged'] else 0.0
 
         if self.params['dftb_pbc']:
             self.__calc = Dftb(kpts=self.params['k_points_grid'],
-                        **args)
+                               **args)
         else:
             self.__calc = Dftb(**args)
 
         return self.__calc
 
-    def create_spinpol_dftbp_calculator(self, args): #, calc=None, params={'dftb_set': '3ob-3-1',
-                                        #'k_points_grid': None}):
+    def create_spinpol_dftbp_calculator(self, args):
         """Create a calculator containing all necessary parameters for a DFTB+
         SCC spin polarised calculation"""
         from pymuonsuite.data.dftb_pars import DFTBArgs
@@ -277,8 +303,8 @@ class ReadWriteDFTB(ReadWrite):
         try:
             dargs.set_optional('spinpol.json', True)
         except KeyError:
-            raise ValueError('DFTB+ parameter set does not allow spin polarised'
-                            ' calculations')
+            raise ValueError('DFTB+ parameter set does not allow spin'
+                             'polarised calculations')
         # Fix a few things, and add a spin on the muon
         args = dargs.args
         del(args['Hamiltonian_SpinPolarisation'])
@@ -290,7 +316,7 @@ class ReadWriteDFTB(ReadWrite):
 
         if self.params['k_points_grid'] is not None:
             self.__calc = Dftb(kpts=self.params['k_points_grid'],
-                        **args)
+                               **args)
         else:
             self.__calc = Dftb(**args)
 
@@ -314,7 +340,7 @@ def dftb_write_input(a, folder, calc=None, name=None, script=None):
     |   name (str):             Seedname to save the files with. If not
     |                           given, use the name of the folder.
     |   script (str):           Path to a file containing a submission script
-    |                           to copy to the input folder. The script can 
+    |                           to copy to the input folder. The script can
     |                           contain the argument {seedname} in curly braces,
     |                           and it will be appropriately replaced.
     """
@@ -504,7 +530,7 @@ def save_muonconf_dftb(a, folder, params, dftbargs={}):
 
     if params['dftb_pbc']:
         dcalc = Dftb(label=name, atoms=a,
-                     kpts=params['k_points_grid'], 
+                     kpts=params['k_points_grid'],
                      **args)
     else:
         dcalc = Dftb(label=name, atoms=a, **args)

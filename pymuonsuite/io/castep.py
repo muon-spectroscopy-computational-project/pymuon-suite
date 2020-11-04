@@ -76,14 +76,10 @@ class ReadWriteCastep(ReadWrite):
         |   sname (str):            Seedname to save the files with. If not
         |                           given, use the name of the folder.
         """
-
-        try:
-            atoms = self.read_castep(folder, sname)
-            self.read_castep_hyperfine_magres(atoms, folder, sname)
-            self.read_castep_gamma_phonons(atoms, folder, sname)
-            return atoms
-        except AttributeError as e:
-            print("No castep files were found in {}.".format(folder))
+        atoms = self.read_castep(folder, sname)
+        self.read_castep_hyperfine_magres(atoms, folder, sname)
+        self.read_castep_gamma_phonons(atoms, folder, sname)
+        return atoms
 
     def read_castep(self, folder, sname=None):
         try:
@@ -95,8 +91,15 @@ class ReadWriteCastep(ReadWrite):
             atoms = io.read(cfile)
             atoms.info['name'] = sname
             return atoms
-        except (IndexError, OSError):
-            print("No .castep files found in {}.".format(folder))
+
+        except IndexError:
+            raise IOError("ERROR: No .castep files found in {}."
+                          .format(os.path.abspath(folder)))
+        except OSError as e:
+            raise IOError("ERROR: {}".format(e))
+        except Exception as e:
+            raise IOError("ERROR: Could not read {file}"
+                          .format(file=sname + '.castep'))
 
     def read_castep_hyperfine_magres(self, atoms, folder, sname=None):
         try:
@@ -107,7 +110,8 @@ class ReadWriteCastep(ReadWrite):
             m = parse_hyperfine_magres(mfile)
             atoms.arrays.update(m.arrays)
         except (IndexError, OSError):
-            print("No .magres files found in {}.".format(folder))
+            print("Warning: No .magres files found in {}."
+                  .format(os.path.abspath(folder)))
 
     def read_castep_gamma_phonons(self, atoms, folder, sname=None):
         """Parse CASTEP phonon data into a casteppy object,
@@ -134,6 +138,8 @@ class ReadWriteCastep(ReadWrite):
             else:
                 pd = QpointPhononModes.from_castep(glob.glob(
                                     os.path.join(folder, '*.phonon'))[0])
+                sname = seedname(glob.glob(
+                        os.path.join(folder, '*.phonon'))[0])
             # Convert frequencies back to cm-1
             pd.frequencies_unit = '1/cm'
             # Get phonon frequencies+modes
@@ -154,8 +160,14 @@ class ReadWriteCastep(ReadWrite):
             atoms.info['ph_evals'] = evals[gamma_i]
             atoms.info['ph_evecs'] = evecs[gamma_i]
 
-        except (IndexError, OSError):
-            print("No .phonon files found in {}.".format(folder))
+        except IndexError:
+            print("Warning: No .phonon files found in {}."
+                  .format(os.path.abspath(folder)))
+        except OSError as e:
+            print("ERROR: {}".format(e))
+        except Exception as e:
+            raise IOError("ERROR: Could not read {file}"
+                          .format(file=sname + '.phonon'))
 
     def write(self, a, folder, sname=None, calc_type="GEOM_OPT"):
 
@@ -177,6 +189,10 @@ class ReadWriteCastep(ReadWrite):
             sname = os.path.split(folder)[-1]  # Same as folder name
 
         self.__calc = deepcopy(self.__calc)
+
+        # We only use the calculator attached to the atoms object if a calc
+        # has not been set when initialising the ReadWrite object OR we have
+        # not called write() and made a calculator before.
 
         if self.__calc is None:
             if isinstance(a.calc, Castep):
@@ -209,14 +225,15 @@ class ReadWriteCastep(ReadWrite):
         # included
         gamma_block = calc.cell.species_gamma.value
         if gamma_block is None:
-            calc.cell.species_gamma = add_to_castep_block(gamma_block, mu_symbol,
-                                                        constants.m_gamma,
-                                                        'gamma')
+            calc.cell.species_gamma = add_to_castep_block(gamma_block,
+                                                          mu_symbol,
+                                                          constants.m_gamma,
+                                                          'gamma')
 
             mass_block = calc.cell.species_mass.value
             calc.cell.species_mass = add_to_castep_block(mass_block, mu_symbol,
-                                                        constants.m_mu_amu,
-                                                        'mass')
+                                                         constants.m_mu_amu,
+                                                         'mass')
 
         # Now assign the k-points
         calc.cell.kpoint_mp_grid = list_to_string(
@@ -264,10 +281,10 @@ class ReadWriteCastep(ReadWrite):
         """Update calculator to contain all the necessary parameters
         for a geometry optimization."""
 
-
         # Remove cell constraints if they exist
         self.__calc.cell.cell_constraints = None
-        self.__calc.cell.fix_all_cell = True   # Necessary for older CASTEP versions
+        self.__calc.cell.fix_all_cell = True
+        # Necessary for older CASTEP versions
 
         self.__calc.param.charge = self.params.get('charged', False)*1.0
 
@@ -276,9 +293,10 @@ class ReadWriteCastep(ReadWrite):
 
         self.__calc.param.task = 'GeometryOptimization'
         self.__calc.param.geom_max_iter = self.params.get('geom_steps', 30)
-        self.__calc.param.geom_force_tol = self.params.get('geom_force_tol', 0.05)
+        self.__calc.param.geom_force_tol = self.params.get('geom_force_tol',
+                                                           0.05)
         self.__calc.param.max_scf_cycles = self.params.get('max_scc_steps', 30)
-        self.__calc.param.write_cell_structure = True # outputs -out.cell file
+        self.__calc.param.write_cell_structure = True  # outputs -out.cell file
 
         # Remove settings for magres calculator:
         self.__calc.param.magres_task = None
@@ -305,9 +323,9 @@ def castep_write_input(a, folder, calc=None, name=None, script=None):
     |   name (str):             Seedname to save the files with. If not
     |                           given, use the name of the folder.
     |   script (str):           Path to a file containing a submission script
-    |                           to copy to the input folder. The script can 
-    |                           contain the argument {seedname} in curly braces,
-    |                           and it will be appropriately replaced.    
+    |                           to copy to the input folder. The script can
+    |                           contain the argument {seedname} in curly
+    |                           braces, and it will be appropriately replaced.
     """
 
     if name is None:
@@ -384,18 +402,18 @@ def parse_castep_bands(infile, header=False):
 
     | Args:
     |   infile(str): Directory of bands file.
-    |   header(bool, default=False): If true, just return the number of k-points
-    |       and eigenvalues. Else, parse and return the band structure.
+    |   header(bool, default=False): If true, just return the number of
+    |   k-points and eigenvalues. Else, parse and return the band structure.
     | Returns:
     |   n_kpts(int), n_evals(int): Number of k-points and eigenvalues.
-    |   bands(Numpy float array, shape:(n_kpts, n_evals)): Energy eigenvalues of
-    |       band structure.
+    |   bands(Numpy float array, shape:(n_kpts, n_evals)): Energy eigenvalues
+    |   of band structure.
     """
     file = open(infile, "r")
     lines = file.readlines()
     n_kpts = int(lines[0].split()[-1])
     n_evals = int(lines[3].split()[-1])
-    if header == True:
+    if header is True:
         return n_kpts, n_evals
     if int(lines[1].split()[-1]) != 1:
         raise ValueError("""Either incorrect file format detected or greater
@@ -449,7 +467,7 @@ def parse_castep_mass_block(mass_block):
 
 
 def parse_castep_masses(cell):
-    """Parse CASTEP custom species masses, returning an array of all atom 
+    """Parse CASTEP custom species masses, returning an array of all atom
     masses in .cell file with corrected custom masses.
 
     | Args:
@@ -476,7 +494,7 @@ def parse_castep_masses(cell):
 
 
 def parse_castep_gamma_block(gamma_block):
-    """Parse CASTEP custom species gyromagnetic ratios, returning a 
+    """Parse CASTEP custom species gyromagnetic ratios, returning a
     dictionary of gyromagnetic ratios by species, in radsectesla.
 
     | Args:
@@ -511,6 +529,7 @@ def parse_castep_gamma_block(gamma_block):
             raise CastepError('Invalid line in species_gamma block')
 
     return custom_gammas
+
 
 def parse_castep_ppots(cfile):
 

@@ -47,7 +47,8 @@ class ReadWriteUEP(ReadWrite):
         try:
             calc.read()
         except Exception as e:
-            print("Error: could not find UEP file in {0}".format(folder))
+            raise(IOError("Error: could not read UEP file in {0}"
+                  .format(folder)))
             return
 
         a = calc.atoms + Atoms('H', positions=[calc._x_opt])
@@ -64,7 +65,11 @@ class ReadWriteUEP(ReadWrite):
         if sname is None:
             sname = os.path.split(folder)[-1]
 
-        calc = self.create_calculator(a, folder, sname)
+        try:
+            calc = self.create_calculator(a, folder, sname)
+        except RuntimeError as e:
+            raise
+            return
 
         calc.write_input()
 
@@ -77,10 +82,11 @@ class ReadWriteUEP(ReadWrite):
     def create_calculator(self, a, folder, sname):
         params = self.params
 
-        calc = UEPCalculator(atoms=a, chden=params['uep_chden'], path=folder, label=sname)
+        calc = UEPCalculator(atoms=a, chden=params['uep_chden'], path=folder,
+                             label=sname)
 
         if not params['charged']:
-            raise RuntimeError("Can't use UEP method for neutral system")
+            raise RuntimeError("Error: Can't use UEP method for neutral system")
 
         calc.path = folder
         calc.gw_factor = params['uep_gw_factor']
@@ -173,7 +179,7 @@ class UEPCalculator(object):
             'opt_tol': self.opt_tol,
             'opt_method': self.opt_method,
             'gw_factor': self.gw_factor,
-            'save_pickle': True,                # Always save it with a "calculator"
+            'save_pickle': True,  # Always save it with a "calculator"
         }
 
         yaml.dump(outdata, open(os.path.join(self.path, self.label + '.yaml'),
