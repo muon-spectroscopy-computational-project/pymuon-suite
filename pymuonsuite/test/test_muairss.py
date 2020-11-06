@@ -1,10 +1,4 @@
-"""Tests for quantum averaging methods"""
-
-# Python 2-to-3 compatibility code
-# from __future__ import absolute_import
-# from __future__ import division
-# from __future__ import print_function
-# from __future__ import unicode_literals
+"""Tests for muairss with uep, dftb+ and castep"""
 
 import unittest
 import numpy as np
@@ -15,7 +9,6 @@ import os
 import sys
 import shutil
 import subprocess
-
 from pymuonsuite.muairss import main as run_muairss
 from pymuonsuite.schemas import load_input_file, MuAirssSchema, UEPOptSchema
 from ase import io
@@ -69,7 +62,7 @@ class TestMuairss(unittest.TestCase):
             os.remove("Si2_Si2_uep_clusters.dat")
 
     def test_castep(self):
-        # try:
+        try:
             yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-castep.yaml')
             cell_file = os.path.join(_TESTDATA_DIR, 'Si2.cell')
             input_params = load_input_file(yaml_file, MuAirssSchema)
