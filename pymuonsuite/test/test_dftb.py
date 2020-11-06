@@ -14,7 +14,8 @@ from ase.io.castep import read_param
 
 from pymuonsuite.utils import list_to_string
 from pymuonsuite.io.dftb import ReadWriteDFTB
-from pymuonsuite.schemas import load_input_file, MuAirssSchema, AsePhononsSchema
+from pymuonsuite.schemas import (load_input_file, MuAirssSchema,
+                                 AsePhononsSchema)
 
 import argparse as ap
 
@@ -33,27 +34,30 @@ class TestReadWriteDFTB(unittest.TestCase):
             reader = ReadWriteDFTB()
             # test that we do not get any result for trying to read
             # an empty folder:
-            self.assertFalse(reader.read(folder, avg_prop=None))
-            self.assertFalse(reader.read(folder, avg_prop="hyperfine"))
+            #self.assertFalse(reader.read(folder))
+            #check we get exception for the above
 
-            folder = os.path.join(_TESTDATA_DIR, "dftb2")
+            folder = os.path.join(_TESTDATA_DIR, "dftb")
             # tests castep file being read:
             self.assertTrue(reader.read(folder))
             atom_arrays = deepcopy(reader.read(folder).arrays)
 
             # tests hyperfine being read:
-            self.assertNotIn('hyperfine', atom_arrays)
-            self.assertTrue(reader.read(folder, calc_type="MAGRES", avg_prop="hyperfine"))
-            atom_arrays_hyperfine = deepcopy(reader.read(folder, calc_type="MAGRES", avg_prop="hyperfine").arrays)
-            print(atom_arrays_hyperfine)
+            atoms = reader.read(folder)
             # checks if added hyperfine to atom array:
-            self.assertIn('hyperfine', atom_arrays_hyperfine.keys())
+            self.assertIn('hyperfine', atoms.arrays.keys())
 
-            folder = os.path.join(_TESTDATA_DIR, "dftb")
-            # tests phonons being read:
-            self.assertTrue(reader.read(folder, sname, calc_type="PHONONS"))
-            # can't read phonons without a seed name
-            self.assertFalse(reader.read(folder, calc_type="PHONONS"))
+            #checks if phonon info has been loaded into atom object:
+            # No phonon file in this folder
+            self.assertNotIn('ph_evecs', atoms.info.keys())
+            self.assertNotIn('ph_evals', atoms.info.keys())
+
+            #phonon file in this folder:
+            folder = os.path.join(_TESTDATA_DIR, "dftb-phonons")
+            self.assertTrue(reader.read(folder))
+            atoms2 = reader.read(folder)
+            self.assertIn('ph_evecs', atoms2.info.keys())
+            self.assertIn('ph_evals', atoms2.info.keys())
 
     def test_create_calc(self):
         params = {"mu_symbol": "mu", "k_points_grid": [2, 2, 2],
@@ -63,8 +67,8 @@ class TestReadWriteDFTB(unittest.TestCase):
         folder = _TESTDATA_DIR  # does not contain any castep files
         reader = ReadWriteDFTB(params=params)
         #self.assertFalse(reader.create_calculator(params=params))
-        calc_geom_opt = reader.create_calculator(calc_type="muairss")
-        calc_magres = reader.create_calculator(calc_type="spinpol")
+        calc_geom_opt = reader.create_calculator(calc_type="GEOM_OPT")
+        calc_magres = reader.create_calculator(calc_type="SPINPOL")
         self.assertTrue(calc_geom_opt)
         self.assertTrue(calc_magres)
 
@@ -81,16 +85,16 @@ class TestReadWriteDFTB(unittest.TestCase):
 
         # read in cell file to get atom
 
-        input_folder = os.path.join(_TESTDATA_DIR, "dftb")
+        input_folder = os.path.join(_TESTDATA_DIR, "dftb-phonons")
         output_folder = _TESTSAVE_DIR
 
-        atoms = io.read(os.path.join(_TESTDATA_DIR, "srtio3.cell"))
+        atoms = io.read(os.path.join(_TESTDATA_DIR, "castep/srtio3.cell"))
 
         # test writing geom_opt output
         reader = ReadWriteDFTB(params=params)
-        reader.write(atoms, output_folder, sname="srtio3_geom_opt", calc_type="muairss")
-        atoms2 = reader.read(output_folder, avg_prop=None)
-        self.assertTrue(reader.read(output_folder, avg_prop=None))
+        reader.write(atoms, output_folder, sname="srtio3_geom_opt", calc_type="GEOM_OPT")
+        atoms2 = reader.read(output_folder)
+        self.assertTrue(reader.read(output_folder))
         self.assertEqual(atoms, atoms2)
 
         # test phonons output:
@@ -114,10 +118,14 @@ class TestReadWriteDFTB(unittest.TestCase):
 
         args = parser.parse_args()
 
-        reader.write(atoms, input_folder, calc_type="PHONONS", args = args)
+        reader.write(atoms, input_folder, calc_type="PHONONS", args=args)
 
         # TODO:
-        # More tests of write outputs being correct
+        # More tests of write outputs being correct - writing one type after the other type and checking still ok - like castep
+        os.remove(os.path.join(output_folder,
+                                 "dftb_in.hsd"))
+        os.remove(os.path.join(output_folder,
+                                   "geo_end.gen"))
 
 
 if __name__ == "__main__":
