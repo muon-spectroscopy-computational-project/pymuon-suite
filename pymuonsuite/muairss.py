@@ -36,8 +36,10 @@ from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import (castep_write_input, castep_read_input,
                                    add_to_castep_block, ReadWriteCastep)
-from pymuonsuite.io.dftb import dftb_write_input, dftb_read_input, ReadWriteDFTB
-from pymuonsuite.io.uep import UEPCalculator, uep_write_input, uep_read_input, ReadWriteUEP
+from pymuonsuite.io.dftb import (dftb_write_input, dftb_read_input,
+                                 ReadWriteDFTB)
+from pymuonsuite.io.uep import (UEPCalculator, uep_write_input, uep_read_input,
+                                ReadWriteUEP)
 from pymuonsuite.io.output import write_cluster_report
 
 
@@ -234,7 +236,8 @@ def save_muairss_collection(struct, params, batch_path=''):
     dc.info['muairss_params'] = dict(params)
 
     # Output folder
-    out_path = safe_create_folder(os.path.join(batch_path, params['out_folder']))
+    out_path = safe_create_folder(os.path.join(batch_path,
+                                  params['out_folder']))
 
     if not out_path:
         raise RuntimeError('Could not create folder {0}')
@@ -257,7 +260,8 @@ def save_muairss_collection(struct, params, batch_path=''):
 
     for cname in calcs:
         calc_path = os.path.join(out_path, cname)
-        dc.save_tree(calc_path, io_formats[cname].write, name_root=params['name'],
+        dc.save_tree(calc_path, io_formats[cname].write,
+                     name_root=params['name'],
                      opt_args={'calc_type': "GEOM_OPT"},
                      safety_check=2)
 
