@@ -66,7 +66,7 @@ class ReadWriteUEP(ReadWrite):
             sname = os.path.split(folder)[-1]
 
         try:
-            calc = self.create_calculator(a, folder, sname)
+            calc = self.__create_calculator(a, folder, sname)
         except RuntimeError as e:
             raise
             return
@@ -79,7 +79,7 @@ class ReadWriteUEP(ReadWrite):
             with open(os.path.join(folder, 'script.sh'), 'w') as sf:
                 sf.write(stxt)
 
-    def create_calculator(self, a, folder, sname):
+    def __create_calculator(self, a, folder, sname):
         params = self.params
 
         calc = UEPCalculator(atoms=a, chden=params['uep_chden'], path=folder,

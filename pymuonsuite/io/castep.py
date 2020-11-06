@@ -25,6 +25,7 @@ from pymuonsuite.utils import list_to_string
 from pymuonsuite.utils import find_ipso_hydrogen
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.io.readwrite import ReadWrite
+from ase.io.castep import read_param
 
 
 class ReadWriteCastep(ReadWrite):
@@ -45,7 +46,7 @@ class ReadWriteCastep(ReadWrite):
         self.params = params
         self.__calc = calc
         if calc is not None and self.params != {}:
-            self.create_calculator()
+            self.__create_calculator()
 
     def set_params(self, params):
         '''
@@ -56,7 +57,7 @@ class ReadWriteCastep(ReadWrite):
         # if the params have been changed, the calc has to be remade
         # from scratch:
         self.__calc = None
-        self.create_calculator()
+        self.__create_calculator()
 
     def set_script(self, script):
         '''
@@ -76,12 +77,12 @@ class ReadWriteCastep(ReadWrite):
         |   sname (str):            Seedname to save the files with. If not
         |                           given, use the name of the folder.
         """
-        atoms = self.read_castep(folder, sname)
-        self.read_castep_hyperfine_magres(atoms, folder, sname)
-        self.read_castep_gamma_phonons(atoms, folder, sname)
+        atoms = self.__read_castep(folder, sname)
+        self.__read_castep_hyperfine_magres(atoms, folder, sname)
+        self.__read_castep_gamma_phonons(atoms, folder, sname)
         return atoms
 
-    def read_castep(self, folder, sname=None):
+    def __read_castep(self, folder, sname=None):
         try:
             if sname is not None:
                 cfile = os.path.join(folder, sname + '.castep')
@@ -101,7 +102,7 @@ class ReadWriteCastep(ReadWrite):
             raise IOError("ERROR: Could not read {file}"
                           .format(file=sname + '.castep'))
 
-    def read_castep_hyperfine_magres(self, atoms, folder, sname=None):
+    def __read_castep_hyperfine_magres(self, atoms, folder, sname=None):
         try:
             if sname is not None:
                 mfile = os.path.join(folder, sname + '.magres')
@@ -113,7 +114,7 @@ class ReadWriteCastep(ReadWrite):
             print("Warning: No .magres files found in {}."
                   .format(os.path.abspath(folder)))
 
-    def read_castep_gamma_phonons(self, atoms, folder, sname=None):
+    def __read_castep_gamma_phonons(self, atoms, folder, sname=None):
         """Parse CASTEP phonon data into a casteppy object,
         and return eigenvalues and eigenvectors at the gamma point.
         """
@@ -197,9 +198,9 @@ class ReadWriteCastep(ReadWrite):
         if self.__calc is None:
             if isinstance(a.calc, Castep):
                 self.__calc = deepcopy(a.calc)
-            self.create_calculator()
+            self.__create_calculator()
 
-        self.update_calculator(calc_type)
+        self.__update_calculator(calc_type)
         a.set_calculator(self.__calc)
 
         io.write(os.path.join(folder, sname + '.cell'),
@@ -213,7 +214,7 @@ class ReadWriteCastep(ReadWrite):
             with open(os.path.join(folder, 'script.sh'), 'w') as sf:
                 sf.write(stxt)
 
-    def create_calculator(self):
+    def __create_calculator(self):
         if self.__calc is not None and isinstance(self.__calc, Castep):
             calc = deepcopy(self.__calc)
         else:
@@ -243,20 +244,21 @@ class ReadWriteCastep(ReadWrite):
         pfile = self.params.get('castep_param', None)
         if pfile is not None:
             calc.param = read_param(self.params['castep_param']).param
+            #TODO: write test for this part ^
 
         self.__calc = calc
 
         return self.__calc
 
-    def update_calculator(self, calc_type):
+    def __update_calculator(self, calc_type):
         if calc_type == "MAGRES":
-            self.create_hfine_castep_calculator()
+            self.__create_hfine_castep_calculator()
         elif calc_type == "GEOM_OPT":
-            self.create_geom_opt_castep_calculator()
+            self.__create_geom_opt_castep_calculator()
 
         return self.__calc
 
-    def create_hfine_castep_calculator(self):
+    def __create_hfine_castep_calculator(self):
         """Update calculator to contain all the necessary parameters
         for a hyperfine calculation."""
 
@@ -270,14 +272,14 @@ class ReadWriteCastep(ReadWrite):
 
         pfile = self.params.get('castep_param', None)
         if pfile is not None:
-            calc.param = read_param(self.params['castep_param']).param
+            self.__calc.param = read_param(self.params['castep_param']).param
 
         self.__calc.param.task = 'Magres'
         self.__calc.param.magres_task = 'Hyperfine'
 
         return self.__calc
 
-    def create_geom_opt_castep_calculator(self):
+    def __create_geom_opt_castep_calculator(self):
         """Update calculator to contain all the necessary parameters
         for a geometry optimization."""
 

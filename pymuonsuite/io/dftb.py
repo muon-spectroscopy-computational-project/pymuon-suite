@@ -136,7 +136,7 @@ class ReadWriteDFTB(ReadWrite):
                       " .phonons.pkl file.")
                 phonon_source_file = glob.glob(os.path.join(folder,
                                                '*.phonons.pkl'))[0]
-            self.read_dftb_phonons(atoms, phonon_source_file)
+            self.__read_dftb_phonons(atoms, phonon_source_file)
         except IndexError:
             print("Warning: No .phonons.pkl files found in {}."
                   .format(os.path.abspath(folder)))
@@ -149,7 +149,7 @@ class ReadWriteDFTB(ReadWrite):
 
         return atoms
 
-    def read_dftb_phonons(self, atoms, phonon_source_file):
+    def __read_dftb_phonons(self, atoms, phonon_source_file):
         with open(phonon_source_file, 'rb') as f:
             phdata = pickle.load(f)
             # Find the gamma point
@@ -182,7 +182,7 @@ class ReadWriteDFTB(ReadWrite):
         """
 
         if calc_type == "PHONONS":
-            self.write_phonons(a, args)
+            self.__write_phonons(a, args)
 
         else:
             if sname is None:
@@ -193,7 +193,7 @@ class ReadWriteDFTB(ReadWrite):
 
             if not isinstance(a.calc, Dftb):
                 a = a.copy()
-                self.create_calculator(calc_type=calc_type)
+                self.__create_calculator(calc_type=calc_type)
 
             a.set_calculator(self.__calc)
             a.calc.label = sname
@@ -206,7 +206,7 @@ class ReadWriteDFTB(ReadWrite):
                 with open(os.path.join(folder, 'script.sh'), 'w') as sf:
                     sf.write(stxt)
 
-    def write_phonons(self, a, args):
+    def __write_phonons(self, a, args):
         from pymuonsuite.data.dftb_pars import DFTBArgs
 
         dargs = DFTBArgs(self.params['dftb_set'])
@@ -223,10 +223,16 @@ class ReadWriteDFTB(ReadWrite):
                                **dargs.args)
             ph_kpts = None
         a.set_calculator(self.__calc)
-        phdata = ase_phonon_calc(a, kpoints=ph_kpts,
-                                 ftol=self.params['force_tol'],
-                                 force_clean=self.params['force_clean'],
-                                 name=self.params['name'])
+        try:
+            phdata = ase_phonon_calc(a, kpoints=ph_kpts,
+                                    ftol=self.params['force_tol'],
+                                    force_clean=self.params['force_clean'],
+                                    name=self.params['name'])
+        except Exception as e:
+            print(e)
+            print("Error: Could not write phonons file, see asephonons.out for" 
+                  " details.")
+            return
 
         fext = os.path.splitext(args.structure_file)[-1]
 
@@ -238,7 +244,7 @@ class ReadWriteDFTB(ReadWrite):
         pickle.dump(phdata, open(outf, 'wb'))
         write_phonon_report(args, self.params, phdata)
 
-    def create_calculator(self, calc_type="GEOM_OPT"):
+    def __create_calculator(self, calc_type="GEOM_OPT"):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
 
         if not isinstance(self.__calc, Dftb):
@@ -247,17 +253,17 @@ class ReadWriteDFTB(ReadWrite):
             args = self.__calc.todict()
 
         if calc_type == "GEOM_OPT":
-            self.__calc = self.create_muairss_dftb_calculator(args)
+            self.__calc = self.__create_muairss_dftb_calculator(args)
 
         elif calc_type == "SPINPOL":
-            self.__calc = self.create_spinpol_dftbp_calculator(args)
+            self.__calc = self.__create_spinpol_dftbp_calculator(args)
 
         else:
             self.__calc = None
 
         return self.__calc
 
-    def create_muairss_dftb_calculator(self, args={}):
+    def __create_muairss_dftb_calculator(self, args={}):
 
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
 
@@ -293,7 +299,7 @@ class ReadWriteDFTB(ReadWrite):
 
         return self.__calc
 
-    def create_spinpol_dftbp_calculator(self, args):
+    def __create_spinpol_dftbp_calculator(self, args):
         """Create a calculator containing all necessary parameters for a DFTB+
         SCC spin polarised calculation"""
         from pymuonsuite.data.dftb_pars import DFTBArgs

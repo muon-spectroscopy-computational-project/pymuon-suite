@@ -1,4 +1,4 @@
-"""Tests for ReadWriteCastep methods"""
+"""Tests for ReadWriteUEP methods"""
 
 import unittest
 import numpy as np
@@ -53,8 +53,8 @@ class TestReadWriteUEP(unittest.TestCase):
         reader = ReadWriteUEP(params=params)
         a = io.read(os.path.join(_TESTDATA_DIR, "uep/srtio3.cell"))
 
-        self.assertTrue(reader.create_calculator(a, folder, "srtio3"))
-        calc = reader.create_calculator(a, folder, "srtio3")
+        self.assertTrue(reader._ReadWriteUEP__create_calculator(a, folder, "srtio3"))
+        calc = reader._ReadWriteUEP__create_calculator(a, folder, "srtio3")
 
         self.assertEqual(calc.gw_factor, params['uep_gw_factor'])
         self.assertEqual(calc.geom_steps, params['geom_steps'])
@@ -85,6 +85,9 @@ class TestReadWriteUEP(unittest.TestCase):
             reader.write(atoms, output_folder)
         except Exception as e:
             print(e)
+
+        os.remove(os.path.join(output_folder,
+                                   "test_save.yaml"))
 
 
 if __name__ == "__main__":

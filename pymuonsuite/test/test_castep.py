@@ -57,15 +57,15 @@ class TestReadWriteCastep(unittest.TestCase):
         params = {"mu_symbol": "mu", "k_points_grid": [7, 7, 7]}
         folder = os.path.join(_TESTDATA_DIR, "castep")  # does not contain any castep files
         reader = ReadWriteCastep(params=params)
-        calc = reader.create_calculator()
+        calc = reader._ReadWriteCastep__create_calculator()
         self.assertTrue(calc)
-        calc_geom = reader.update_calculator("GEOM_OPT")
+        calc_geom = reader._ReadWriteCastep__update_calculator("GEOM_OPT")
         self.assertTrue(calc_geom)
 
         self.assertEqual(calc_geom.param.task.value,
                   "GeometryOptimization")
 
-        calc_magres = reader.update_calculator(calc_type="MAGRES")
+        calc_magres = reader._ReadWriteCastep__update_calculator(calc_type="MAGRES")
 
         # Tests that the calculators have the correct tasks set:
 
