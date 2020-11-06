@@ -26,9 +26,9 @@ from soprano.collection import AtomsCollection
 # Internal imports
 from pymuonsuite import constants
 from pymuonsuite.io.castep import (parse_castep_masses, castep_write_input,
-                                   add_to_castep_block)
+                                   add_to_castep_block, ReadWriteCastep)
 from pymuonsuite.io.dftb import (dftb_write_input, dftb_read_input,
-                                 parse_spinpol_dftb)
+                                 parse_spinpol_dftb, ReadWriteDFTB)
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,
@@ -241,33 +241,34 @@ def muon_vibrational_average_write(cell_file, method='independent',
 
     cell.set_array('castep_custom_species', species)
 
-    # Load the phonons
-    if phonon_source_type == 'castep':
-        if phonon_source_file is not None:
-            phpath, phfile = os.path.split(phonon_source_file)
-            phfile = seedname(phfile)
-        else:
-            phpath = path
-            phfile = sname
-        ph_evals, ph_evecs = read_castep_gamma_phonons(phfile, phpath)
-    elif phonon_source_type == 'dftb+':
-        if phonon_source_file is None:
-            phonon_source_file = os.path.join(path, sname + '.phonons.pkl')
+    io_object = {
+        'castep': ReadWriteCastep(),
+        'dftb+': ReadWriteDFTB()
+    }
 
-        with open(phonon_source_file, 'rb') as f:
-            phdata = pickle.load(f)
-            # Find the gamma point
-            gamma_i = None
-            for i, p in enumerate(phdata.path):
-                if (p == 0).all():
-                    gamma_i = i
-                    break
-            try:
-                ph_evals = phdata.frequencies[gamma_i]
-                ph_evecs = phdata.modes[gamma_i]
-            except TypeError:
-                raise RuntimeError(('Phonon file {0} does not contain gamma '
-                                    'point data').format(phonon_source_file))
+    # Load the phonons
+    if phonon_source_file is not None:
+        phpath, phfile = os.path.split(phonon_source_file)
+        phfile = seedname(seedname(phfile)) #have to do twice for dftb case
+    else:
+        phpath = path
+        phfile = sname
+
+
+    try:
+        atoms = io_object[phonon_source_type].read(phpath, phfile)
+        ph_evals = atoms.info['ph_evals']
+        ph_evecs = atoms.info['ph_evecs']
+    except IOError as e:
+        raise
+        return
+    except KeyError:
+        phonon_source_file = os.path.join(phpath, phfile + ".phonon")
+        if phonon_source_type == "dftb+":
+            phonon_source_file = phonon_source_file + 's.pkl'
+        raise(IOError("Phonon file {0} could not be read."
+              .format(phonon_source_file)))
+        return
 
     # Fetch masses
     try:
@@ -308,23 +309,24 @@ def muon_vibrational_average_write(cell_file, method='independent',
 
     # Get a calculator
     if calculator == 'castep':
-        writer_function = castep_write_input
-        param, kpts = kwargs['castep_param'], kwargs['k_points_grid']
-        calc = create_hfine_castep_calculator(mu_symbol=mu_symbol,
-                                              calc=cell.calc,
-                                              param_file=param, kpts=kpts)
+        params = {'castep_param': kwargs['castep_param'], 'k_points_grid':
+                  kwargs['k_points_grid'], 'mu_symbol': mu_symbol}
+        io_object = ReadWriteCastep(params=params, calc=cell.calc,
+                                    script=kwargs['script_file'])
+        opt_args = {'calc_type': "MAGRES"}
+
     elif calculator == 'dftb+':
-        writer_function = dftb_write_input
-        kpts = kwargs['k_points_grid'] if kwargs['dftb_pbc'] else None
-        calc = create_spinpol_dftbp_calculator(
-            param_set=kwargs['dftb_set'], kpts=kpts)
+        params = {'dftb_set': kwargs['dftb_set'], 'dftb_pbc': kwargs['dftb_pbc'],
+                  'k_points_grid': kwargs['k_points_grid'] if kwargs['dftb_pbc'] else None}
+        io_object = ReadWriteDFTB(params=params, calc=cell.calc,
+                                  script=kwargs['script_file'])
+        opt_args = {'calc_type': "SPINPOL"}
 
     displaced_coll = AtomsCollection(displaced_cells)
     displaced_coll.info['displacement_scheme'] = displsch
     displaced_coll.info['muon_index'] = mu_index
-    displaced_coll.save_tree(sname + '_displaced', writer_function,
-                             opt_args={'calc': calc,
-                                       'script': kwargs['script_file']})
+    displaced_coll.save_tree(sname + '_displaced', io_object.write,
+                             opt_args=opt_args)
 
 
 def muon_vibrational_average_read(cell_file, calculator='castep',
@@ -337,17 +339,19 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
     sname = seedname(cell_file)
     num_atoms = len(cell)
 
-    reader_function = {
-        'castep': read_output_castep,
-        'dftb+': read_output_dftbp
-    }[calculator]
+    io_object = {
+        'castep': ReadWriteCastep(),
+        'dftb+': ReadWriteDFTB()
+    }
 
-    displaced_coll = AtomsCollection.load_tree(sname + '_displaced',
-                                               reader_function,
-                                               safety_check=2,
-                                               opt_args={
-                                                   'avgprop': avgprop
-                                               })
+    try:
+        displaced_coll = AtomsCollection.load_tree(sname + '_displaced',
+                                               io_object[calculator].read,
+                                               safety_check=2)
+    except Exception as e:
+        raise
+        return
+
     mu_i = displaced_coll.info['muon_index']
     displsch = displaced_coll.info['displacement_scheme']
 
@@ -361,7 +365,7 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
             try:
                 to_avg.append(a.get_charges()[mu_i])
             except RuntimeError:
-                raise(IOError)
+                raise(IOError("Could not read charges."))
 
     to_avg = np.array(to_avg)
     displsch.recalc_weights(T=average_T)
