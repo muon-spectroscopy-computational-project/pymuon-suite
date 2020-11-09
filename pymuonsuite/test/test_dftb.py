@@ -34,11 +34,13 @@ class TestReadWriteDFTB(unittest.TestCase):
             reader = ReadWriteDFTB()
             # test that we do not get any result for trying to read
             # an empty folder:
-            #self.assertFalse(reader.read(folder))
-            #check we get exception for the above
+            try:
+                reader.read(folder)
+            except Exception as e:
+                print(e)
 
             folder = os.path.join(_TESTDATA_DIR, "dftb")
-            # tests castep file being read:
+            # tests dftb files being read:
             self.assertTrue(reader.read(folder))
             atom_arrays = deepcopy(reader.read(folder).arrays)
 
@@ -98,9 +100,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         self.assertEqual(atoms, atoms2)
 
         # test phonons output:
-        
         os.chdir(input_folder)
-        print("FOLDER: ", input_folder)
         atoms = io.read(os.path.join(input_folder, "ethyleneMu.xyz"))
         params = load_input_file("phonons.yaml", AsePhononsSchema)
 
@@ -120,12 +120,8 @@ class TestReadWriteDFTB(unittest.TestCase):
 
         reader.write(atoms, input_folder, calc_type="PHONONS", args=args)
 
-        # TODO:
-        # More tests of write outputs being correct - writing one type after the other type and checking still ok - like castep
-        os.remove(os.path.join(output_folder,
-                                 "dftb_in.hsd"))
-        os.remove(os.path.join(output_folder,
-                                   "geo_end.gen"))
+        os.remove(os.path.join(output_folder, "dftb_in.hsd"))
+        os.remove(os.path.join(output_folder, "geo_end.gen"))
 
 
 if __name__ == "__main__":

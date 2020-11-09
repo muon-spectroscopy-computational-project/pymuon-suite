@@ -31,10 +31,10 @@ class TestReadWriteCastep(unittest.TestCase):
             reader = ReadWriteCastep()
             # test that we do not get any result for trying to read
             # an empty folder:
-            # try:
-            #     reader.read(folder, sname)
-            # except Exception as e:
-            #     print(e)
+            try:
+                reader.read(folder, sname)
+            except Exception as e:
+                print(e)
 
             folder = os.path.join(_TESTDATA_DIR, "castep")
             # tests castep file being read:
@@ -42,7 +42,7 @@ class TestReadWriteCastep(unittest.TestCase):
             atoms = reader.read(folder, sname)
             atom_arrays_castep = deepcopy(reader.read(folder, sname).arrays)
 
-            #checks if phonon info has been loaded into atom object:
+            #  checks if phonon info has been loaded into atom object:
             self.assertIn('ph_evecs', atoms.info.keys())
             self.assertIn('ph_evals', atoms.info.keys())
 
@@ -63,7 +63,7 @@ class TestReadWriteCastep(unittest.TestCase):
         self.assertTrue(calc_geom)
 
         self.assertEqual(calc_geom.param.task.value,
-                  "GeometryOptimization")
+                         "GeometryOptimization")
 
         calc_magres = reader._ReadWriteCastep__update_calculator(calc_type="MAGRES")
 
@@ -90,7 +90,7 @@ class TestReadWriteCastep(unittest.TestCase):
         reader = ReadWriteCastep()
         print(atoms.calc)
         reader.write(atoms, output_folder, sname="srtio3_geom_opt",
-                        calc_type="GEOM_OPT")
+                     calc_type="GEOM_OPT")
 
         reader.write(atoms, output_folder, sname="srtio3_magres",
                      calc_type="MAGRES")

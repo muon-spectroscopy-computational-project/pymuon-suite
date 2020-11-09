@@ -11,6 +11,8 @@ import shutil
 import subprocess
 from pymuonsuite.muairss import main as run_muairss
 from pymuonsuite.schemas import load_input_file, MuAirssSchema, UEPOptSchema
+from ase.io.castep import read_param
+from pymuonsuite.utils import list_to_string
 from ase import io
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -25,7 +27,6 @@ class TestMuairss(unittest.TestCase):
             yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-uep.yaml')
             cell_file = os.path.join(_TESTDATA_DIR, 'Si2.cell')
             input_params = load_input_file(yaml_file, MuAirssSchema)
-            print(input_params)
 
             # Run Muairss write:
             sys.argv[1:] = ["-tw", cell_file, yaml_file]
@@ -42,7 +43,7 @@ class TestMuairss(unittest.TestCase):
                     self.assertEqual(params['gw_factor'], input_params['uep_gw_factor'])
 
             # Run UEP
-            subprocess.call(os.path.join(_TESTDATA_DIR,"script-uep"))
+            subprocess.call(os.path.join(_TESTDATA_DIR, "script-uep"))
 
             # Check all folders contain UEP file
             for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/uep/"):
@@ -65,8 +66,10 @@ class TestMuairss(unittest.TestCase):
         try:
             yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-castep.yaml')
             cell_file = os.path.join(_TESTDATA_DIR, 'Si2.cell')
+            param_file = os.path.join(_TESTDATA_DIR, 'Si2.param')
             input_params = load_input_file(yaml_file, MuAirssSchema)
             input_atoms = io.read(cell_file)
+            castep_param = read_param(param_file).param
 
             # Run Muairss write:
             sys.argv[1:] = ["-tw", cell_file, yaml_file]
@@ -77,26 +80,28 @@ class TestMuairss(unittest.TestCase):
                 for s in subDirs:
                     expected_file = os.path.join("muon-airss-out-castep/castep/" + s, s + ".cell")
                     self.assertTrue(os.path.exists(expected_file))
+                    atoms = io.read(expected_file)
+                    self.assertEqual(atoms.calc.cell.kpoint_mp_grid.value,
+                                     list_to_string(input_params['k_points_grid']))
+                    expected_param_file = os.path.join("muon-airss-out-castep/castep/" + s, s + ".param")
+                    self.assertTrue(os.path.exists(expected_param_file))
+                    output_castep_param = read_param(expected_param_file).param
+                    self.assertEqual(output_castep_param.cut_off_energy, castep_param.cut_off_energy)
+                    self.assertEqual(output_castep_param.elec_energy_tol, castep_param.elec_energy_tol)
                     # below test didn't work as cell positions get rounded...
-                    # atoms = io.read(expected_file)
                     # equal = atoms.cell == input_atoms.cell
                     # self.assertTrue(equal.all())
-                    
 
             # Check all folders contain castep file
             for (rootDir, subDirs, files) in os.walk("castep-results/castep"):
                 for s in subDirs:
                     expected_file = os.path.join("castep-results/castep/" + s, s + ".castep")
-                    print(expected_file)
                     self.assertTrue(os.path.exists(expected_file))
-
 
             yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-castep-read.yaml')
             sys.argv[1:] = [cell_file, yaml_file]
             run_muairss()
-            # print(sys.argv)
 
-            
             self.assertTrue(os.path.exists("Si2_clusters.txt"))
             self.assertTrue(os.path.exists("Si2_Si2_castep_clusters.dat"))
         finally:

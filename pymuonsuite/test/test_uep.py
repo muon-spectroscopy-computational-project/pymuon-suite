@@ -25,24 +25,22 @@ _TESTSAVE_DIR = os.path.join(_TEST_DIR, "test_save")
 class TestReadWriteUEP(unittest.TestCase):
 
     def test_read(self):
-        seednames = ['srtio3_1']
-        for sname in seednames:
-            folder = _TESTDATA_DIR  # does not contain any uep files
-            reader = ReadWriteUEP()
-            # test that we do not get any result for trying to read
-            # an empty folder:
-            #self.assertFalse(reader.read(folder, sname))
-            try:
-                reader.read(folder, sname)
-            except Exception as e:
-                print(e)
+        sname = 'srtio3_1'
+        folder = _TESTDATA_DIR  # does not contain any uep files
+        reader = ReadWriteUEP()
+        # test that we do not get any result for trying to read
+        # an empty folder:
+        #self.assertFalse(reader.read(folder, sname))
+        try:
+            reader.read(folder, sname)
+        except Exception as e:
+            print(e)
 
-            #TODO: check we got the exception above
+        #TODO: check we got the exception above
 
-            folder = os.path.join(_TESTDATA_DIR, "uep")
-            # # tests uep file being read:
-            self.assertTrue(reader.read(folder, sname))
-            print(reader.read(folder, sname).calc.atoms)
+        folder = os.path.join(_TESTDATA_DIR, "uep")
+        # # tests uep file being read:
+        self.assertTrue(reader.read(folder, sname))
 
     def test_create_calc(self):
         folder = os.path.join(_TESTDATA_DIR, "uep")
@@ -68,26 +66,27 @@ class TestReadWriteUEP(unittest.TestCase):
         atoms = io.read(os.path.join(input_folder, "srtio3.cell"))
 
         # test writing geom_opt output
-        
-
         param_file = os.path.join(input_folder, "srtio3.yaml")
         params = load_input_file(param_file, MuAirssSchema)
 
-        reader = ReadWriteUEP(params = params)
+        reader = ReadWriteUEP(params=params)
 
         reader.write(atoms, output_folder)
+
+        self.assertTrue(os.path.exists(os.path.join(output_folder,
+                        "test_save.yaml")))
 
         try:
             params['charged'] = False
 
-            reader = ReadWriteUEP(params = params)
+            reader = ReadWriteUEP(params=params)
 
             reader.write(atoms, output_folder)
         except Exception as e:
             print(e)
 
         os.remove(os.path.join(output_folder,
-                                   "test_save.yaml"))
+                  "test_save.yaml"))
 
 
 if __name__ == "__main__":
