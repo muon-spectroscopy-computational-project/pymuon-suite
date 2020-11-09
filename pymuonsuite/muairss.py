@@ -34,12 +34,9 @@ from soprano.analyse.phylogen import PhylogenCluster, Gene
 import pymuonsuite.constants as cnst
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
-from pymuonsuite.io.castep import (castep_write_input, castep_read_input,
-                                   add_to_castep_block, ReadWriteCastep)
-from pymuonsuite.io.dftb import (dftb_write_input, dftb_read_input,
-                                 ReadWriteDFTB)
-from pymuonsuite.io.uep import (UEPCalculator, uep_write_input, uep_read_input,
-                                ReadWriteUEP)
+from pymuonsuite.io.castep import add_to_castep_block, ReadWriteCastep
+from pymuonsuite.io.dftb import ReadWriteDFTB
+from pymuonsuite.io.uep import UEPCalculator, ReadWriteUEP
 from pymuonsuite.io.output import write_cluster_report
 
 
@@ -120,114 +117,6 @@ def parse_structure_name(file_name):
     return base
 
 
-def create_muairss_castep_calculator(a, params={}, calc=None):
-    """Create a calculator containing all the necessary parameters
-    for a geometry optimization."""
-
-    if not isinstance(calc, Castep):
-        calc = Castep()
-    else:
-        calc = deepcopy(calc)
-
-    musym = params.get('mu_symbol', 'H:mu')
-
-    # Start by ensuring that the muon mass and gyromagnetic ratios are included
-    mass_block = calc.cell.species_mass.value
-    calc.cell.species_mass = add_to_castep_block(mass_block, musym,
-                                                 cnst.m_mu_amu,
-                                                 'mass')
-
-    gamma_block = calc.cell.species_gamma.value
-    calc.cell.species_gamma = add_to_castep_block(gamma_block, musym,
-                                                  851586494.1, 'gamma')
-
-    # Now assign the k-points
-    calc.cell.kpoint_mp_grid = list_to_string(
-        params.get('k_points_grid', [1, 1, 1]))
-
-    # Remove cell constraints if they exist
-    calc.cell.cell_constraints = None
-    calc.cell.fix_all_cell = True   # Necessary for older CASTEP versions
-
-    calc.param.charge = params.get('charged', False)*1.0
-
-    # Remove symmetry operations if they exist
-    calc.cell.symmetry_ops.value = None
-
-    # Read the parameters
-    pfile = params.get('castep_param', None)
-    if pfile is not None:
-        calc.param = read_param(params['castep_param']).param
-
-    calc.param.task = 'GeometryOptimization'
-    calc.param.geom_max_iter = params.get('geom_steps', 30)
-    calc.param.geom_force_tol = params.get('geom_force_tol', 0.05)
-    calc.param.max_scf_cycles = params.get('max_scc_steps', 30)
-
-    return calc
-
-
-def create_muairss_dftb_calculator(a, params={}, calc=None):
-
-    from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
-
-    if not isinstance(calc, Dftb):
-        args = {}
-    else:
-        args = calc.todict()
-
-    dargs = DFTBArgs(params['dftb_set'])
-
-    for opt in params['dftb_optionals']:
-        try:
-            dargs.set_optional(opt, True)
-        except KeyError:
-            print(('WARNING: optional DFTB+ file {0} not available for {1}'
-                   ' parameter set, skipping').format(opt, params['dftb_set'])
-                  )
-
-    args.update(dargs.args)
-    args = dargs.args
-    args['Driver_'] = 'ConjugateGradient'
-    args['Driver_Masses_'] = ''
-    args['Driver_Masses_Mass_'] = ''
-    args['Driver_Masses_Mass_Atoms'] = '-1'
-    args['Driver_Masses_Mass_MassPerAtom [amu]'] = str(cnst.m_mu_amu)
-
-    args['Driver_MaxForceComponent [eV/AA]'] = params['geom_force_tol']
-    args['Driver_MaxSteps'] = params['geom_steps']
-    args['Driver_MaxSccIterations'] = params['max_scc_steps']
-    args['Hamiltonian_Charge'] = 1.0 if params['charged'] else 0.0
-
-    if params['dftb_pbc']:
-        calc = Dftb(kpts=params['k_points_grid'],
-                    **args)
-    else:
-        calc = Dftb(**args)
-
-    return calc
-
-
-def create_muairss_uep_calculator(a, params={}, calc=None):
-
-    if not isinstance(calc, UEPCalculator):
-        calc = UEPCalculator(atoms=a, chden=params['uep_chden'])
-    else:
-        dummy = UEPCalculator(chden=params['uep_chden'])
-        calc.chden_path = dummy.chden_path
-        calc.chden_seed = dummy.chden_seed
-
-    if not params['charged']:
-        raise RuntimeError("Can't use UEP method for neutral system")
-
-    calc.label = params['name']
-    calc.gw_factor = params['uep_gw_factor']
-    calc.geom_steps = params['geom_steps']
-    calc.opt_tol = params['geom_force_tol']
-
-    return calc
-
-
 def save_muairss_collection(struct, params, batch_path=''):
     """Generate input files for a single structure and configuration file"""
 
@@ -287,7 +176,7 @@ def load_muairss_collection(struct, params, batch_path=''):
         calc_path = os.path.join(out_path, cname)
 
         dc = AtomsCollection.load_tree(calc_path, load_formats[cname].read,
-                                       safety_check=2, tolerant_loading=True)
+                                       safety_check=2, tolerant=True)
 
         print("If greater than 10% of structures could not be loaded, \
 we advise adjusting the parameters and re-running the {0} \
