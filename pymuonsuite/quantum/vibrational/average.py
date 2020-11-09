@@ -27,8 +27,7 @@ from soprano.collection import AtomsCollection
 from pymuonsuite import constants
 from pymuonsuite.io.castep import (parse_castep_masses, add_to_castep_block,
                                    ReadWriteCastep)
-from pymuonsuite.io.dftb import (dftb_write_input, dftb_read_input,
-                                 parse_spinpol_dftb, ReadWriteDFTB)
+from pymuonsuite.io.dftb import (parse_spinpol_dftb, ReadWriteDFTB)
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,
