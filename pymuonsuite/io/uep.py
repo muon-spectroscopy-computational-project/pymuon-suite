@@ -46,7 +46,7 @@ class ReadWriteUEP(ReadWrite):
 
         try:
             calc.read()
-        except Exception as e:
+        except ValueError as e:
             raise(IOError("Error: could not read UEP file in {0}"
                   .format(folder)))
             return
@@ -67,11 +67,10 @@ class ReadWriteUEP(ReadWrite):
 
         try:
             calc = self.__create_calculator(a, folder, sname)
-        except RuntimeError as e:
+            calc.write_input()
+        except (ValueError, RuntimeError) as e:
             raise
             return
-
-        calc.write_input()
 
         if self.script is not None:
             stxt = open(self.script).read()
@@ -210,44 +209,3 @@ class UEPCalculator(object):
         except FileNotFoundError:
             self.run()
             self.read()
-
-
-def uep_write_input(a, folder, calc=None, name=None, script=None):
-
-    if name is None:
-        name = os.path.split(folder)[-1]
-
-    if calc is None:
-        calc = UEPCalculator()
-
-    calc.path = folder
-    calc.label = name
-    calc.atoms = a
-
-    calc.write_input()
-
-    if script is not None:
-        stxt = open(script).read()
-        stxt = stxt.format(seedname=name)
-        with open(os.path.join(folder, 'script.sh'), 'w') as sf:
-            sf.write(stxt)
-
-
-def uep_read_input(folder, name=None, atoms=None):
-
-    if name is None:
-        name = os.path.split(folder)[-1]
-
-    calc = UEPCalculator(label=name, path=folder)
-    calc.read()
-
-    a = Atoms('H', positions=[calc._x_opt])
-
-    if atoms is not None:
-        a = atoms + a
-
-    a.info['name'] = name
-    a.set_calculator(calc)
-    calc.atoms = a
-
-    return a

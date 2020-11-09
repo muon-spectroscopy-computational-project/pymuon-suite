@@ -10,6 +10,7 @@ import yaml
 import glob
 import numpy as np
 import scipy.constants as cnst
+import warnings
 
 from copy import deepcopy
 
@@ -111,8 +112,8 @@ class ReadWriteCastep(ReadWrite):
             m = parse_hyperfine_magres(mfile)
             atoms.arrays.update(m.arrays)
         except (IndexError, OSError):
-            print("Warning: No .magres files found in {}."
-                  .format(os.path.abspath(folder)))
+            warnings.warn("No .magres files found in {}."
+                          .format(os.path.abspath(folder)))
 
     def __read_castep_gamma_phonons(self, atoms, folder, sname=None):
         """Parse CASTEP phonon data into a casteppy object,
@@ -162,8 +163,8 @@ class ReadWriteCastep(ReadWrite):
             atoms.info['ph_evecs'] = evecs[gamma_i]
 
         except IndexError:
-            print("Warning: No .phonon files found in {}."
-                  .format(os.path.abspath(folder)))
+            warnings.warn("No .phonon files found in {}."
+                          .format(os.path.abspath(folder)))
         except OSError as e:
             print("ERROR: {}".format(e))
         except Exception as e:
@@ -185,34 +186,37 @@ class ReadWriteCastep(ReadWrite):
         |   calc_type (str):        Castep task which will be performed:
         |                           "GEOM_OPT" or "MAGRES"
         """
+        if calc_type == "GEOM_OPT" or calc_type == "MAGRES":
+            if sname is None:
+                sname = os.path.split(folder)[-1]  # Same as folder name
 
-        if sname is None:
-            sname = os.path.split(folder)[-1]  # Same as folder name
+            self.__calc = deepcopy(self.__calc)
 
-        self.__calc = deepcopy(self.__calc)
+            # We only use the calculator attached to the atoms object if a calc
+            # has not been set when initialising the ReadWrite object OR we have
+            # not called write() and made a calculator before.
 
-        # We only use the calculator attached to the atoms object if a calc
-        # has not been set when initialising the ReadWrite object OR we have
-        # not called write() and made a calculator before.
+            if self.__calc is None:
+                if isinstance(a.calc, Castep):
+                    self.__calc = deepcopy(a.calc)
+                self.__create_calculator()
 
-        if self.__calc is None:
-            if isinstance(a.calc, Castep):
-                self.__calc = deepcopy(a.calc)
-            self.__create_calculator()
+            self.__update_calculator(calc_type)
+            a.set_calculator(self.__calc)
 
-        self.__update_calculator(calc_type)
-        a.set_calculator(self.__calc)
+            io.write(os.path.join(folder, sname + '.cell'),
+                     a, magnetic_moments='initial')
+            write_param(os.path.join(folder, sname + '.param'),
+                        a.calc.param, force_write=True)
 
-        io.write(os.path.join(folder, sname + '.cell'),
-                 a, magnetic_moments='initial')
-        write_param(os.path.join(folder, sname + '.param'),
-                    a.calc.param, force_write=True)
-
-        if self.script is not None:
-            stxt = open(self.script).read()
-            stxt = stxt.format(seedname=sname)
-            with open(os.path.join(folder, 'script.sh'), 'w') as sf:
-                sf.write(stxt)
+            if self.script is not None:
+                stxt = open(self.script).read()
+                stxt = stxt.format(seedname=sname)
+                with open(os.path.join(folder, 'script.sh'), 'w') as sf:
+                    sf.write(stxt)
+        else:
+            raise(NotImplementedError("Calculation type {} is not implemented."
+                  " Please choose 'GEOM_OPT' or 'MAGRES'".format(calc_type)))
 
     def __create_calculator(self):
         if self.__calc is not None and isinstance(self.__calc, Castep):
@@ -308,94 +312,6 @@ class ReadWriteCastep(ReadWrite):
 
 class CastepError(Exception):
     pass
-
-
-def castep_write_input(a, folder, calc=None, name=None, script=None):
-    """Writes input files for an Atoms object with a Castep
-    calculator.
-
-    | Args:
-    |   a (ase.Atoms):          Atoms object to write. Can have a Castep
-    |                           calculator attached to carry cell/param
-    |                           keywords.
-    |   folder (str):           Path to save the input files to.
-    |   calc (ase.Calculator):  Calculator to attach to Atoms. If
-    |                           present, the pre-existent one will
-    |                           be ignored.
-    |   name (str):             Seedname to save the files with. If not
-    |                           given, use the name of the folder.
-    |   script (str):           Path to a file containing a submission script
-    |                           to copy to the input folder. The script can
-    |                           contain the argument {seedname} in curly
-    |                           braces, and it will be appropriately replaced.
-    """
-
-    if name is None:
-        name = os.path.split(folder)[-1]  # Same as folder name
-
-    if calc is not None:
-        a.set_calculator(calc)
-
-    if not isinstance(a.calc, Castep):
-        a = a.copy()
-        calc = Castep(atoms=a)
-        a.set_calculator(calc)
-
-    io.write(os.path.join(folder, name + '.cell'),
-             a, magnetic_moments='initial')
-    write_param(os.path.join(folder, name + '.param'),
-                a.calc.param, force_write=True)
-
-    if script is not None:
-        stxt = open(script).read()
-        stxt = stxt.format(seedname=name)
-        with open(os.path.join(folder, 'script.sh'), 'w') as sf:
-            sf.write(stxt)
-
-
-def castep_read_input(folder):
-    sname = os.path.split(folder)[-1]
-    a = io.read(os.path.join(folder, sname + '.castep'))
-    return a
-
-
-def save_muonconf_castep(a, folder, params):
-    # Muon mass and gyromagnetic ratio
-    mass_block = 'AMU\n{0}       0.1138'
-    gamma_block = 'radsectesla\n{0}        851586494.1'
-
-    if isinstance(a.calc, Castep):
-        ccalc = a.calc
-    else:
-        ccalc = Castep()
-
-    ccalc.cell.kpoint_mp_grid.value = list_to_string(params['k_points_grid'])
-    ccalc.cell.species_mass = mass_block.format(params['mu_symbol']
-                                                ).split('\n')
-    ccalc.cell.species_gamma = gamma_block.format(params['mu_symbol']
-                                                  ).split('\n')
-    ccalc.cell.fix_all_cell = True  # To make sure for older CASTEP versions
-
-    a.set_calculator(ccalc)
-
-    name = os.path.split(folder)[-1]
-    io.write(os.path.join(folder, '{0}.cell'.format(name)), a)
-    ccalc.atoms = a
-
-    if params['castep_param'] is not None:
-        castep_params = yaml.load(open(params['castep_param'], 'r'))
-    else:
-        castep_params = {}
-
-    # Parameters from .yaml will overwrite parameters from .param
-    castep_params['task'] = "GeometryOptimization"
-    castep_params['geom_max_iter'] = params['geom_steps']
-    castep_params['geom_force_tol'] = params['geom_force_tol']
-    castep_params['max_scf_cycles'] = params['max_scc_steps']
-
-    parameter_file = os.path.join(folder, '{0}.param'.format(name))
-    yaml.safe_dump(castep_params, open(parameter_file, 'w'),
-                   default_flow_style=False)
 
 
 def parse_castep_bands(infile, header=False):
