@@ -25,8 +25,8 @@ from soprano.collection import AtomsCollection
 
 # Internal imports
 from pymuonsuite import constants
-from pymuonsuite.io.castep import (parse_castep_masses, castep_write_input,
-                                   add_to_castep_block, ReadWriteCastep)
+from pymuonsuite.io.castep import (parse_castep_masses, add_to_castep_block,
+                                   ReadWriteCastep)
 from pymuonsuite.io.dftb import (dftb_write_input, dftb_read_input,
                                  parse_spinpol_dftb, ReadWriteDFTB)
 from pymuonsuite.io.magres import parse_hyperfine_magres
