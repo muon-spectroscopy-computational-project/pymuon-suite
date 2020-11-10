@@ -188,6 +188,9 @@ MuAirssSchema = Schema({
     bool,
     # Format to use to save the minimum energy structures for each cluster
     Optional('clustering_save_format', default='cif'):
+    validate_str,
+    # Save a file with all muon positions in one
+    Optional('allpos_filename', default=None):
     validate_str
 })
 

@@ -273,6 +273,12 @@ def save_muairss_collection(struct, params, batch_path=''):
                      opt_args={'calc': calc, 'script': params['script_file']},
                      safety_check=2)
 
+    # Do we also save a collective structure?
+    allf = params['allpos_filename']
+    if allf is not None:
+        alls = sum(dc.structures, struct)
+        io.write(allf, alls)
+
 
 def load_muairss_collection(struct, params, batch_path=''):
 
