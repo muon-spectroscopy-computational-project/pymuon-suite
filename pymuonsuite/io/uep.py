@@ -19,7 +19,11 @@ from pymuonsuite.io.readwrite import ReadWrite
 class ReadWriteUEP(ReadWrite):
     def __init__(self, params={}, script=None):
         self.script = script
-        self.params = params
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
+        else:
+            self.params = params
 
     def set_script(self, script):
         '''
@@ -36,7 +40,11 @@ class ReadWriteUEP(ReadWrite):
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
         '''
-        self.params = params
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
+        else:
+            self.params = params
 
     def read(self, folder, sname=None):
         if sname is None:

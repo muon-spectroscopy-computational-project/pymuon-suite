@@ -45,8 +45,12 @@ class ReadWriteCastep(ReadWrite):
         |                           present, the pre-existent one will
         |                           be ignored.
         '''
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
+        else:
+            self.params = params
         self.script = script
-        self.params = params
         self.__calc = calc
         if calc is not None and self.params != {}:
             self.__create_calculator()
@@ -56,7 +60,11 @@ class ReadWriteCastep(ReadWrite):
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
         '''
-        self.params = params
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
+        else:
+            self.params = params
         # if the params have been changed, the calc has to be remade
         # from scratch:
         self.__calc = None

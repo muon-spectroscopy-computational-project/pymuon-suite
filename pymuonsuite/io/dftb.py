@@ -44,6 +44,10 @@ class ReadWriteDFTB(ReadWrite):
         |                           present, the pre-existent one will
         |                           be ignored.
         '''
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
+
         if params == {}:
             params = {'dftb_set': '3ob-3-1', 'k_points_grid': None,
                       'geom_force_tol': 0.01, 'dftb_optionals': []}
@@ -69,6 +73,10 @@ class ReadWriteDFTB(ReadWrite):
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
         '''
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
+
         if params == {}:
             params = {'dftb_set': '3ob-3-1', 'k_points_grid': None,
                       'geom_force_tol': 0.01, 'dftb_optionals': []}
