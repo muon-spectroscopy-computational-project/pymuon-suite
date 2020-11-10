@@ -28,38 +28,37 @@ _TESTSAVE_DIR = os.path.join(_TEST_DIR, "test_save")
 class TestReadWriteDFTB(unittest.TestCase):
 
     def test_read(self):
-        seednames = ['ethyleneMu_opt']
-        for sname in seednames:
-            folder = _TESTDATA_DIR  # does not contain any castep files
-            reader = ReadWriteDFTB()
-            # test that we do not get any result for trying to read
-            # an empty folder:
-            try:
-                reader.read(folder)
-            except Exception as e:
-                print(e)
+        sname = 'ethyleneMu_opt'
+        folder = _TESTDATA_DIR  # does not contain any castep files
+        reader = ReadWriteDFTB()
+        # test that we do not get any result for trying to read
+        # an empty folder:
+        try:
+            reader.read(folder)
+        except Exception as e:
+            print(e)
 
-            folder = os.path.join(_TESTDATA_DIR, "dftb")
-            # tests dftb files being read:
-            self.assertTrue(reader.read(folder))
-            atom_arrays = deepcopy(reader.read(folder).arrays)
+        folder = os.path.join(_TESTDATA_DIR, "dftb")
+        # tests dftb files being read:
+        self.assertTrue(reader.read(folder))
+        atom_arrays = deepcopy(reader.read(folder).arrays)
 
-            # tests hyperfine being read:
-            atoms = reader.read(folder)
-            # checks if added hyperfine to atom array:
-            self.assertIn('hyperfine', atoms.arrays.keys())
+        # tests hyperfine being read:
+        atoms = reader.read(folder)
+        # checks if added hyperfine to atom array:
+        self.assertIn('hyperfine', atoms.arrays.keys())
 
-            #checks if phonon info has been loaded into atom object:
-            # No phonon file in this folder
-            self.assertNotIn('ph_evecs', atoms.info.keys())
-            self.assertNotIn('ph_evals', atoms.info.keys())
+        #checks if phonon info has been loaded into atom object:
+        # No phonon file in this folder
+        self.assertNotIn('ph_evecs', atoms.info.keys())
+        self.assertNotIn('ph_evals', atoms.info.keys())
 
-            #phonon file in this folder:
-            folder = os.path.join(_TESTDATA_DIR, "dftb-phonons")
-            self.assertTrue(reader.read(folder))
-            atoms2 = reader.read(folder)
-            self.assertIn('ph_evecs', atoms2.info.keys())
-            self.assertIn('ph_evals', atoms2.info.keys())
+        #phonon file in this folder:
+        folder = os.path.join(_TESTDATA_DIR, "dftb-phonons")
+        self.assertTrue(reader.read(folder))
+        atoms2 = reader.read(folder)
+        self.assertIn('ph_evecs', atoms2.info.keys())
+        self.assertIn('ph_evals', atoms2.info.keys())
 
     def test_create_calc(self):
         params = {"mu_symbol": "mu", "k_points_grid": [2, 2, 2],
@@ -90,11 +89,11 @@ class TestReadWriteDFTB(unittest.TestCase):
         input_folder = os.path.join(_TESTDATA_DIR, "dftb-phonons")
         output_folder = _TESTSAVE_DIR
 
-        atoms = io.read(os.path.join(_TESTDATA_DIR, "castep/srtio3.cell"))
+        atoms = io.read(os.path.join(_TESTDATA_DIR, "Si2/Si2.cell"))
 
         # test writing geom_opt output
         reader = ReadWriteDFTB(params=params)
-        reader.write(atoms, output_folder, sname="srtio3_geom_opt", calc_type="GEOM_OPT")
+        reader.write(atoms, output_folder, sname="Si2_geom_opt", calc_type="GEOM_OPT")
         atoms2 = reader.read(output_folder)
         self.assertTrue(reader.read(output_folder))
         self.assertEqual(atoms, atoms2)

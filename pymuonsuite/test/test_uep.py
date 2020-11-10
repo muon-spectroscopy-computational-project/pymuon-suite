@@ -25,7 +25,7 @@ _TESTSAVE_DIR = os.path.join(_TEST_DIR, "test_save")
 class TestReadWriteUEP(unittest.TestCase):
 
     def test_read(self):
-        sname = 'srtio3_1'
+        sname = 'Si2_1'
         folder = _TESTDATA_DIR  # does not contain any uep files
         reader = ReadWriteUEP()
         # test that we do not get any result for trying to read
@@ -45,14 +45,14 @@ class TestReadWriteUEP(unittest.TestCase):
     def test_create_calc(self):
         folder = os.path.join(_TESTDATA_DIR, "uep")
         
-        param_file = os.path.join(_TESTDATA_DIR, "uep/srtio3.yaml")
+        param_file = os.path.join(_TESTDATA_DIR, "uep/Si2.yaml")
         params = load_input_file(param_file, MuAirssSchema)
 
         reader = ReadWriteUEP(params=params)
-        a = io.read(os.path.join(_TESTDATA_DIR, "uep/srtio3.cell"))
+        a = io.read(os.path.join(_TESTDATA_DIR, "uep/Si2.cell"))
 
-        self.assertTrue(reader._ReadWriteUEP__create_calculator(a, folder, "srtio3"))
-        calc = reader._ReadWriteUEP__create_calculator(a, folder, "srtio3")
+        self.assertTrue(reader._ReadWriteUEP__create_calculator(a, folder, "Si2"))
+        calc = reader._ReadWriteUEP__create_calculator(a, folder, "Si2")
 
         self.assertEqual(calc.gw_factor, params['uep_gw_factor'])
         self.assertEqual(calc.geom_steps, params['geom_steps'])
@@ -60,13 +60,13 @@ class TestReadWriteUEP(unittest.TestCase):
     def test_write(self):
         # read in cell file to get atom
 
-        input_folder = _TESTDATA_DIR + "/castep"
+        input_folder = _TESTDATA_DIR + "/uep"
         output_folder = _TESTSAVE_DIR
 
-        atoms = io.read(os.path.join(input_folder, "srtio3.cell"))
+        atoms = io.read(os.path.join(input_folder, "Si2.cell"))
 
         # test writing geom_opt output
-        param_file = os.path.join(input_folder, "srtio3.yaml")
+        param_file = os.path.join(input_folder, "Si2.yaml")
         params = load_input_file(param_file, MuAirssSchema)
 
         reader = ReadWriteUEP(params=params)
