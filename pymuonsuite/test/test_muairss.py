@@ -17,7 +17,6 @@ from ase import io
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data/Si2")
-# _TESTSAVE_DIR = os.path.join(_TEST_DIR, "test_save")
 
 
 class TestMuairss(unittest.TestCase):
@@ -128,17 +127,16 @@ class TestMuairss(unittest.TestCase):
                 for s in subDirs:
                     count = 0
                     for f in expected_files:
-                        f=os.path.join("muon-airss-out-dftb/dftb+/" + s, f)
+                        f = os.path.join("muon-airss-out-dftb/dftb+/" + s, f)
                         self.assertTrue(os.path.exists(f))
-                        if count ==0:
+                        if count == 0:
                             atoms = io.read(f)
                             equal = atoms.cell == input_atoms.cell
                             self.assertTrue(equal.all())
-
-                        count+=1
+                        count += 1
 
             # Run DFTB
-            subprocess.call(os.path.join(_TESTDATA_DIR,"script-dftb"))
+            subprocess.call(os.path.join(_TESTDATA_DIR, "script-dftb"))
 
             sys.argv[1:] = [cell_file, yaml_file]
             run_muairss()

@@ -19,7 +19,7 @@ from ase import io
 from ase.io.castep import write_param
 from ase.calculators.castep import Castep
 from soprano.selection import AtomSelection
-from soprano.utils import seedname
+from soprano.utils import seedname, customize_warnings
 
 from pymuonsuite import constants
 from pymuonsuite.utils import list_to_string
@@ -27,6 +27,8 @@ from pymuonsuite.utils import find_ipso_hydrogen
 from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.io.readwrite import ReadWrite
 from ase.io.castep import read_param
+
+customize_warnings()
 
 
 class ReadWriteCastep(ReadWrite):
@@ -113,7 +115,7 @@ class ReadWriteCastep(ReadWrite):
             atoms.arrays.update(m.arrays)
         except (IndexError, OSError):
             warnings.warn("No .magres files found in {}."
-                          .format(os.path.abspath(folder)))
+                  .format(os.path.abspath(folder)))
 
     def __read_castep_gamma_phonons(self, atoms, folder, sname=None):
         """Parse CASTEP phonon data into a casteppy object,
@@ -248,7 +250,6 @@ class ReadWriteCastep(ReadWrite):
         pfile = self.params.get('castep_param', None)
         if pfile is not None:
             calc.param = read_param(self.params['castep_param']).param
-            #TODO: write test for this part ^
 
         self.__calc = calc
 

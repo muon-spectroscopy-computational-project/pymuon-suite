@@ -12,6 +12,8 @@ import glob
 import numpy as np
 import warnings
 
+from soprano.utils import customize_warnings
+
 from ase import io
 from ase.calculators.dftb import Dftb
 from ase.calculators.singlepoint import SinglePointCalculator
@@ -23,6 +25,8 @@ from pymuonsuite import constants
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.io.output import write_phonon_report
 from pymuonsuite.io.readwrite import ReadWrite
+
+customize_warnings()
 
 
 class ReadWriteDFTB(ReadWrite):
@@ -143,13 +147,13 @@ class ReadWriteDFTB(ReadWrite):
             self.__read_dftb_phonons(atoms, phonon_source_file)
         except IndexError:
             warnings.warn("No .phonons.pkl files found in {}."
-                          .format(os.path.abspath(folder)))
+                  .format(os.path.abspath(folder)))
         except IOError:
             warnings.warn("{} could not be found."
-                          .format(phonon_source_file))
+                  .format(phonon_source_file))
         except Exception as e:
             warnings.warn('Could not read {file} due to error: {error}'
-                          .format(file=phonon_source_file, error=e))
+                  .format(file=phonon_source_file, error=e))
 
         return atoms
 
@@ -240,7 +244,7 @@ class ReadWriteDFTB(ReadWrite):
                                      name=self.params['name'])
         except Exception as e:
             print(e)
-            print("Error: Could not write phonons file, see asephonons.out for"
+            print("Error: Could not write phonons file, see asephonons.out for" 
                   " details.")
             return
 
@@ -284,8 +288,8 @@ class ReadWriteDFTB(ReadWrite):
                 dargs.set_optional(opt, True)
             except KeyError:
                 warnings.warn('Warning: optional DFTB+ file {0} not available for {1}'
-                              ' parameter set, skipping').format(
-                              opt, self.params['dftb_set'])
+                      ' parameter set, skipping').format(
+                       opt, self.params['dftb_set'])
 
         args.update(dargs.args)
         args = dargs.args

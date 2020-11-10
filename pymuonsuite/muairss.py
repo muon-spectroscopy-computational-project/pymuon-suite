@@ -26,7 +26,7 @@ from ase.io.castep import read_param
 from ase.build import make_supercell
 from ase.calculators.castep import Castep
 from ase.calculators.dftb import Dftb
-from soprano.utils import safe_input
+from soprano.utils import safe_input, customize_warnings
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 from soprano.analyse.phylogen import PhylogenCluster, Gene
@@ -39,6 +39,7 @@ from pymuonsuite.io.dftb import ReadWriteDFTB
 from pymuonsuite.io.uep import UEPCalculator, ReadWriteUEP
 from pymuonsuite.io.output import write_cluster_report
 
+customize_warnings()
 
 def find_primitive_structure(struct):
     """Find the structure contained within the reduced cell
