@@ -55,15 +55,15 @@ class TestReadWriteCastep(unittest.TestCase):
     def test_create_calc(self):
         params = {"mu_symbol": "mu", "k_points_grid": [7, 7, 7]}
         reader = ReadWriteCastep(params=params)
-        calc = reader._ReadWriteCastep__create_calculator()
+        calc = reader._create_calculator()
         self.assertTrue(calc)
-        calc_geom = reader._ReadWriteCastep__update_calculator("GEOM_OPT")
+        calc_geom = reader._update_calculator("GEOM_OPT")
         self.assertTrue(calc_geom)
 
         self.assertEqual(calc_geom.param.task.value,
                          "GeometryOptimization")
 
-        calc_magres = reader._ReadWriteCastep__update_calculator(calc_type="MAGRES")
+        calc_magres = reader._update_calculator(calc_type="MAGRES")
 
         # Tests that the calculators have the correct tasks set:
 
@@ -89,7 +89,6 @@ class TestReadWriteCastep(unittest.TestCase):
         param_file = os.path.join(input_folder, 'Si2.param')
         input_params = load_input_file(yaml_file, MuAirssSchema)
         input_atoms = io.read(cell_file)
-        print("file to load: ", param_file)
         castep_param = read_param(param_file).param
 
         atoms = io.read(cell_file)

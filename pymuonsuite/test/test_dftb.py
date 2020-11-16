@@ -67,9 +67,9 @@ class TestReadWriteDFTB(unittest.TestCase):
                   "max_scc_steps": 20, "charged": False, "dftb_pbc": False}
         folder = _TESTDATA_DIR  # does not contain any castep files
         reader = ReadWriteDFTB(params=params)
-        #self.assertFalse(reader._ReadWriteDFTB__create_calculator(params=params))
-        calc_geom_opt = reader._ReadWriteDFTB__create_calculator(calc_type="GEOM_OPT")
-        calc_magres = reader._ReadWriteDFTB__create_calculator(calc_type="SPINPOL")
+        #self.assertFalse(reader._create_calculator(params=params))
+        calc_geom_opt = reader._create_calculator(calc_type="GEOM_OPT")
+        calc_magres = reader._create_calculator(calc_type="SPINPOL")
         self.assertTrue(calc_geom_opt)
         self.assertTrue(calc_magres)
 

@@ -15,7 +15,7 @@ class ReadWrite(object):
         |                           present, the pre-existent one will
         |                           be ignored.
         '''
-        self.__calc = calc
+        self._calc = calc
         self.script = script
         self.params = params
 
@@ -43,7 +43,7 @@ class ReadWrite(object):
     def write(self, a, folder, sname=None, calc_type=None):
         if sname is None:
             sname = os.path.split(folder)[-1]
-        if self.__calc is not None:
-            a.calc = self.__calc
+        if self._calc is not None:
+            a.calc = self._calc
         fname = os.path.join(folder, sname + ".xyz")
         io.write(fname, a)

@@ -54,7 +54,7 @@ class ReadWriteDFTB(ReadWrite):
         else:
             self.params = params
         self.script = script
-        self.__calc = calc
+        self._calc = calc
 
     def set_script(self, script):
         '''
@@ -152,7 +152,7 @@ class ReadWriteDFTB(ReadWrite):
                       " .phonons.pkl file.")
                 phonon_source_file = glob.glob(os.path.join(folder,
                                                '*.phonons.pkl'))[0]
-            self.__read_dftb_phonons(atoms, phonon_source_file)
+            self._read_dftb_phonons(atoms, phonon_source_file)
         except IndexError:
             warnings.warn("No .phonons.pkl files found in {}."
                   .format(os.path.abspath(folder)))
@@ -165,7 +165,7 @@ class ReadWriteDFTB(ReadWrite):
 
         return atoms
 
-    def __read_dftb_phonons(self, atoms, phonon_source_file):
+    def _read_dftb_phonons(self, atoms, phonon_source_file):
         with open(phonon_source_file, 'rb') as f:
             phdata = pickle.load(f)
             # Find the gamma point
@@ -201,20 +201,20 @@ class ReadWriteDFTB(ReadWrite):
         """
 
         if calc_type == "PHONONS":
-            self.__write_phonons(a, args)
+            self._write_phonons(a, args)
 
         elif calc_type == "GEOM_OPT" or calc_type == "SPINPOL":
             if sname is None:
                 sname = os.path.split(folder)[-1]  # Same as folder name
 
-            if self.__calc is not None:
-                a.calc = self.__calc
+            if self._calc is not None:
+                a.calc = self._calc
 
             if not isinstance(a.calc, Dftb):
                 a = a.copy()
-                self.__create_calculator(calc_type=calc_type)
+                self._create_calculator(calc_type=calc_type)
 
-            a.set_calculator(self.__calc)
+            a.set_calculator(self._calc)
             a.calc.label = sname
             a.calc.directory = folder
             a.calc.write_input(a)
@@ -228,23 +228,23 @@ class ReadWriteDFTB(ReadWrite):
             raise(NotImplementedError("Calculation type {} is not implemented."
                   " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
 
-    def __write_phonons(self, a, args):
+    def _write_phonons(self, a, args):
         from pymuonsuite.data.dftb_pars import DFTBArgs
 
         dargs = DFTBArgs(self.params['dftb_set'])
         # Is it periodic?
         if self.params['pbc']:
             a.set_pbc(True)
-            self.__calc = Dftb(atoms=a, label='asephonons',
+            self._calc = Dftb(atoms=a, label='asephonons',
                                kpts=self.params['kpoint_grid'],
                                **dargs.args)
             ph_kpts = self.params['phonon_kpoint_grid']
         else:
             a.set_pbc(False)
-            self.__calc = Dftb(atoms=a, label='asephonons',
+            self._calc = Dftb(atoms=a, label='asephonons',
                                **dargs.args)
             ph_kpts = None
-        a.set_calculator(self.__calc)
+        a.set_calculator(self._calc)
         try:
             phdata = ase_phonon_calc(a, kpoints=ph_kpts,
                                      ftol=self.params['force_tol'],
@@ -266,26 +266,26 @@ class ReadWriteDFTB(ReadWrite):
         pickle.dump(phdata, open(outf, 'wb'))
         write_phonon_report(args, self.params, phdata)
 
-    def __create_calculator(self, calc_type="GEOM_OPT"):
+    def _create_calculator(self, calc_type="GEOM_OPT"):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
 
-        if not isinstance(self.__calc, Dftb):
+        if not isinstance(self._calc, Dftb):
             args = {}
         else:
-            args = self.__calc.todict()
+            args = self._calc.todict()
 
         if calc_type == "GEOM_OPT":
-            self.__calc = self.__create_muairss_dftb_calculator(args)
+            self._calc = self._create_muairss_dftb_calculator(args)
 
         elif calc_type == "SPINPOL":
-            self.__calc = self.__create_spinpol_dftbp_calculator(args)
+            self._calc = self._create_spinpol_dftbp_calculator(args)
 
         else:
-            self.__calc = None
+            self._calc = None
 
-        return self.__calc
+        return self._calc
 
-    def __create_muairss_dftb_calculator(self, args={}):
+    def _create_muairss_dftb_calculator(self, args={}):
 
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
 
@@ -314,14 +314,14 @@ class ReadWriteDFTB(ReadWrite):
         args['Hamiltonian_Charge'] = 1.0 if self.params['charged'] else 0.0
 
         if self.params['dftb_pbc']:
-            self.__calc = Dftb(kpts=self.params['k_points_grid'],
+            self._calc = Dftb(kpts=self.params['k_points_grid'],
                                **args)
         else:
-            self.__calc = Dftb(**args)
+            self._calc = Dftb(**args)
 
-        return self.__calc
+        return self._calc
 
-    def __create_spinpol_dftbp_calculator(self, args):
+    def _create_spinpol_dftbp_calculator(self, args):
         """Create a calculator containing all necessary parameters for a DFTB+
         SCC spin polarised calculation"""
         from pymuonsuite.data.dftb_pars import DFTBArgs
@@ -343,14 +343,14 @@ class ReadWriteDFTB(ReadWrite):
         args['Hamiltonian_SpinPolarisation_InitialSpins_SpinPerAtom'] = 1
 
         if self.params['k_points_grid'] is not None:
-            self.__calc = Dftb(kpts=self.params['k_points_grid'],
+            self._calc = Dftb(kpts=self.params['k_points_grid'],
                                **args)
         else:
-            self.__calc = Dftb(**args)
+            self._calc = Dftb(**args)
 
-        self.__calc.do_forces = True
+        self._calc.do_forces = True
 
-        return self.__calc
+        return self._calc
 
 
 def parse_spinpol_dftb(folder):

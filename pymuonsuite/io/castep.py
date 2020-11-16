@@ -51,9 +51,9 @@ class ReadWriteCastep(ReadWrite):
         else:
             self.params = params
         self.script = script
-        self.__calc = calc
+        self._calc = calc
         if calc is not None and self.params != {}:
-            self.__create_calculator()
+            self._create_calculator()
 
     def set_params(self, params):
         '''
@@ -67,8 +67,8 @@ class ReadWriteCastep(ReadWrite):
             self.params = params
         # if the params have been changed, the calc has to be remade
         # from scratch:
-        self.__calc = None
-        self.__create_calculator()
+        self._calc = None
+        self._create_calculator()
 
     def set_script(self, script):
         '''
@@ -88,12 +88,12 @@ class ReadWriteCastep(ReadWrite):
         |   sname (str):            Seedname to save the files with. If not
         |                           given, use the name of the folder.
         """
-        atoms = self.__read_castep(folder, sname)
-        self.__read_castep_hyperfine_magres(atoms, folder, sname)
-        self.__read_castep_gamma_phonons(atoms, folder, sname)
+        atoms = self._read_castep(folder, sname)
+        self._read_castep_hyperfine_magres(atoms, folder, sname)
+        self._read_castep_gamma_phonons(atoms, folder, sname)
         return atoms
 
-    def __read_castep(self, folder, sname=None):
+    def _read_castep(self, folder, sname=None):
         try:
             if sname is not None:
                 cfile = os.path.join(folder, sname + '.castep')
@@ -113,7 +113,7 @@ class ReadWriteCastep(ReadWrite):
             raise IOError("ERROR: Could not read {file}"
                           .format(file=sname + '.castep'))
 
-    def __read_castep_hyperfine_magres(self, atoms, folder, sname=None):
+    def _read_castep_hyperfine_magres(self, atoms, folder, sname=None):
         try:
             if sname is not None:
                 mfile = os.path.join(folder, sname + '.magres')
@@ -125,7 +125,7 @@ class ReadWriteCastep(ReadWrite):
             warnings.warn("No .magres files found in {}."
                   .format(os.path.abspath(folder)))
 
-    def __read_castep_gamma_phonons(self, atoms, folder, sname=None):
+    def _read_castep_gamma_phonons(self, atoms, folder, sname=None):
         """Parse CASTEP phonon data into a casteppy object,
         and return eigenvalues and eigenvectors at the gamma point.
         """
@@ -200,19 +200,19 @@ class ReadWriteCastep(ReadWrite):
             if sname is None:
                 sname = os.path.split(folder)[-1]  # Same as folder name
 
-            self.__calc = deepcopy(self.__calc)
+            self._calc = deepcopy(self._calc)
 
             # We only use the calculator attached to the atoms object if a calc
             # has not been set when initialising the ReadWrite object OR we have
             # not called write() and made a calculator before.
 
-            if self.__calc is None:
+            if self._calc is None:
                 if isinstance(a.calc, Castep):
-                    self.__calc = deepcopy(a.calc)
-                self.__create_calculator()
+                    self._calc = deepcopy(a.calc)
+                self._create_calculator()
 
-            self.__update_calculator(calc_type)
-            a.set_calculator(self.__calc)
+            self._update_calculator(calc_type)
+            a.set_calculator(self._calc)
 
             io.write(os.path.join(folder, sname + '.cell'),
                      a, magnetic_moments='initial')
@@ -228,9 +228,9 @@ class ReadWriteCastep(ReadWrite):
             raise(NotImplementedError("Calculation type {} is not implemented."
                   " Please choose 'GEOM_OPT' or 'MAGRES'".format(calc_type)))
 
-    def __create_calculator(self):
-        if self.__calc is not None and isinstance(self.__calc, Castep):
-            calc = deepcopy(self.__calc)
+    def _create_calculator(self):
+        if self._calc is not None and isinstance(self._calc, Castep):
+            calc = deepcopy(self._calc)
         else:
             calc = Castep()
 
@@ -259,64 +259,64 @@ class ReadWriteCastep(ReadWrite):
         if pfile is not None:
             calc.param = read_param(self.params['castep_param']).param
 
-        self.__calc = calc
+        self._calc = calc
 
-        return self.__calc
+        return self._calc
 
-    def __update_calculator(self, calc_type):
+    def _update_calculator(self, calc_type):
         if calc_type == "MAGRES":
-            self.__create_hfine_castep_calculator()
+            self._create_hfine_castep_calculator()
         elif calc_type == "GEOM_OPT":
-            self.__create_geom_opt_castep_calculator()
+            self._create_geom_opt_castep_calculator()
 
-        return self.__calc
+        return self._calc
 
-    def __create_hfine_castep_calculator(self):
+    def _create_hfine_castep_calculator(self):
         """Update calculator to contain all the necessary parameters
         for a hyperfine calculation."""
 
         # Remove settings for geom_opt calculator:
-        self.__calc.param.geom_max_iter = None
-        self.__calc.param.geom_force_tol = None
-        self.__calc.param.max_scf_cycles = None
-        self.__calc.param.write_cell_structure = None
-        self.__calc.param.charge = None
-        self.__calc.cell.fix_all_cell = None
+        self._calc.param.geom_max_iter = None
+        self._calc.param.geom_force_tol = None
+        self._calc.param.max_scf_cycles = None
+        self._calc.param.write_cell_structure = None
+        self._calc.param.charge = None
+        self._calc.cell.fix_all_cell = None
 
         pfile = self.params.get('castep_param', None)
         if pfile is not None:
-            self.__calc.param = read_param(self.params['castep_param']).param
+            self._calc.param = read_param(self.params['castep_param']).param
 
-        self.__calc.param.task = 'Magres'
-        self.__calc.param.magres_task = 'Hyperfine'
+        self._calc.param.task = 'Magres'
+        self._calc.param.magres_task = 'Hyperfine'
 
-        return self.__calc
+        return self._calc
 
-    def __create_geom_opt_castep_calculator(self):
+    def _create_geom_opt_castep_calculator(self):
         """Update calculator to contain all the necessary parameters
         for a geometry optimization."""
 
         # Remove cell constraints if they exist
-        self.__calc.cell.cell_constraints = None
-        self.__calc.cell.fix_all_cell = True
+        self._calc.cell.cell_constraints = None
+        self._calc.cell.fix_all_cell = True
         # Necessary for older CASTEP versions
 
-        self.__calc.param.charge = self.params.get('charged', False)*1.0
+        self._calc.param.charge = self.params.get('charged', False)*1.0
 
         # Remove symmetry operations if they exist
-        self.__calc.cell.symmetry_ops.value = None
+        self._calc.cell.symmetry_ops.value = None
 
-        self.__calc.param.task = 'GeometryOptimization'
-        self.__calc.param.geom_max_iter = self.params.get('geom_steps', 30)
-        self.__calc.param.geom_force_tol = self.params.get('geom_force_tol',
+        self._calc.param.task = 'GeometryOptimization'
+        self._calc.param.geom_max_iter = self.params.get('geom_steps', 30)
+        self._calc.param.geom_force_tol = self.params.get('geom_force_tol',
                                                            0.05)
-        self.__calc.param.max_scf_cycles = self.params.get('max_scc_steps', 30)
-        self.__calc.param.write_cell_structure = True  # outputs -out.cell file
+        self._calc.param.max_scf_cycles = self.params.get('max_scc_steps', 30)
+        self._calc.param.write_cell_structure = True  # outputs -out.cell file
 
         # Remove settings for magres calculator:
-        self.__calc.param.magres_task = None
+        self._calc.param.magres_task = None
 
-        return self.__calc
+        return self._calc
 
 
 class CastepError(Exception):

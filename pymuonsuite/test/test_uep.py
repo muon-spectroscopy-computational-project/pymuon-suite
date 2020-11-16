@@ -51,8 +51,8 @@ class TestReadWriteUEP(unittest.TestCase):
         reader = ReadWriteUEP(params=params)
         a = io.read(os.path.join(_TESTDATA_DIR, "uep/Si2.cell"))
 
-        self.assertTrue(reader._ReadWriteUEP__create_calculator(a, folder, "Si2"))
-        calc = reader._ReadWriteUEP__create_calculator(a, folder, "Si2")
+        self.assertTrue(reader._create_calculator(a, folder, "Si2"))
+        calc = reader._create_calculator(a, folder, "Si2")
 
         self.assertEqual(calc.gw_factor, params['uep_gw_factor'])
         self.assertEqual(calc.geom_steps, params['geom_steps'])
