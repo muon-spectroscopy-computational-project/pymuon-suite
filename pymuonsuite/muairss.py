@@ -276,7 +276,7 @@ def save_muairss_collection(struct, params, batch_path=''):
     # Do we also save a collective structure?
     allf = params['allpos_filename']
     if allf is not None:
-        alls = struct
+        alls = struct.copy()
         csp = struct.get_chemical_symbols()
         for atoms in dc:
             # We rely on the fact the muon is always put at the end
