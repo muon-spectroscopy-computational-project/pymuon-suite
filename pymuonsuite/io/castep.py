@@ -123,7 +123,7 @@ class ReadWriteCastep(ReadWrite):
             atoms.arrays.update(m.arrays)
         except (IndexError, OSError):
             warnings.warn("No .magres files found in {}."
-                  .format(os.path.abspath(folder)))
+                          .format(os.path.abspath(folder)))
 
     def _read_castep_gamma_phonons(self, atoms, folder, sname=None):
         """Parse CASTEP phonon data into a casteppy object,
@@ -265,10 +265,15 @@ class ReadWriteCastep(ReadWrite):
 
     def _update_calculator(self, calc_type):
         if calc_type == "MAGRES":
-            self._create_hfine_castep_calculator()
+            # check if our calculator is already set up for Magres
+            # if it is, we don't need to modify the calc.
+            if not self._calc.param.task == 'Magres':
+                self._create_hfine_castep_calculator()
         elif calc_type == "GEOM_OPT":
-            self._create_geom_opt_castep_calculator()
-
+            # check if our calculator is already set up for geom opt
+            # if it is, we don't need to modify the calc.
+            if not self._calc.param.task == 'GeometryOptimization':
+                self._create_geom_opt_castep_calculator()
         return self._calc
 
     def _create_hfine_castep_calculator(self):
@@ -548,7 +553,6 @@ def add_to_castep_block(cblock, symbol, value, blocktype='mass'):
         cblock += '{0} {1}\n'.format(k, v)
 
     return cblock
-
 
 def parse_hyperfine_magres(infile):
     """
