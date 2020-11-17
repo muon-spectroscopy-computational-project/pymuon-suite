@@ -19,7 +19,6 @@ from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
-_TESTSAVE_DIR = os.path.join(_TEST_DIR, "test_save")
 
 
 class TestReadWriteCastep(unittest.TestCase):
@@ -35,7 +34,7 @@ class TestReadWriteCastep(unittest.TestCase):
         except Exception as e:
             print(e)
 
-        folder = os.path.join(_TESTDATA_DIR, "castep")
+        folder = os.path.join(_TESTDATA_DIR, sname)
         # tests castep file being read:
         self.assertTrue(reader.read(folder, sname))
         atoms = reader.read(folder, sname)
@@ -80,7 +79,8 @@ class TestReadWriteCastep(unittest.TestCase):
         # read in cell file to get atom
 
         input_folder = _TESTDATA_DIR + "/Si2"
-        output_folder = _TESTSAVE_DIR
+        output_folder = os.path.join(_TESTDATA_DIR, "test_save")
+        os.mkdir(output_folder)
 
         os.chdir(input_folder)
 
@@ -114,9 +114,8 @@ class TestReadWriteCastep(unittest.TestCase):
                          list_to_string(input_params['k_points_grid']))
         self.assertEqual(magres_atoms.calc.cell.kpoint_mp_grid.value,
                          list_to_string(input_params['k_points_grid']))
-        
 
-        # # Test if parameters file have correct tasks:
+        # Test if parameters file have correct tasks:
         geom_params = read_param(os.path.join(output_folder,
                                  "Si2_geom_opt.param")).param
         magres_params = read_param(os.path.join(output_folder,
@@ -136,14 +135,7 @@ class TestReadWriteCastep(unittest.TestCase):
         self.assertEqual(magres_params.elec_energy_tol,
                          castep_param.elec_energy_tol)
 
-        os.remove(os.path.join(output_folder,
-                               "Si2_geom_opt.param"))
-        os.remove(os.path.join(output_folder,
-                               "Si2_magres.param"))
-        os.remove(os.path.join(output_folder,
-                               "Si2_magres.cell"))
-        os.remove(os.path.join(output_folder,
-                               "Si2_geom_opt.cell"))
+        shutil.rmtree(output_folder)
 
 
 if __name__ == "__main__":

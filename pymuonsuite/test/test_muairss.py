@@ -18,6 +18,11 @@ from ase import io
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data/Si2")
 
+_RUN_DFTB = False
+#  Setting _RUN_DFTB to True requires dftb+ to be installed locally
+#  and will test running dftb using the files output by muairss
+#  otherwise, the test will use previously generated dftb results
+
 
 class TestMuairss(unittest.TestCase):
 
@@ -136,11 +141,13 @@ class TestMuairss(unittest.TestCase):
                         count += 1
 
             # Run DFTB
-            subprocess.call(os.path.join(_TESTDATA_DIR, "script-dftb"))
+            if _RUN_DFTB:
+                subprocess.call(os.path.join(_TESTDATA_DIR, "script-dftb"))
+            else:
+                yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-dftb-read.yaml') #TODO: create this
 
             sys.argv[1:] = [cell_file, yaml_file]
             run_muairss()
-
 
             self.assertTrue(os.path.exists("Si2_clusters.txt"))
             self.assertTrue(os.path.exists("Si2_Si2_dftb+_clusters.dat"))
@@ -149,8 +156,7 @@ class TestMuairss(unittest.TestCase):
             shutil.rmtree("muon-airss-out-dftb")
             os.remove("Si2_clusters.txt")
             os.remove("Si2_Si2_dftb+_clusters.dat")
-
-
+            os.remove("all.cell")
 
 
 if __name__ == "__main__":

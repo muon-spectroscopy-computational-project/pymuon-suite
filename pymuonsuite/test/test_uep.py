@@ -19,7 +19,6 @@ from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
-_TESTSAVE_DIR = os.path.join(_TEST_DIR, "test_save")
 
 
 class TestReadWriteUEP(unittest.TestCase):
@@ -30,26 +29,22 @@ class TestReadWriteUEP(unittest.TestCase):
         reader = ReadWriteUEP()
         # test that we do not get any result for trying to read
         # an empty folder:
-        #self.assertFalse(reader.read(folder, sname))
         try:
             reader.read(folder, sname)
         except Exception as e:
             print(e)
-
-        #TODO: check we got the exception above
-
-        folder = os.path.join(_TESTDATA_DIR, "uep")
+        folder = os.path.join(_TESTDATA_DIR, "Si2/uep-result")
         # # tests uep file being read:
         self.assertTrue(reader.read(folder, sname))
 
     def test_create_calc(self):
-        folder = os.path.join(_TESTDATA_DIR, "uep")
-        
-        param_file = os.path.join(_TESTDATA_DIR, "uep/Si2.yaml")
+        folder = os.path.join(_TESTDATA_DIR, "Si2")
+
+        param_file = os.path.join(folder, "Si2-muairss-uep.yaml")
         params = load_input_file(param_file, MuAirssSchema)
 
         reader = ReadWriteUEP(params=params)
-        a = io.read(os.path.join(_TESTDATA_DIR, "uep/Si2.cell"))
+        a = io.read(os.path.join(folder, "Si2.cell"))
 
         self.assertTrue(reader._create_calculator(a, folder, "Si2"))
         calc = reader._create_calculator(a, folder, "Si2")
@@ -59,24 +54,26 @@ class TestReadWriteUEP(unittest.TestCase):
 
     def test_write(self):
         # read in cell file to get atom
-
-        input_folder = _TESTDATA_DIR + "/uep"
-        output_folder = _TESTSAVE_DIR
-
-        atoms = io.read(os.path.join(input_folder, "Si2.cell"))
-
-        # test writing geom_opt output
-        param_file = os.path.join(input_folder, "Si2.yaml")
-        params = load_input_file(param_file, MuAirssSchema)
-
-        reader = ReadWriteUEP(params=params)
-
-        reader.write(atoms, output_folder)
-
-        self.assertTrue(os.path.exists(os.path.join(output_folder,
-                        "test_save.yaml")))
-
         try:
+            input_folder = _TESTDATA_DIR + "/Si2"
+            os.chdir(input_folder)
+
+            output_folder = "test_save"
+            os.mkdir(output_folder)
+
+            atoms = io.read("Si2.cell")
+
+            # test writing geom_opt output
+            param_file = "Si2-muairss-uep.yaml"
+            params = load_input_file(param_file, MuAirssSchema)
+
+            reader = ReadWriteUEP(params=params)
+
+            reader.write(atoms, output_folder)
+
+            self.assertTrue(os.path.exists(os.path.join(output_folder,
+                            "test_save.yaml")))
+
             params['charged'] = False
 
             reader = ReadWriteUEP(params=params)
@@ -84,9 +81,8 @@ class TestReadWriteUEP(unittest.TestCase):
             reader.write(atoms, output_folder)
         except Exception as e:
             print(e)
-
-        os.remove(os.path.join(output_folder,
-                  "test_save.yaml"))
+        finally:
+            shutil.rmtree("test_save")
 
 
 if __name__ == "__main__":
