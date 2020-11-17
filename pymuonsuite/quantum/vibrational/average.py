@@ -28,7 +28,6 @@ from pymuonsuite import constants
 from pymuonsuite.io.castep import (parse_castep_masses, add_to_castep_block,
                                    ReadWriteCastep)
 from pymuonsuite.io.dftb import (parse_spinpol_dftb, ReadWriteDFTB)
-from pymuonsuite.io.magres import parse_hyperfine_magres
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,
                                                      MonteCarloDisplacements)
@@ -77,106 +76,6 @@ def read_castep_gamma_phonons(seed, path='.'):
                                ' phonon file')
 
     return evals[gamma_i], evecs[gamma_i]
-
-
-def create_hfine_castep_calculator(mu_symbol='H:mu', calc=None,
-                                   param_file=None,
-                                   kpts=[1, 1, 1]):
-    """Create a calculator containing all the necessary parameters
-    for a hyperfine calculation."""
-
-    if not isinstance(calc, Castep):
-        calc = Castep()
-    else:
-        calc = deepcopy(calc)
-
-    gamma_block = calc.cell.species_gamma.value
-    calc.cell.species_gamma = add_to_castep_block(gamma_block, mu_symbol,
-                                                  constants.m_gamma, 'gamma')
-
-    calc.cell.kpoint_mp_grid = ' '.join(map(str, kpts))
-
-    if param_file is not None:
-        calc.param = read_param(param_file).param
-
-    calc.param.task = 'Magres'
-    calc.param.magres_task = 'Hyperfine'
-
-    return calc
-
-
-def create_spinpol_dftbp_calculator(calc=None, param_set='3ob-3-1',
-                                    kpts=None):
-    """Create a calculator containing all necessary parameters for a DFTB+
-    SCC spin polarised calculation"""
-    from pymuonsuite.data.dftb_pars import DFTBArgs
-
-    if not isinstance(calc, Dftb):
-        calc = Dftb()
-    else:
-        calc = deepcopy(calc)
-
-    # A bit of a hack for the k-points
-    if kpts is not None:
-        kc = Dftb(kpts=kpts)
-        kargs = {k: v for k, v in kc.parameters.items() if 'KPoints' in k}
-        calc.parameters.update(kargs)
-
-    # Create the arguments
-    dargs = DFTBArgs(param_set)
-    # Make it spin polarised
-    try:
-        dargs.set_optional('spinpol.json', True)
-    except KeyError:
-        raise ValueError('DFTB+ parameter set does not allow spin polarised'
-                         ' calculations')
-    # Fix a few things, and add a spin on the muon
-    args = dargs.args
-    del(args['Hamiltonian_SpinPolarisation'])
-    args['Hamiltonian_SpinPolarisation_'] = 'Colinear'
-    args['Hamiltonian_SpinPolarisation_UnpairedElectrons'] = 1
-    args['Hamiltonian_SpinPolarisation_InitialSpins_'] = ''
-    args['Hamiltonian_SpinPolarisation_InitialSpins_Atoms'] = '-1'
-    args['Hamiltonian_SpinPolarisation_InitialSpins_SpinPerAtom'] = 1
-
-    calc.parameters.update(args)
-    calc.do_forces = True
-
-    return calc
-
-
-def read_output_castep(folder, avgprop='hyperfine'):
-
-    # Read a castep file in the given folder, and then the required property
-    cfile = glob.glob(os.path.join(folder, '*.castep'))[0]
-    sname = seedname(cfile)
-    a = io.read(cfile)
-    a.info['name'] = sname
-
-    # Now read properties depending on what's being measured
-    if avgprop == 'hyperfine':
-        m = parse_hyperfine_magres(os.path.join(folder, sname + '.magres'))
-        a.arrays.update(m.arrays)
-
-    return a
-
-
-def read_output_dftbp(folder, avgprop='hyperfine'):
-
-    # Read a DFTB+ file in the given folder, and then the required property
-    a = dftb_read_input(folder)
-    a.info['name'] = os.path.split(folder)[-1]
-
-    if avgprop == 'hyperfine':
-        pops = parse_spinpol_dftb(folder)
-        hfine = []
-        for i in range(len(a)):
-            hf = compute_hfine_mullpop(a, pops, self_i=i, fermi=True,
-                                       fermi_neigh=True)
-            hfine.append(hf)
-        a.set_array('hyperfine', np.array(hfine))
-
-    return a
 
 
 def muon_vibrational_average_write(cell_file, method='independent',
