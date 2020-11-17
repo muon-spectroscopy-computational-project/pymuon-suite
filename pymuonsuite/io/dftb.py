@@ -8,9 +8,10 @@ import os
 import json
 import pickle
 import glob
-
-import numpy as np
 import warnings
+import numpy as np
+
+from copy import deepcopy
 
 from soprano.utils import customize_warnings
 
@@ -46,7 +47,7 @@ class ReadWriteDFTB(ReadWrite):
         |   Args:
         |   params (dict):          Contains dftb_set, k_points_grid,
         |                           geom_force_tol and dftb_optionals.
-        |                           geom_steps, max_scc_steps, and 
+        |                           geom_steps, max_scc_steps, and
         |                           charged are also required in the case
         |                           of writing geom_opt input files
         |   script (str):           Path to a file containing a submission
@@ -65,6 +66,7 @@ class ReadWriteDFTB(ReadWrite):
         self.set_params(params)
         self.script = script
         self._calc = calc
+        self._calc_type = None
 
     def set_script(self, script):
         '''
@@ -95,6 +97,9 @@ class ReadWriteDFTB(ReadWrite):
                       'geom_force_tol': 0.01, 'dftb_optionals': []}
 
         self.params = params
+        # resetting this to None makes sure that the calc is recreated after
+        # the params are updated:
+        self._calc_type = None
 
     def read(self, folder, sname=None):
         ''' Read a DFTB+ output non-destructively.
@@ -223,7 +228,12 @@ class ReadWriteDFTB(ReadWrite):
             if self._calc is None and isinstance(a.calc, Dftb):
                 self._calc = a.calc
 
-            self._create_calculator(calc_type=calc_type)
+            self._calc = deepcopy(self._calc)
+
+            # only create a new calc if the calc type requested is different
+            # to that already saved.
+            if calc_type != self._calc_type:
+                self._create_calculator(calc_type=calc_type)
 
             a.set_calculator(self._calc)
             a.calc.label = sname
@@ -316,7 +326,8 @@ class ReadWriteDFTB(ReadWrite):
             args.update(_geom_opt_args)
             geom_opt_param_args = {'Driver_MaxForceComponent [eV/AA]':
                                    self.params['geom_force_tol'],
-                                   'Driver_MaxSteps': self.params['geom_steps'],
+                                   'Driver_MaxSteps':
+                                   self.params['geom_steps'],
                                    'Driver_MaxSccIterations':
                                    self.params['max_scc_steps'],
                                    'Hamiltonian_Charge': 1.0 if
@@ -333,6 +344,8 @@ class ReadWriteDFTB(ReadWrite):
                   " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
 
         self._calc.parameters.update(args)
+
+        self._calc_type = calc_type
 
         return self._calc
 
