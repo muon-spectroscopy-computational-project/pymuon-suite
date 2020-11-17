@@ -1,6 +1,3 @@
-import os
-from ase import io
-
 
 class ReadWrite(object):
     def __init__(self, params={}, script=None, calc=None):
@@ -20,30 +17,9 @@ class ReadWrite(object):
         self.params = params
 
     def read(self, folder, sname=None):
-        try:
-            if sname is not None:
-                sfile = os.path.join(folder, sname + '.xyz')
-            else:
-                sfile = glob.glob(os.path.join(folder, '*.xyz'))[0]
-                sname = seedname(sfile)
-                print(sfile)
-            atoms = io.read(sfile)
-            atoms.info['name'] = sname
-            return atoms
-
-        except IndexError:
-            raise IOError("ERROR: No .xyz files found in {}."
-                          .format(os.path.abspath(folder)))
-        except OSError as e:
-            raise IOError("ERROR: {}".format(e))
-        except Exception as e:
-            raise IOError("ERROR: Could not read {file}"
-                          .format(file=sname + '.xyz'))
+        raise(NotImplementedError("read method is not implemented for"
+              " ReadWrite baseclass."))
 
     def write(self, a, folder, sname=None, calc_type=None):
-        if sname is None:
-            sname = os.path.split(folder)[-1]
-        if self._calc is not None:
-            a.calc = self._calc
-        fname = os.path.join(folder, sname + ".xyz")
-        io.write(fname, a)
+        raise(NotImplementedError("write method is not implemented for"
+              " ReadWrite baseclass."))
