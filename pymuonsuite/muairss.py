@@ -276,7 +276,15 @@ def save_muairss_collection(struct, params, batch_path=''):
     # Do we also save a collective structure?
     allf = params['allpos_filename']
     if allf is not None:
-        alls = sum(dc.structures, struct)
+        alls = struct.copy()
+        csp = struct.get_chemical_symbols()
+        for atoms in dc:
+            # We rely on the fact the muon is always put at the end
+            mu = atoms[-1]
+            alls.append(mu)
+            csp += [params['mu_symbol']]
+
+        alls.set_array('castep_custom_species', np.array(csp))
         io.write(allf, alls)
 
 
