@@ -102,7 +102,8 @@ class TestReadWriteDFTB(unittest.TestCase):
 
         # only test phonons output if we are able to run dftb:
         if _RUN_DFTB:
-            input_folder = os.path.join(_TESTDATA_DIR, "ethyleneMu/dftb-phonons")
+            input_folder = os.path.join(_TESTDATA_DIR,
+                                        "ethyleneMu/dftb-phonons")
             os.chdir(input_folder)
             atoms = io.read(os.path.join(input_folder, "ethyleneMu.xyz"))
             params = load_input_file("phonons.yaml", AsePhononsSchema)

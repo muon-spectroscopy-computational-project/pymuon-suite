@@ -37,22 +37,29 @@ class TestMuairss(unittest.TestCase):
             os.chdir(_TESTDATA_DIR)
             run_muairss()
             # Check all folders contain a yaml file
-            for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/uep/"):
+            for (rootDir, subDirs, files) in (
+                    os.walk("muon-airss-out-uep/uep/")):
                 for s in subDirs:
-                    expected_file = os.path.join("muon-airss-out-uep/uep/" + s, s + ".yaml")
+                    expected_file = os.path.join("muon-airss-out-uep/uep/" + s,
+                                                 s + ".yaml")
                     self.assertTrue(os.path.exists(expected_file))
                     params = load_input_file(expected_file, UEPOptSchema)
-                    self.assertEqual(params['geom_steps'], input_params['geom_steps'])
-                    self.assertEqual(params['opt_tol'], input_params['geom_force_tol'])
-                    self.assertEqual(params['gw_factor'], input_params['uep_gw_factor'])
+                    self.assertEqual(params['geom_steps'],
+                                     input_params['geom_steps'])
+                    self.assertEqual(params['opt_tol'],
+                                     input_params['geom_force_tol'])
+                    self.assertEqual(params['gw_factor'],
+                                     input_params['uep_gw_factor'])
 
             # Run UEP
             subprocess.call(os.path.join(_TESTDATA_DIR, "script-uep"))
 
             # Check all folders contain UEP file
-            for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/uep/"):
+            for (rootDir, subDirs, files) in (
+                    os.walk("muon-airss-out-uep/uep/")):
                 for s in subDirs:
-                    expected_file = os.path.join("muon-airss-out-uep/uep/" + s, s + ".uep")
+                    expected_file = os.path.join("muon-airss-out-uep/uep/" + s,
+                                                 s + ".uep")
                     self.assertTrue(os.path.exists(expected_file))
 
             sys.argv[1:] = [cell_file, yaml_file]
@@ -65,6 +72,7 @@ class TestMuairss(unittest.TestCase):
             shutil.rmtree("muon-airss-out-uep")
             os.remove("Si2_clusters.txt")
             os.remove("Si2_Si2_uep_clusters.dat")
+            os.remove("all.cell")
 
     def test_castep(self):
         try:
@@ -80,18 +88,24 @@ class TestMuairss(unittest.TestCase):
             os.chdir(_TESTDATA_DIR)
             run_muairss()
             # Check all folders contain a yaml file
-            for (rootDir, subDirs, files) in os.walk("muon-airss-out-castep/castep/"):
+            for (rootDir, subDirs, files) in (
+                    os.walk("muon-airss-out-castep/castep/")):
                 for s in subDirs:
-                    expected_file = os.path.join("muon-airss-out-castep/castep/" + s, s + ".cell")
+                    expected_file = os.path.join(
+                        "muon-airss-out-castep/castep/" + s, s + ".cell")
                     self.assertTrue(os.path.exists(expected_file))
                     atoms = io.read(expected_file)
                     self.assertEqual(atoms.calc.cell.kpoint_mp_grid.value,
-                                     list_to_string(input_params['k_points_grid']))
-                    expected_param_file = os.path.join("muon-airss-out-castep/castep/" + s, s + ".param")
+                                     list_to_string(input_params
+                                                    ['k_points_grid']))
+                    expected_param_file = os.path.join(
+                        "muon-airss-out-castep/castep/" + s, s + ".param")
                     self.assertTrue(os.path.exists(expected_param_file))
                     output_castep_param = read_param(expected_param_file).param
-                    self.assertEqual(output_castep_param.cut_off_energy, castep_param.cut_off_energy)
-                    self.assertEqual(output_castep_param.elec_energy_tol, castep_param.elec_energy_tol)
+                    self.assertEqual(output_castep_param.cut_off_energy,
+                                     castep_param.cut_off_energy)
+                    self.assertEqual(output_castep_param.elec_energy_tol,
+                                     castep_param.elec_energy_tol)
                     # below test didn't work as cell positions get rounded...
                     # equal = atoms.cell == input_atoms.cell
                     # self.assertTrue(equal.all())
@@ -99,10 +113,12 @@ class TestMuairss(unittest.TestCase):
             # Check all folders contain castep file
             for (rootDir, subDirs, files) in os.walk("castep-results/castep"):
                 for s in subDirs:
-                    expected_file = os.path.join("castep-results/castep/" + s, s + ".castep")
+                    expected_file = os.path.join("castep-results/castep/" + s,
+                                                 s + ".castep")
                     self.assertTrue(os.path.exists(expected_file))
 
-            yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-castep-read.yaml')
+            yaml_file = os.path.join(_TESTDATA_DIR,
+                                     'Si2-muairss-castep-read.yaml')
             sys.argv[1:] = [cell_file, yaml_file]
             run_muairss()
 
@@ -113,6 +129,7 @@ class TestMuairss(unittest.TestCase):
             shutil.rmtree("muon-airss-out-castep")
             os.remove("Si2_clusters.txt")
             os.remove("Si2_Si2_castep_clusters.dat")
+            os.remove("all.cell")
 
     def test_dftb(self):
         try:
@@ -126,7 +143,8 @@ class TestMuairss(unittest.TestCase):
             os.chdir(_TESTDATA_DIR)
             run_muairss()
             # Check all folders contain a dftb_in.hsd and geo_end.gen
-            for rootDir, subDirs, files in os.walk(os.path.abspath("muon-airss-out-dftb/dftb+")):
+            for rootDir, subDirs, files in os.walk(os.path.abspath(
+                            "muon-airss-out-dftb/dftb+")):
                 expected_files = ['geo_end.gen', 'dftb_in.hsd']
 
                 for s in subDirs:
@@ -144,7 +162,8 @@ class TestMuairss(unittest.TestCase):
             if _RUN_DFTB:
                 subprocess.call(os.path.join(_TESTDATA_DIR, "script-dftb"))
             else:
-                yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-dftb-read.yaml') #TODO: create this
+                yaml_file = os.path.join(_TESTDATA_DIR,
+                                         'Si2-muairss-dftb-read.yaml')
 
             sys.argv[1:] = [cell_file, yaml_file]
             run_muairss()
