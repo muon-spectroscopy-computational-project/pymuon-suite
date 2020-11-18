@@ -147,11 +147,10 @@ def muon_vibrational_average_write(cell_file, method='independent',
     # Load the phonons
     if phonon_source_file is not None:
         phpath, phfile = os.path.split(phonon_source_file)
-        phfile = seedname(seedname(phfile)) #have to do twice for dftb case
+        phfile = seedname(seedname(phfile))  # have to do twice for dftb case
     else:
         phpath = path
         phfile = sname
-
 
     try:
         atoms = io_object[phonon_source_type].read(phpath, phfile)
@@ -214,8 +213,9 @@ def muon_vibrational_average_write(cell_file, method='independent',
         opt_args = {'calc_type': "MAGRES"}
 
     elif calculator == 'dftb+':
-        params = {'dftb_set': kwargs['dftb_set'], 'dftb_pbc': kwargs['dftb_pbc'],
-                  'k_points_grid': kwargs['k_points_grid'] if kwargs['dftb_pbc'] else None}
+        params = {'dftb_set': kwargs['dftb_set'], 'dftb_pbc':
+                  kwargs['dftb_pbc'], 'k_points_grid':
+                  kwargs['k_points_grid'] if kwargs['dftb_pbc'] else None}
         io_object = ReadWriteDFTB(params=params, calc=cell.calc,
                                   script=kwargs['script_file'])
         opt_args = {'calc_type': "SPINPOL"}
@@ -244,8 +244,8 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
 
     try:
         displaced_coll = AtomsCollection.load_tree(sname + '_displaced',
-                                               io_object[calculator].read,
-                                               safety_check=2)
+                                                   io_object[calculator].read,
+                                                   safety_check=2)
     except Exception as e:
         raise
         return
