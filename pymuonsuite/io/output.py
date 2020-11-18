@@ -136,9 +136,8 @@ Parameter file: {param}
                     c1 = inds[0][i]
                     c2 = inds[1][i]
                     d = dmat[c1, c2]
-                    f.write('\t{0} <--> {1} (distance = {2:.3f})\n'.format(c1,
-                                                                           c2,
-                                                                           d))
+                    f.write('\t{0} <--> {1} (distance = {2:.3f})\n'
+                            .format(c1+1, c2+1, d))
 
             f.write('\n--------------------------\n\n')
 
