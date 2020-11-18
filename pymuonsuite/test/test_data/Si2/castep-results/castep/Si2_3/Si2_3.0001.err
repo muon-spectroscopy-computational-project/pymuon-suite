@@ -1,0 +1,6 @@
+Error in geom_get_forces - electronic_minimisation of current_cell failed
+Current trace stack:
+ geom_get_forces
+ geom_BFGS
+ geometry_optimise
+ castep

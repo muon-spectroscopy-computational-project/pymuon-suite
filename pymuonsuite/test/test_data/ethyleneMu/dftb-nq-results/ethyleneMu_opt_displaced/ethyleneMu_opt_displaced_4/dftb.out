@@ -1,0 +1,204 @@
+|===============================================================================
+|
+|  DFTB+ release 20.1
+|
+|  Copyright (C) 2006 - 2020  DFTB+ developers group
+|
+|===============================================================================
+|
+|  When publishing results obtained with DFTB+, please cite the following
+|  reference:
+|
+|  * DFTB+, a software package for efficient approximate density functional
+|    theory based atomistic simulations, J. Chem. Phys. 152, 124101 (2020).
+|    [doi: 10.1063/1.5143190]
+|
+|  You should also cite additional publications crediting the parametrization
+|  data you use. Please consult the documentation of the SK-files for the
+|  references.
+|
+|===============================================================================
+
+Reading input file 'dftb_in.hsd'
+Parser version: 8
+
+--------------------------------------------------------------------------------
+Reading SK-files:
+Done.
+WARNING!
+-> The following 34 node(s) have been ignored by the parser:
+(1)
+Path: dftbplusinput/Hamiltonian/DFTB/DampXH
+Line: 6-6 (File: dftb_in.hsd)
+(2)
+Path: dftbplusinput/Hamiltonian/DFTB/DampXHExponent
+Line: 7-7 (File: dftb_in.hsd)
+(3)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/Br
+Line: 9-9 (File: dftb_in.hsd)
+(4)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/Ca
+Line: 11-11 (File: dftb_in.hsd)
+(5)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/Cl
+Line: 12-12 (File: dftb_in.hsd)
+(6)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/F
+Line: 13-13 (File: dftb_in.hsd)
+(7)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/I
+Line: 15-15 (File: dftb_in.hsd)
+(8)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/K
+Line: 16-16 (File: dftb_in.hsd)
+(9)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/Mg
+Line: 17-17 (File: dftb_in.hsd)
+(10)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/N
+Line: 18-18 (File: dftb_in.hsd)
+(11)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/Na
+Line: 19-19 (File: dftb_in.hsd)
+(12)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/O
+Line: 20-20 (File: dftb_in.hsd)
+(13)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/P
+Line: 21-21 (File: dftb_in.hsd)
+(14)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/S
+Line: 22-22 (File: dftb_in.hsd)
+(15)
+Path: dftbplusinput/Hamiltonian/DFTB/HubbardDerivs/Zn
+Line: 23-23 (File: dftb_in.hsd)
+(16)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/Br
+Line: 26-26 (File: dftb_in.hsd)
+(17)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/Ca
+Line: 28-28 (File: dftb_in.hsd)
+(18)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/Cl
+Line: 29-29 (File: dftb_in.hsd)
+(19)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/F
+Line: 30-30 (File: dftb_in.hsd)
+(20)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/I
+Line: 32-32 (File: dftb_in.hsd)
+(21)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/K
+Line: 33-33 (File: dftb_in.hsd)
+(22)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/Mg
+Line: 34-34 (File: dftb_in.hsd)
+(23)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/N
+Line: 35-35 (File: dftb_in.hsd)
+(24)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/Na
+Line: 36-36 (File: dftb_in.hsd)
+(25)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/O
+Line: 37-37 (File: dftb_in.hsd)
+(26)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/P
+Line: 38-38 (File: dftb_in.hsd)
+(27)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/S
+Line: 39-39 (File: dftb_in.hsd)
+(28)
+Path: dftbplusinput/Hamiltonian/DFTB/MaxAngularMomentum/Zn
+Line: 40-40 (File: dftb_in.hsd)
+(29)
+Path: dftbplusinput/Hamiltonian/DFTB/OrbitalResolvedSCC
+Line: 42-42 (File: dftb_in.hsd)
+(30)
+Path: dftbplusinput/Hamiltonian/DFTB/SpinConstants/N
+Line: 57-60 (File: dftb_in.hsd)
+(31)
+Path: dftbplusinput/Hamiltonian/DFTB/SpinConstants/O
+Line: 61-64 (File: dftb_in.hsd)
+(32)
+Path: dftbplusinput/Hamiltonian/DFTB/SpinConstants/S
+Line: 65-69 (File: dftb_in.hsd)
+(33)
+Path: dftbplusinput/Hamiltonian/DFTB/SpinPolarisation/Colinear/InitialSpins/Atoms
+Line: 74-74 (File: dftb_in.hsd)
+(34)
+Path: dftbplusinput/Hamiltonian/DFTB/SpinPolarisation/Colinear/InitialSpins/SpinPerAtom
+Line: 75-75 (File: dftb_in.hsd)
+
+
+
+Processed input in HSD format written to 'dftb_pin.hsd'
+
+Starting initialization...
+--------------------------------------------------------------------------------
+OpenMP threads:              8
+Chosen random seed:          807470528
+Mode:                        Static calculation
+Self consistent charges:     Yes
+SCC-tolerance:                 0.100000E-04
+Max. scc iterations:                    100
+Shell resolved Hubbard:      No
+Spin polarisation:           Yes
+Nr. of up electrons:             7.000000
+Nr. of down electrons:           6.000000
+Periodic boundaries:         No
+Electronic solver:           Relatively robust
+Mixer:                       Broyden mixer
+Mixing parameter:                  0.200000
+Maximal SCC-cycles:                     100
+Nr. of chrg. vec. in memory:              0
+Electronic temperature:        0.100000E-07 H      0.272114E-06 eV
+Initial charges:             Set automatically (system chrg:   0.000E+00)
+Included shells:             C:  s, p
+                             H:  s
+Spin coupling constants:     C   1(s)-1(s):  -0.310000E-01
+                             C   1(s)-2(p):  -0.250000E-01
+                             C   2(p)-1(s):  -0.250000E-01
+                             C   2(p)-2(p):  -0.230000E-01
+                             H   1(s)-1(s):  -0.720000E-01
+Full 3rd order correction    Yes
+Extra options:
+                             Mulliken analysis
+                             Force calculation
+Force type                   original
+
+--------------------------------------------------------------------------------
+
+***  Geometry step: 0
+
+ iSCC Total electronic   Diff electronic      SCC error    
+    1   -0.50782657E+01    0.00000000E+00    0.51774169E+00
+    2   -0.50819366E+01   -0.36708429E-02    0.17402202E+00
+    3   -0.50871110E+01   -0.51744055E-02    0.12596881E+00
+    4   -0.50890915E+01   -0.19805303E-02    0.63432128E-01
+    5   -0.50891474E+01   -0.55883666E-04    0.73137000E-02
+    6   -0.50891491E+01   -0.16975871E-05    0.50678099E-02
+    7   -0.50891510E+01   -0.19001522E-05    0.78853619E-03
+    8   -0.50891510E+01   -0.18140410E-07    0.83016627E-03
+    9   -0.50891510E+01   -0.33358893E-07    0.25297138E-03
+   10   -0.50891511E+01   -0.38686148E-08    0.85489862E-04
+   11   -0.50891511E+01   -0.51985083E-11    0.12383806E-03
+   12   -0.50891511E+01   -0.63620398E-09    0.69130943E-05
+>> Charges saved for restart in charges.bin
+
+Total Energy:                       -5.1377389602 H         -139.8050 eV
+Extrapolated to 0:                  -5.1377389602 H         -139.8050 eV
+Total Mermin free energy:           -5.1377389602 H         -139.8050 eV
+Force related energy:               -5.1377389602 H         -139.8050 eV
+
+--------------------------------------------------------------------------------
+DFTB+ running times                          cpu [s]             wall clock [s]
+--------------------------------------------------------------------------------
+Global initialisation                  +     0.02  (  0.9%)      0.01  (  2.1%)
+Pre-SCC initialisation                 +     0.31  ( 17.9%)      0.05  ( 19.5%)
+SCC                                    +     1.30  ( 74.1%)      0.22  ( 76.2%)
+Post-geometry optimisation             +     0.12  (  7.1%)      0.00  (  0.4%)
+--------------------------------------------------------------------------------
+Missing                                +     0.00  (  0.0%)      0.01  (  1.8%)
+Total                                  =     1.75  (100.0%)      0.28  (100.0%)
+--------------------------------------------------------------------------------

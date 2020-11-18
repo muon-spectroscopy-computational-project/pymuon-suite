@@ -1,0 +1,88 @@
+Geometry = GenFormat {
+3  S
+Si   H
+1      1      0.000000000000000      0.000000000000000      0.000000000000000
+2      1      1.347732250000000      1.347732250000000      1.347732250000000
+3      2      0.708997816226183      2.950831293430613      2.499828047739151
+0.000000000000000      0.000000000000000      0.000000000000000
+2.695464500000000      2.695464500000000      0.000000000000000
+2.695464500000000      0.000000000000000      2.695464500000000
+0.000000000000000      2.695464500000000      2.695464500000000
+}
+Driver = ConjugateGradient {
+  MaxForceComponent [eV/AA] = 0.05
+  MaxSteps = 300
+  LatticeOpt = No
+  MovedAtoms = "1:-1"
+  MaxAtomStep = 0.20000000000000001
+  OutputPrefix = "geo_end"
+  AppendGeometries = No
+  ConvergentForcesOnly = Yes
+  Constraints = {}
+}
+Hamiltonian = DFTB {
+  Charge = 1.0
+  KPointsAndWeights = SupercellFolding {
+1 0 0
+0 1 0
+0 0 1
+0.0 0.0 0.0
+  }
+  MaxAngularMomentum = {
+    H = s
+    Si = p
+  }
+  SlaterKosterFiles = Type2FileNames {
+    Prefix = /home/lauramurgatroyd/miniconda3/envs/muon_spectroscopy_wsl/lib/python3.8/site-packages/pymuonsuite/data/dftb_pars/pbc-0-3/pbc-0-3/
+    Separator = "-"
+    Suffix = ".skf"
+    LowerCaseTypeName = No
+  }
+  PolynomialRepulsive = {}
+  SCC = No
+  OldSKInterpolation = No
+  RangeSeparated = None {}
+  SpinPolarisation = {}
+  ElectricField = {}
+  Solver = RelativelyRobust {}
+  OnSiteCorrection = {}
+  Dispersion = {}
+  Solvation = {}
+  Electrostatics = GammaFunctional {}
+  Differentiation = FiniteDiff {
+    Delta = 1.2207031250000000E-004
+  }
+  Filling = Fermi {
+    Temperature = 0.0000000000000000
+    IndependentKFilling = No
+  }
+}
+Options = {
+  WriteResultsTag = Yes
+  WriteDetailedOut = Yes
+  WriteAutotestTag = No
+  WriteDetailedXML = No
+  RandomSeed = 0
+  WriteHS = No
+  WriteRealHS = No
+  MinimiseMemoryUsage = No
+  ShowFoldedCoords = No
+  TimingVerbosity = 1
+  WriteChargesAsText = No
+}
+ParserOptions = {
+  IgnoreUnprocessedNodes = Yes
+  ParserVersion = 8
+  WriteHSDInput = Yes
+  StopAfterParsing = No
+}
+Analysis = {
+  ProjectStates = {}
+  WriteEigenvectors = No
+  WriteBandOut = Yes
+  MullikenAnalysis = Yes
+  AtomResolvedEnergies = No
+  CalculateForces = No
+}
+ExcitedState = {}
+Reks = None {}

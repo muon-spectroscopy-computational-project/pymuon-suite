@@ -1,0 +1,40 @@
+
+*********************************
+|   UU  UU   EEEEEE    PPPP     |
+|   UU  UU   EE        PP  PP   |
+|   UU  UU   EEEEEE    PPPP     |
+|   UU  UU   EE        PP       |
+|    UUUU    EEEEEE    PP       |
+*********************************
+
+Unperturbed Electrostatic Potential
+optimiser for mu+ stopping site finding
+
+by Simone Sturniolo (2018)
+
+Calculations started on 2020-11-05 11:15:36.059357
+
+Charge distribution loaded from /home/lauramurgatroyd/MuonSpectroscopy/pymuon-suite/pymuonsuite/pymuonsuite/test/test_data/Si2/Si2
+Gaussian width factor used: 4.0
+Particle mass: 1.6738233791328e-27 kg
+
+---------
+
+Performing optimisation with method trust-exact
+Tolerance required for convergence: 0.05 eV
+Maximum number of steps: 300
+Defect starting position: 1.9325283443721193 2.436934131611847 2.8002517957232254 Ang
+
+---------
+
+Optimisation stopped after 7 steps
+
+
+Final coordinates: 2.708444887635976 2.7094736712228946 2.678066733104724 Ang
+Final fractional coordinates: 0.5082337062413819 0.49658193411892554 0.4969636062154858
+Classical energy: -8.843094140155303 eV
+Zero-point energy: 0.11128549781255458 eV
+Quantum total energy: -8.731808642342749 eV
+
+
+Calculation time: 0.185049 s

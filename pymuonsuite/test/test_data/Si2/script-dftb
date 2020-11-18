@@ -1,0 +1,8 @@
+#!/bin/bash
+target="muon-airss-out-dftb/dftb+/"
+for folder in "$target"*
+do
+	cd $folder
+	dftb+
+	cd ..
+done

@@ -1,0 +1,44 @@
+Geometry = GenFormat { 
+    <<< "geo_end.gen" 
+} 
+ 
+Driver = ConjugateGradient{ 
+   Masses = { 
+      Mass = { 
+         Atoms = -1 
+         MassPerAtom [amu] = 0.1134289259 
+      } 
+   } 
+   MaxForceComponent [eV/AA] = 0.05 
+   MaxSccIterations = 200 
+   MaxSteps = 300 
+   } 
+Hamiltonian = DFTB{ 
+   Charge = 1.0 
+   KPointsAndWeights = SupercellFolding { 
+      1 0 0 
+      0 1 0 
+      0 0 1 
+      0.0 0.0 0.0 
+   } 
+   MaxAngularMomentum = { 
+      C = p 
+      F = p 
+      Fe = d 
+      H = s 
+      N = p 
+      O = p 
+      Si = p 
+   } 
+   SlaterKosterFiles = Type2FileNames{ 
+      Prefix = /home/lauramurgatroyd/miniconda3/envs/muon_spectroscopy_wsl/lib/python3.8/site-packages/pymuonsuite/data/dftb_pars/pbc-0-3/pbc-0-3/ 
+      Separator = "-" 
+      Suffix = ".skf" 
+      } 
+   } 
+Options { 
+   WriteResultsTag = Yes 
+} 
+ParserOptions { 
+   IgnoreUnprocessedNodes = Yes  
+} 

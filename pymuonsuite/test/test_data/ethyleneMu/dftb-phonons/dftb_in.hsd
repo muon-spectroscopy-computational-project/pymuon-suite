@@ -1,0 +1,58 @@
+Geometry = GenFormat { 
+    <<< "geo_end.gen" 
+} 
+ 
+Hamiltonian = DFTB{ 
+   DampXH = Yes 
+   DampXHExponent = 4.0 
+   HubbardDerivs = { 
+      Br = -0.0573 
+      C = -0.1492 
+      Ca = -0.034 
+      Cl = -0.0697 
+      F = -0.1623 
+      H = -0.1857 
+      I = -0.0433 
+      K = -0.0339 
+      Mg = -0.02 
+      N = -0.1535 
+      Na = -0.0454 
+      O = -0.1575 
+      P = -0.14 
+      S = -0.11 
+      Zn = -0.03 
+   } 
+   MaxAngularMomentum = { 
+      Br = d 
+      C = p 
+      Ca = p 
+      Cl = d 
+      F = p 
+      H = s 
+      I = d 
+      K = p 
+      Mg = p 
+      N = p 
+      Na = p 
+      O = p 
+      P = p 
+      S = d 
+      Zn = d 
+   } 
+   SCC = Yes 
+   SlaterKosterFiles = Type2FileNames{ 
+      Prefix = /home/lauramurgatroyd/miniconda3/envs/muon_spectroscopy_wsl/lib/python3.8/site-packages/pymuonsuite/data/dftb_pars/3ob-3-1/3ob-3-1/ 
+      Separator = "-" 
+      Suffix = ".skf" 
+   } 
+   ThirdOrderFull = Yes 
+   } 
+Options { 
+   WriteResultsTag = Yes 
+} 
+ParserOptions { 
+   IgnoreUnprocessedNodes = Yes  
+} 
+Analysis { 
+   CalculateForces = Yes  
+} 

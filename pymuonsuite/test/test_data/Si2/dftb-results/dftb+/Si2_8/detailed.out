@@ -1,0 +1,65 @@
+ Fermi distribution function
+
+Geometry optimization step: 24
+
+Coordinates of moved atoms (au):
+    1     -0.50807846     -0.07106362     -0.27037734
+    2      2.69114066      3.12654564      2.92833980
+    3      1.07049055      1.51899123      1.34157532
+
+ Total charge:     1.00000000
+
+ Atomic gross charges (e)
+ Atom           Charge
+    1       0.57273088
+    2       0.60449918
+    3      -0.17723006
+
+Nr. of electrons (up):      8.00000000
+Atom populations (up)
+ Atom       Population
+    1       3.42726912
+    2       3.39550082
+    3       1.17723006
+
+l-shell populations (up)
+ Atom Sh.   l       Population
+    1   1   0       0.94783548
+    1   2   1       2.47943364
+    2   1   0       0.95315656
+    2   2   1       2.44234426
+    3   1   0       1.17723006
+
+Orbital populations (up)
+ Atom Sh.   l   m       Population  Label
+    1   1   0   0       0.94783548  s
+    1   2   1  -1       0.82610414  p_y
+    1   2   1   0       0.82919543  p_z
+    1   2   1   1       0.82413406  p_x
+    2   1   0   0       0.95315656  s
+    2   2   1  -1       0.81459397  p_y
+    2   2   1   0       0.81141795  p_z
+    2   2   1   1       0.81633235  p_x
+    3   1   0   0       1.17723006  s
+
+Fermi level:                        -0.1675123470 H           -4.5582 eV
+Band energy:                        -2.2320896310 H          -60.7382 eV
+TS:                                  0.0000000000 H            0.0000 eV
+Band free energy (E-TS):            -2.2320896310 H          -60.7382 eV
+Extrapolated E(0K):                 -2.2320896310 H          -60.7382 eV
+Output electrons (q):      8.0000000000
+
+Energy H0:                          -2.2320896310 H          -60.7382 eV
+Total Electronic energy:            -2.2320896310 H          -60.7382 eV
+Repulsive energy:                    0.0156080513 H            0.4247 eV
+Total energy:                       -2.2164815796 H          -60.3135 eV
+Extrapolated to 0:                  -2.2164815796 H          -60.3135 eV
+Total Mermin free energy:           -2.2164815796 H          -60.3135 eV
+Force related energy:               -2.2164815796 H          -60.3135 eV
+
+Non-SCC calculation
+
+Full geometry written in geo_end.{xyz|gen}
+
+Geometry converged
+

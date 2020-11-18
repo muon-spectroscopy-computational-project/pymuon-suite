@@ -1,0 +1,49 @@
+# CELL file written 15:09:34 (GMT-0.0) 17th November 2020 from run ./castep-pymuonsuite-test-data/muon-airss-out-castep/castep/Si2_23/Si2_23
+
+%BLOCK lattice_cart
+   ANG
+       2.69546400000000        2.69546400000000        0.00000000000000    
+       2.69546400000000        0.00000000000000        2.69546400000000    
+       0.00000000000000        2.69546400000000        2.69546400000000    
+%ENDBLOCK lattice_cart
+
+%BLOCK cell_constraints
+      0   0   0
+      0   0   0
+%ENDBLOCK cell_constraints
+
+%BLOCK positions_frac
+   Si            -0.022006416739735       0.020313411791948       0.018980796056315
+   Si             0.274359359892754       0.132423681940414       0.314221101926924
+   H:mu           0.043801077082459       0.575899052029555       0.322294706682971
+%ENDBLOCK positions_frac
+
+FIX_COM : true
+
+%BLOCK species_mass
+   AMU
+   H:mu      0.1134289259    
+%ENDBLOCK species_mass
+
+%BLOCK species_gamma
+   radsectesla
+   H:mu       851615456.6    
+%ENDBLOCK species_gamma
+
+%BLOCK species_pot
+   Si      3|1.8|5|6|7|30:31:32
+   H:mu    1|0.6|13|15|17|10(qc=8)
+%ENDBLOCK species_pot
+
+SYMMETRY_TOL :     0.001000
+
+%BLOCK symmetry_ops
+# Symm. op. 1       E
+          1.000000000000000       0.000000000000000       0.000000000000000
+          0.000000000000000       1.000000000000000       0.000000000000000
+          0.000000000000000       0.000000000000000       1.000000000000000
+          0.000000000000000       0.000000000000000       0.000000000000000
+%ENDBLOCK symmetry_ops
+
+kpoint_mp_grid :    1   1   1
+

@@ -1,0 +1,12 @@
+chden_path: /home/lauramurgatroyd/MuonSpectroscopy/pymuon-suite/pymuonsuite/pymuonsuite/test/test_data/Si2
+chden_seed: Si2
+geom_steps: 300
+gw_factor: 4.0
+mu_pos:
+- 1.9325283443721193
+- 2.436934131611847
+- 2.8002517957232254
+opt_method: trust-exact
+opt_tol: 0.05
+particle_mass: 1.6738233791328e-27
+save_pickle: true

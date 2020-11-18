@@ -1,0 +1,29 @@
+#######################################################
+#CASTEP cell file: muon-airss-out-castep/castep/Si2_2/Si2_2.cell
+#Created using the Atomic Simulation Environment (ASE)#
+#######################################################
+
+%BLOCK LATTICE_CART
+ 2.695464  2.695464  0.000000
+ 2.695464  0.000000  2.695464
+ 0.000000  2.695464  2.695464
+%ENDBLOCK LATTICE_CART
+
+%BLOCK POSITIONS_ABS
+Si  0.000000  0.000000  0.000000
+Si  1.347732  1.347732  1.347732
+H:mu  3.017986  3.216196  2.638382
+%ENDBLOCK POSITIONS_ABS
+
+%BLOCK SPECIES_GAMMA
+radsectesla
+H:mu 851615456.5978916
+%ENDBLOCK SPECIES_GAMMA
+
+%BLOCK SPECIES_MASS
+AMU
+H:mu 0.1134289259
+%ENDBLOCK SPECIES_MASS
+
+KPOINT_MP_GRID: 1 1 1
+FIX_ALL_CELL: True

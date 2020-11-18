@@ -1,0 +1,6 @@
+#!/bin/bash
+target="muon-airss-out-uep/uep/"
+for folder in "$target"*
+do
+	pm-uep-opt $folder/$(basename $folder).yaml
+done
