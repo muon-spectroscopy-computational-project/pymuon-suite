@@ -288,10 +288,6 @@ class ReadWriteCastep(ReadWrite):
         self._calc.param.charge = None
         self._calc.cell.fix_all_cell = None
 
-        pfile = self.params.get('castep_param', None)
-        if pfile is not None:
-            self._calc.param = read_param(self.params['castep_param']).param
-
         self._calc.param.task = 'Magres'
         self._calc.param.magres_task = 'Hyperfine'
 
