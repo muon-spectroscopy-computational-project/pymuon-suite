@@ -203,8 +203,8 @@ class ReadWriteCastep(ReadWrite):
             self._calc = deepcopy(self._calc)
 
             # We only use the calculator attached to the atoms object if a calc
-            # has not been set when initialising the ReadWrite object OR we have
-            # not called write() and made a calculator before.
+            # has not been set when initialising the ReadWrite object OR we
+            # have not called write() and made a calculator before.
 
             if self._calc is None:
                 if isinstance(a.calc, Castep):
@@ -314,7 +314,7 @@ class ReadWriteCastep(ReadWrite):
         self._calc.param.task = 'GeometryOptimization'
         self._calc.param.geom_max_iter = self.params.get('geom_steps', 30)
         self._calc.param.geom_force_tol = self.params.get('geom_force_tol',
-                                                           0.05)
+                                                          0.05)
         self._calc.param.max_scf_cycles = self.params.get('max_scc_steps', 30)
         self._calc.param.write_cell_structure = True  # outputs -out.cell file
 
@@ -553,6 +553,7 @@ def add_to_castep_block(cblock, symbol, value, blocktype='mass'):
         cblock += '{0} {1}\n'.format(k, v)
 
     return cblock
+
 
 def parse_hyperfine_magres(infile):
     """

@@ -17,6 +17,7 @@ from pymuonsuite.quantum.vibrational.average import (
     muon_vibrational_average_write, muon_vibrational_average_read)
 from pymuonsuite.schemas import (load_input_file, MuonHarmonicSchema,
                                  AsePhononsSchema)
+from pymuonsuite.io.output import write_phonon_report
 from pymuonsuite.io.dftb import ReadWriteDFTB
 
 
@@ -78,8 +79,8 @@ def asephonons_entry():
     # Load structure
     a = io.read(args.structure_file)
 
-    io_object = ReadWriteDFTB(params=params)
-    io_object.write(a, "", calc_type="PHONONS", args=args)
+    io_format = ReadWriteDFTB(params=params)
+    io_format.write(a, "", calc_type="PHONONS", args=args)
 
 
 if __name__ == "__main__":

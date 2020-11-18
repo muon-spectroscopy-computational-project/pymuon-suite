@@ -299,6 +299,8 @@ class ReadWriteDFTB(ReadWrite):
         dargs = DFTBArgs(self.params['dftb_set'])
 
         if calc_type == "SPINPOL":
+            if 'dftb_optionals' not in self.params:
+                self.params['dftb_optionals'] = []
             self.params['dftb_optionals'].append('spinpol.json')
             if self.params['k_points_grid'] is not None:
                 self.params['dftb_pbc'] = True

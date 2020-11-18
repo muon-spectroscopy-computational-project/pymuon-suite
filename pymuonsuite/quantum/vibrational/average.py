@@ -139,7 +139,7 @@ def muon_vibrational_average_write(cell_file, method='independent',
 
     cell.set_array('castep_custom_species', species)
 
-    io_object = {
+    io_formats = {
         'castep': ReadWriteCastep(),
         'dftb+': ReadWriteDFTB()
     }
@@ -153,7 +153,7 @@ def muon_vibrational_average_write(cell_file, method='independent',
         phfile = sname
 
     try:
-        atoms = io_object[phonon_source_type].read(phpath, phfile)
+        atoms = io_formats[phonon_source_type].read(phpath, phfile)
         ph_evals = atoms.info['ph_evals']
         ph_evecs = atoms.info['ph_evecs']
     except IOError as e:
@@ -208,7 +208,7 @@ def muon_vibrational_average_write(cell_file, method='independent',
     if calculator == 'castep':
         params = {'castep_param': kwargs['castep_param'], 'k_points_grid':
                   kwargs['k_points_grid'], 'mu_symbol': mu_symbol}
-        io_object = ReadWriteCastep(params=params, calc=cell.calc,
+        io_format = ReadWriteCastep(params=params, calc=cell.calc,
                                     script=kwargs['script_file'])
         opt_args = {'calc_type': "MAGRES"}
 
@@ -216,14 +216,14 @@ def muon_vibrational_average_write(cell_file, method='independent',
         params = {'dftb_set': kwargs['dftb_set'], 'dftb_pbc':
                   kwargs['dftb_pbc'], 'k_points_grid':
                   kwargs['k_points_grid'] if kwargs['dftb_pbc'] else None}
-        io_object = ReadWriteDFTB(params=params, calc=cell.calc,
+        io_format = ReadWriteDFTB(params=params, calc=cell.calc,
                                   script=kwargs['script_file'])
         opt_args = {'calc_type': "SPINPOL"}
 
     displaced_coll = AtomsCollection(displaced_cells)
     displaced_coll.info['displacement_scheme'] = displsch
     displaced_coll.info['muon_index'] = mu_index
-    displaced_coll.save_tree(sname + '_displaced', io_object.write,
+    displaced_coll.save_tree(sname + '_displaced', io_format.write,
                              opt_args=opt_args)
 
 
@@ -237,14 +237,14 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
     sname = seedname(cell_file)
     num_atoms = len(cell)
 
-    io_object = {
+    io_formats = {
         'castep': ReadWriteCastep(),
         'dftb+': ReadWriteDFTB()
     }
 
     try:
         displaced_coll = AtomsCollection.load_tree(sname + '_displaced',
-                                                   io_object[calculator].read,
+                                                   io_formats[calculator].read,
                                                    safety_check=2)
     except Exception as e:
         raise
