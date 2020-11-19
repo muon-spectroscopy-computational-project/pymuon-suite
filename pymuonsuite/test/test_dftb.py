@@ -40,7 +40,8 @@ class TestReadWriteDFTB(unittest.TestCase):
         except Exception as e:
             print(e)
 
-        folder = os.path.join(_TESTDATA_DIR, "ethyleneMu/dftb-result")
+        folder = os.path.join(folder,
+                              "dftb-nq-results/ethyleneMu_opt_displaced/ethyleneMu_opt_displaced_0")
         # tests dftb files being read:
         self.assertTrue(reader.read(folder))
         atom_arrays = deepcopy(reader.read(folder).arrays)

@@ -1,4 +1,4 @@
-poisson_r: 1.0
+poisson_r: 1.1
 name: Si2
 charged: true
 geom_steps: 300

@@ -1,61 +1,61 @@
  Fermi distribution function
 
-Geometry optimization step: 66
+Geometry optimization step: 79
 
 Coordinates of moved atoms (au):
-    1      0.85102166      1.65233514     -1.41426533
-    2      1.31442939      2.32090961      3.01759023
-    3      8.72155786      7.08654620      8.42481604
+    1      1.09458844      1.34908639     -0.67285118
+    2      0.43970745      2.02037396      3.95673719
+    3      5.85113067      1.69874868      1.64744083
 
  Total charge:     1.00000000
 
  Atomic gross charges (e)
  Atom           Charge
-    1       0.46354394
-    2       0.46077263
-    3       0.07568344
+    1       0.46300809
+    2       0.46101017
+    3       0.07598174
 
 Nr. of electrons (up):      8.00000000
 Atom populations (up)
  Atom       Population
-    1       3.53645606
-    2       3.53922737
-    3       0.92431656
+    1       3.53699191
+    2       3.53898983
+    3       0.92401826
 
 l-shell populations (up)
  Atom Sh.   l       Population
-    1   1   0       1.75602090
-    1   2   1       1.78043517
-    2   1   0       1.75622070
-    2   2   1       1.78300668
-    3   1   0       0.92431656
+    1   1   0       1.75586512
+    1   2   1       1.78112679
+    2   1   0       1.75775795
+    2   2   1       1.78123188
+    3   1   0       0.92401826
 
 Orbital populations (up)
  Atom Sh.   l   m       Population  Label
-    1   1   0   0       1.75602090  s
-    1   2   1  -1       0.57577136  p_y
-    1   2   1   0       0.56597934  p_z
-    1   2   1   1       0.63868446  p_x
-    2   1   0   0       1.75622070  s
-    2   2   1  -1       0.57542621  p_y
-    2   2   1   0       0.56550367  p_z
-    2   2   1   1       0.64207679  p_x
-    3   1   0   0       0.92431656  s
+    1   1   0   0       1.75586512  s
+    1   2   1  -1       0.58299011  p_y
+    1   2   1   0       0.63924959  p_z
+    1   2   1   1       0.55888709  p_x
+    2   1   0   0       1.75775795  s
+    2   2   1  -1       0.58155163  p_y
+    2   2   1   0       0.64216569  p_z
+    2   2   1   1       0.55751457  p_x
+    3   1   0   0       0.92401826  s
 
-Fermi level:                        -0.1755845370 H           -4.7779 eV
-Band energy:                        -2.3612810146 H          -64.2537 eV
+Fermi level:                        -0.1755979425 H           -4.7783 eV
+Band energy:                        -2.3612637593 H          -64.2533 eV
 TS:                                  0.0000000000 H            0.0000 eV
-Band free energy (E-TS):            -2.3612810146 H          -64.2537 eV
-Extrapolated E(0K):                 -2.3612810146 H          -64.2537 eV
+Band free energy (E-TS):            -2.3612637593 H          -64.2533 eV
+Extrapolated E(0K):                 -2.3612637593 H          -64.2533 eV
 Output electrons (q):      8.0000000000
 
-Energy H0:                          -2.3612810146 H          -64.2537 eV
-Total Electronic energy:            -2.3612810146 H          -64.2537 eV
-Repulsive energy:                    0.0035399827 H            0.0963 eV
-Total energy:                       -2.3577410319 H          -64.1574 eV
-Extrapolated to 0:                  -2.3577410319 H          -64.1574 eV
-Total Mermin free energy:           -2.3577410319 H          -64.1574 eV
-Force related energy:               -2.3577410319 H          -64.1574 eV
+Energy H0:                          -2.3612637593 H          -64.2533 eV
+Total Electronic energy:            -2.3612637593 H          -64.2533 eV
+Repulsive energy:                    0.0035262352 H            0.0960 eV
+Total energy:                       -2.3577375242 H          -64.1573 eV
+Extrapolated to 0:                  -2.3577375242 H          -64.1573 eV
+Total Mermin free energy:           -2.3577375242 H          -64.1573 eV
+Force related energy:               -2.3577375242 H          -64.1573 eV
 
 Non-SCC calculation
 

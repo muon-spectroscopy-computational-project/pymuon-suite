@@ -41,6 +41,7 @@ from pymuonsuite.io.output import write_cluster_report
 
 customize_warnings()
 
+
 def find_primitive_structure(struct):
     """Find the structure contained within the reduced cell
 
