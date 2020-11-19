@@ -288,6 +288,10 @@ class ReadWriteCastep(ReadWrite):
         self._calc.param.charge = None
         self._calc.cell.fix_all_cell = None
 
+        pfile = self.params.get('castep_param', None)
+        if pfile is not None:
+            calc.param = read_param(self.params['castep_param']).param
+
         self._calc.param.task = 'Magres'
         self._calc.param.magres_task = 'Hyperfine'
 
@@ -308,10 +312,14 @@ class ReadWriteCastep(ReadWrite):
         self._calc.cell.symmetry_ops.value = None
 
         self._calc.param.task = 'GeometryOptimization'
-        self._calc.param.geom_max_iter = self.params.get('geom_steps', 30)
-        self._calc.param.geom_force_tol = self.params.get('geom_force_tol',
-                                                          0.05)
-        self._calc.param.max_scf_cycles = self.params.get('max_scc_steps', 30)
+        if self._calc.param.geom_max_iter.value is None:
+            self._calc.param.geom_max_iter = self.params.get('geom_steps', 30)
+        if self._calc.param.geom_force_tol is None:
+            self._calc.param.geom_force_tol = self.params.get('geom_force_tol',
+                                                              0.05)
+        if self._calc.param.max_scf_cycles is None:
+            self._calc.param.max_scf_cycles = self.params.get('max_scc_steps',
+                                                              30)
         self._calc.param.write_cell_structure = True  # outputs -out.cell file
 
         # Remove settings for magres calculator:
