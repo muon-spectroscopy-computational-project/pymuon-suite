@@ -96,44 +96,44 @@ class TestReadWriteCastep(unittest.TestCase):
             # test writing geom_opt output
             reader = ReadWriteCastep(params=input_params)
             reader.write(atoms, output_folder, sname="Si2_geom_opt",
-                        calc_type="GEOM_OPT")
+                         calc_type="GEOM_OPT")
 
             reader.write(atoms, output_folder, sname="Si2_magres",
-                        calc_type="MAGRES")
+                         calc_type="MAGRES")
 
             # # read back in and check that atom locations are preserved
             geom_opt_atoms = io.read(os.path.join(output_folder,
-                                    "Si2_geom_opt.cell"))
+                                     "Si2_geom_opt.cell"))
             magres_atoms = io.read(os.path.join(output_folder,
-                                "Si2_magres.cell"))
+                                   "Si2_magres.cell"))
             equal = atoms.positions == geom_opt_atoms.positions
             # self.assertTrue(equal.all()) # is not true due to to rounding
             equal = geom_opt_atoms.positions == magres_atoms.positions
             self.assertTrue(equal.all())
             self.assertEqual(geom_opt_atoms.calc.cell.kpoint_mp_grid.value,
-                            list_to_string(input_params['k_points_grid']))
+                             list_to_string(input_params['k_points_grid']))
             self.assertEqual(magres_atoms.calc.cell.kpoint_mp_grid.value,
-                            list_to_string(input_params['k_points_grid']))
+                             list_to_string(input_params['k_points_grid']))
 
             # Test if parameters file have correct tasks:
             geom_params = read_param(os.path.join(output_folder,
-                                    "Si2_geom_opt.param")).param
+                                     "Si2_geom_opt.param")).param
             magres_params = read_param(os.path.join(output_folder,
-                                    "Si2_magres.param")).param
+                                       "Si2_magres.param")).param
             self.assertEqual(geom_params.task.value,
-                            "GeometryOptimization")
+                             "GeometryOptimization")
             self.assertEqual(magres_params.task.value, "Magres")
             self.assertEqual(magres_params.magres_task.value, "Hyperfine")
 
             self.assertEqual(geom_params.cut_off_energy,
-                            castep_param.cut_off_energy)
+                             castep_param.cut_off_energy)
             self.assertEqual(geom_params.elec_energy_tol,
-                            castep_param.elec_energy_tol)
+                             castep_param.elec_energy_tol)
 
             self.assertEqual(magres_params.cut_off_energy,
-                            castep_param.cut_off_energy)
+                             castep_param.cut_off_energy)
             self.assertEqual(magres_params.elec_energy_tol,
-                            castep_param.elec_energy_tol)
+                             castep_param.elec_energy_tol)
         finally:
             shutil.rmtree(output_folder)
 
