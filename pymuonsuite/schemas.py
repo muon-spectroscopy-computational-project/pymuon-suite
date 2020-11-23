@@ -191,7 +191,11 @@ MuAirssSchema = Schema({
     validate_str,
     # Save a file with all muon positions in one
     Optional('allpos_filename', default=None):
-    validate_str
+    validate_str,
+    # Save input files for castep or dftb+ calculations for the minimum energy
+    # structures for each cluster
+    Optional('clustering_write_input', default=None):
+    validate_all_of('castep', 'dftb+', 'all', None),
 })
 
 # Parameter file schema and defaults

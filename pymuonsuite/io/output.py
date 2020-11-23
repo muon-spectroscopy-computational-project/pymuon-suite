@@ -8,9 +8,16 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
 from ase import io
 import numpy as np
 from datetime import datetime
+
+from pymuonsuite.utils import safe_create_folder
+from pymuonsuite.io.castep import ReadWriteCastep
+from pymuonsuite.io.dftb import ReadWriteDFTB
+
+from soprano.collection import AtomsCollection
 
 
 def write_tensors(tensors, filename, symbols):
@@ -82,6 +89,8 @@ Parameter file: {param}
 
                 f.write('\t{0} clusters found\n'.format(max(cinds)))
 
+                min_energy_structs = []
+
                 for i, g in enumerate(cgroups):
 
                     f.write(
@@ -100,8 +109,15 @@ Parameter file: {param}
                                                                        Eavg,
                                                                        Estd))
 
-                    fdat.write('\t'.join(map(str, [i+1, len(g),
-                                                   Emin, Eavg, Estd])) + '\n')
+                    fdat.write('\t'.join(map(str, [i+1, len(g), Emin,
+                               Eavg, Estd,
+                               coll[np.argmin(E)].structures[0]
+                               .positions[-1][0],
+                               coll[np.argmin(E)].structures[0]
+                               .positions[-1][1],
+                               coll[np.argmin(E)].structures[0]
+                               .positions[-1][2]
+                               ])) + '\n')
 
                     f.write('\n\tMinimum energy structure: {0}\n'.format(
                         coll[np.argmin(E)].structures[0].info['name']))
@@ -110,8 +126,11 @@ Parameter file: {param}
                     if params['clustering_save_min']:
                         fname = ('{0}_min_cluster_'
                                  '{1}.{2}'.format(params['name'], i+1,
-                                                  params['clustering_save_format']))
+                                                  params
+                                                  ['clustering_save_format']))
                         io.write(fname, coll[np.argmin(E)].structures[0])
+
+                    min_energy_structs.append(coll[np.argmin(E)].structures[0])
 
                     f.write('\n\n\tStructure list:')
 
@@ -121,6 +140,43 @@ Parameter file: {param}
                         f.write('{0}\t'.format(s.info['name']))
 
                 fdat.close()
+
+                if params['clustering_write_input'] is not None:
+                    clustering_write_input_path = safe_create_folder(
+                                                  '{0}_{1}_clustering'
+                                                  '_write_input'
+                                                  .format(params['name'],
+                                                          calc))
+                    if not clustering_write_input_path:
+                        raise RuntimeError('Could not create folder {0}')
+
+                    sname = "{0}_min_cluster".format(params['name'])
+
+                    io_formats = {
+                        'castep': ReadWriteCastep(params),
+                        'dftb+': ReadWriteDFTB(params),
+                    }
+
+                    calcs = [s.strip().lower() for s in params[
+                        'clustering_write_input'].split(',')]
+                    if 'all' in calcs:
+                        calcs = io_formats.keys()
+
+                    min_energy_structs = AtomsCollection(min_energy_structs)
+                    # here we remove the structure's name so the original
+                    # numbering of the structs is removed:
+                    for i, a in enumerate(min_energy_structs):
+                        min_energy_structs.structures[i].info.pop('name', None)
+
+                    for cname in calcs:
+                        calc_path = os.path.join(clustering_write_input_path,
+                                                 cname)
+                        min_energy_structs.save_tree(calc_path,
+                                                     io_formats[cname].write,
+                                                     name_root=sname,
+                                                     opt_args={'calc_type':
+                                                               "GEOM_OPT"},
+                                                     safety_check=2)
 
                 # Print distance matrix
 
