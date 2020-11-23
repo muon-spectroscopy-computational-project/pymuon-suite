@@ -79,8 +79,40 @@ def asephonons_entry():
     # Load structure
     a = io.read(args.structure_file)
 
-    io_format = ReadWriteDFTB(params=params)
-    io_format.write(a, "", calc_type="PHONONS", args=args)
+    dargs = DFTBArgs(params['dftb_set'])
+    # Is it periodic?
+    if params['pbc']:
+        a.set_pbc(True)
+        calc = Dftb(atoms=a, label='asephonons',
+                    kpts=params['kpoint_grid'],
+                    **dargs.args)
+        ph_kpts = params['phonon_kpoint_grid']
+    else:
+        a.set_pbc(False)
+        calc = Dftb(atoms=a, label='asephonons',
+                    **dargs.args)
+        ph_kpts = None
+    a.set_calculator(calc)
+    try:
+        phdata = ase_phonon_calc(a, kpoints=ph_kpts,
+                                 ftol=params['force_tol'],
+                                 force_clean=params['force_clean'],
+                                 name=params['name'])
+    except Exception as e:
+        print(e)
+        print("Error: Could not write phonons file, see asephonons.out for"
+              " details.")
+        return
+
+    fext = os.path.splitext(args.structure_file)[-1]
+
+    # Save optimised structure
+    io.write(params['name'] + '_opt' + fext, phdata.structure)
+
+    # And write out the phonons
+    outf = params['name'] + '_opt.phonons.pkl'
+    pickle.dump(phdata, open(outf, 'wb'))
+    write_phonon_report(args, params, phdata)
 
 
 if __name__ == "__main__":

@@ -24,7 +24,6 @@ from pymuonsuite.calculate.hfine import compute_hfine_mullpop
 from pymuonsuite import constants
 
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
-from pymuonsuite.io.output import write_phonon_report
 from pymuonsuite.io.readwrite import ReadWrite
 
 _geom_opt_args = {'Driver_': 'ConjugateGradient', 'Driver_Masses_': '',
@@ -249,44 +248,6 @@ class ReadWriteDFTB(ReadWrite):
             raise(NotImplementedError("Calculation type {} is not implemented."
                   " Please choose 'PHONONS', 'GEOM_OPT' or 'SPINPOL'"
                                       .format(calc_type)))
-
-    def _write_phonons(self, a, args):
-        from pymuonsuite.data.dftb_pars import DFTBArgs
-
-        dargs = DFTBArgs(self.params['dftb_set'])
-        # Is it periodic?
-        if self.params['pbc']:
-            a.set_pbc(True)
-            self._calc = Dftb(atoms=a, label='asephonons',
-                              kpts=self.params['kpoint_grid'],
-                              **dargs.args)
-            ph_kpts = self.params['phonon_kpoint_grid']
-        else:
-            a.set_pbc(False)
-            self._calc = Dftb(atoms=a, label='asephonons',
-                              **dargs.args)
-            ph_kpts = None
-        a.set_calculator(self._calc)
-        try:
-            phdata = ase_phonon_calc(a, kpoints=ph_kpts,
-                                     ftol=self.params['force_tol'],
-                                     force_clean=self.params['force_clean'],
-                                     name=self.params['name'])
-        except Exception as e:
-            print(e)
-            print("Error: Could not write phonons file, see asephonons.out for"
-                  " details.")
-            return
-
-        fext = os.path.splitext(args.structure_file)[-1]
-
-        # Save optimised structure
-        io.write(self.params['name'] + '_opt' + fext, phdata.structure)
-
-        # And write out the phonons
-        outf = self.params['name'] + '_opt.phonons.pkl'
-        pickle.dump(phdata, open(outf, 'wb'))
-        write_phonon_report(args, self.params, phdata)
 
     def _create_calculator(self, calc_type="GEOM_OPT"):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
