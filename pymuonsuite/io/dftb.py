@@ -23,7 +23,6 @@ from pymuonsuite.utils import BackupFile
 from pymuonsuite.calculate.hfine import compute_hfine_mullpop
 from pymuonsuite import constants
 
-from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.io.readwrite import ReadWrite
 
 _geom_opt_args = {'Driver_': 'ConjugateGradient', 'Driver_Masses_': '',
@@ -200,7 +199,7 @@ class ReadWriteDFTB(ReadWrite):
                 raise RuntimeError(('Phonon file {0} does not contain gamma '
                                     'point data').format(phonon_source_file))
 
-    def write(self, a, folder, sname=None, calc_type="GEOM_OPT", args=None):
+    def write(self, a, folder, sname=None, calc_type="GEOM_OPT"):
 
         """Writes input files for an Atoms object with a Dftb+
         calculator.
@@ -213,14 +212,10 @@ class ReadWriteDFTB(ReadWrite):
         |   sname (str):            Seedname to save the files with. If not
         |                           given, use the name of the folder.
         |   calc_type (str):        Calculation which will be performed:
-        |                           "GEOM_OPT", "SPINPOL" or "PHONONS"
-        |   args:                   Input arguments for writing phonons
+        |                           "GEOM_OPT" or "SPINPOL"
         """
 
-        if calc_type == "PHONONS":
-            self._write_phonons(a, args)
-
-        elif calc_type == "GEOM_OPT" or calc_type == "SPINPOL":
+        if calc_type == "GEOM_OPT" or calc_type == "SPINPOL":
             if sname is None:
                 sname = os.path.split(folder)[-1]  # Same as folder name
 
@@ -246,8 +241,7 @@ class ReadWriteDFTB(ReadWrite):
                     sf.write(stxt)
         else:
             raise(NotImplementedError("Calculation type {} is not implemented."
-                  " Please choose 'PHONONS', 'GEOM_OPT' or 'SPINPOL'"
-                                      .format(calc_type)))
+                  " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
 
     def _create_calculator(self, calc_type="GEOM_OPT"):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
