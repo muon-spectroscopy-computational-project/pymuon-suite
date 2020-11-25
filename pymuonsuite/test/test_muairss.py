@@ -186,7 +186,7 @@ class TestMuairss(unittest.TestCase):
 
             sys.argv[1:] = [cell_file, yaml_file]
             run_muairss()
-            clust_folder = "Si2_clusters"
+            clust_folder = "Si2_clusters/dftb+"
             self.assertTrue(os.path.exists(clust_folder))
             self.assertTrue(len(glob.glob(os.path.join(clust_folder, '*.{0}'
                             .format(input_params['clustering_save_format']))

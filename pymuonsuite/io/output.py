@@ -135,11 +135,15 @@ Parameter file: {param}
                     # Save minimum energy structure
                     if params['clustering_save_type'] == 'structures':
                         try:
-                            fname = ('{0}_min_cluster_'
-                                     '{1}.{2}'.format(
-                                        params['name'], i+1,
+                            calc_path = os.path.join(clustering_save_path,
+                                                     calc)
+                            if not os.path.exists(calc_path):
+                                os.mkdir(calc_path)
+                            fname = ('{0}_{1}_min_cluster_'
+                                     '{2}.{3}'.format(
+                                        params['name'], calc, i+1,
                                         params['clustering_save_format']))
-                            io.write(os.path.join(clustering_save_path, fname),
+                            io.write(os.path.join(calc_path, fname),
                                      coll[np.argmin(E)].structures[0])
                         except (io.formats.UnknownFileTypeError) as e:
                             print("ERROR: File format '{0}' is not "
