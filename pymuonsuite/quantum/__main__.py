@@ -79,6 +79,7 @@ def asephonons_entry():
     # Load structure
     a = io.read(args.structure_file)
 
+    # Create a Dftb calculator
     dargs = DFTBArgs(params['dftb_set'])
     # Is it periodic?
     if params['pbc']:
@@ -103,8 +104,6 @@ def asephonons_entry():
         print("Error: Could not write phonons file, see asephonons.out for"
               " details.")
         return
-
-    fext = os.path.splitext(args.structure_file)[-1]
 
     # Save optimised structure
     io.write(params['name'] + '_opt' + fext, phdata.structure)
