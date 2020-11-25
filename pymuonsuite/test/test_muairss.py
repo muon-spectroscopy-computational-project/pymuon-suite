@@ -192,8 +192,8 @@ class TestMuairss(unittest.TestCase):
                             .format(input_params['clustering_save_format']))
                             )) > 0)
 
-            # self.assertTrue(os.path.exists("Si2_clusters.txt"))
-            # self.assertTrue(os.path.exists("Si2_Si2_dftb+_clusters.dat"))
+            self.assertTrue(os.path.exists("Si2_clusters.txt"))
+            self.assertTrue(os.path.exists("Si2_Si2_dftb+_clusters.dat"))
         finally:
             #  Remove all created files and folders
             shutil.rmtree("muon-airss-out-dftb")
