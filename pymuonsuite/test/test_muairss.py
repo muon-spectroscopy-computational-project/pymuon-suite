@@ -9,6 +9,7 @@ import os
 import sys
 import shutil
 import subprocess
+import glob
 from pymuonsuite.muairss import main as run_muairss
 from pymuonsuite.schemas import load_input_file, MuAirssSchema, UEPOptSchema
 from ase.io.castep import read_param
@@ -110,13 +111,6 @@ class TestMuairss(unittest.TestCase):
                     # equal = atoms.cell == input_atoms.cell
                     # self.assertTrue(equal.all())
 
-            # Check all folders contain castep file
-            for (rootDir, subDirs, files) in os.walk("castep-results/castep"):
-                for s in subDirs:
-                    expected_file = os.path.join("castep-results/castep/" + s,
-                                                 s + ".castep")
-                    self.assertTrue(os.path.exists(expected_file))
-
             yaml_file = os.path.join(_TESTDATA_DIR,
                                      'Si2-muairss-castep-read.yaml')
             sys.argv[1:] = [cell_file, yaml_file]
@@ -124,9 +118,32 @@ class TestMuairss(unittest.TestCase):
 
             self.assertTrue(os.path.exists("Si2_clusters.txt"))
             self.assertTrue(os.path.exists("Si2_Si2_castep_clusters.dat"))
+
+            # Test clustering_write_input has produced files we expect:
+            self.assertTrue(os.path.exists("Si2_clusters"))
+            calc_folder = "Si2_clusters/castep/"
+            for (rootDir, subDirs, files) in (
+                    os.walk(calc_folder)):
+                for s in subDirs:
+                    expected_file = os.path.join(
+                        calc_folder + s, s + ".cell")
+                    self.assertTrue(os.path.exists(expected_file))
+                    atoms = io.read(expected_file)
+                    self.assertEqual(atoms.calc.cell.kpoint_mp_grid.value,
+                                     list_to_string(input_params
+                                                    ['k_points_grid']))
+                    expected_param_file = os.path.join(
+                        calc_folder + s, s + ".param")
+                    self.assertTrue(os.path.exists(expected_param_file))
+                    output_castep_param = read_param(expected_param_file).param
+                    self.assertEqual(output_castep_param.cut_off_energy,
+                                     castep_param.cut_off_energy)
+                    self.assertEqual(output_castep_param.elec_energy_tol,
+                                     castep_param.elec_energy_tol)
         finally:
             # Remove all created files and folders
             shutil.rmtree("muon-airss-out-castep")
+            shutil.rmtree("Si2_clusters")
             os.remove("Si2_clusters.txt")
             os.remove("Si2_Si2_castep_clusters.dat")
             os.remove("all.cell")
@@ -165,14 +182,22 @@ class TestMuairss(unittest.TestCase):
                 yaml_file = os.path.join(_TESTDATA_DIR,
                                          'Si2-muairss-dftb-read.yaml')
 
+            input_params = load_input_file(yaml_file, MuAirssSchema)
+
             sys.argv[1:] = [cell_file, yaml_file]
             run_muairss()
+            clust_folder = "Si2_clusters"
+            self.assertTrue(os.path.exists(clust_folder))
+            self.assertTrue(len(glob.glob(os.path.join(clust_folder, '*.{0}'
+                            .format(input_params['clustering_save_format']))
+                            )) > 0)
 
-            self.assertTrue(os.path.exists("Si2_clusters.txt"))
-            self.assertTrue(os.path.exists("Si2_Si2_dftb+_clusters.dat"))
+            # self.assertTrue(os.path.exists("Si2_clusters.txt"))
+            # self.assertTrue(os.path.exists("Si2_Si2_dftb+_clusters.dat"))
         finally:
             #  Remove all created files and folders
             shutil.rmtree("muon-airss-out-dftb")
+            shutil.rmtree("Si2_clusters")
             os.remove("Si2_clusters.txt")
             os.remove("Si2_Si2_dftb+_clusters.dat")
             os.remove("all.cell")

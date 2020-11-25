@@ -1,7 +1,7 @@
-cut_off_energy   : 150 eV
+cut_off_energy   : 150.0
 fix_occupancy    : true
 grid_scale       : 2
-elec_energy_tol  : 1.0e-8 eV
+elec_energy_tol  : 1e-08
 task             : singlepoint
 opt_strategy     : speed
 num_dump_cycles  : 0

@@ -12,3 +12,5 @@ clustering_hier_t: 0.2
 dftb_set: pbc-0-3
 out_folder: castep-results
 allpos_filename: all.cell
+clustering_save_type: input
+clustering_save_format: castep
