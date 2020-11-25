@@ -165,14 +165,14 @@ MuAirssSchema = Schema({
     Optional('mu_symbol', default='H:mu'):
     validate_str,
     # Maximum number of geometry optimisation steps
-    Optional('geom_steps', default=30):
+    Optional('geom_steps', default=None):
     int,
     # Tolerance on geometry optimisation in units of eV/AA.
-    Optional('geom_force_tol', default=0.05):
+    Optional('geom_force_tol', default=None):
     float,
     # Max number of SCC steps to perform before giving up. Default is
     # 200 which is also the default for DFTB+.
-    Optional('max_scc_steps', default=200):
+    Optional('max_scc_steps', default=None):
     int,
     # Clustering method to use
     Optional('clustering_method', default='hier'):

@@ -124,16 +124,24 @@ class TestReadWriteCastep(unittest.TestCase):
                              "GeometryOptimization")
             self.assertEqual(magres_params.task.value, "Magres")
             self.assertEqual(magres_params.magres_task.value, "Hyperfine")
-
+            # These are only set in the param file only so should equal
+            # the value in the param file:
+            self.assertEqual(geom_params.geom_max_iter,
+                             castep_param.geom_max_iter)
             self.assertEqual(geom_params.cut_off_energy,
                              castep_param.cut_off_energy)
             self.assertEqual(geom_params.elec_energy_tol,
                              castep_param.elec_energy_tol)
+            # This is set in the input yaml and param file so should equal
+            # the value in the yaml file:
+            self.assertEqual(geom_params.geom_force_tol.value,
+                             str(input_params['geom_force_tol']))
 
             self.assertEqual(magres_params.cut_off_energy,
                              castep_param.cut_off_energy)
             self.assertEqual(magres_params.elec_energy_tol,
                              castep_param.elec_energy_tol)
+            
         finally:
             shutil.rmtree(output_folder)
 

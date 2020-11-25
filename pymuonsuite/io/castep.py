@@ -313,10 +313,31 @@ class ReadWriteCastep(ReadWrite):
 
         self._calc.param.task = 'GeometryOptimization'
 
-        self._calc.param.geom_max_iter = self.params.get('geom_steps', 30)
-        self._calc.param.geom_force_tol = self.params.get('geom_force_tol',
-                                                          0.05)
-        self._calc.param.max_scf_cycles = self.params.get('max_scc_steps', 30)
+        geom_steps_param = self.params.get('geom_steps')
+
+        if geom_steps_param is not None:
+            self._calc.param.geom_max_iter = geom_steps_param
+        else:
+            if self._calc.param.geom_max_iter.value is None:
+                self._calc.param.geom_max_iter = 30
+
+        geom_force_tol_param = self.params.get('geom_force_tol')
+
+        if geom_force_tol_param is not None:
+            self._calc.param.geom_force_tol = geom_force_tol_param
+        else:
+            if self._calc.param.geom_force_tol.value is None:
+                self._calc.param.geom_force_tol = 0.05
+
+        max_scf_cycles_param = self.params.get('max_scc_steps')
+
+        if max_scf_cycles_param is not None:
+            self._calc.param.max_scf_cycles.value = max_scf_cycles_param
+
+        else:
+            if self._calc.param.max_scf_cycles.value is None:
+                self._calc.param.max_scf_cycles = 30
+
         self._calc.param.write_cell_structure = True  # outputs -out.cell file
 
         # Remove settings for magres calculator:

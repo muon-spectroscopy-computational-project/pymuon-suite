@@ -1,7 +1,6 @@
 poisson_r: 1.0
 name: Si2
 charged: true
-geom_steps: 300
 vdw_scale: 0.25
 calculator: castep
 uep_gw_factor: 4.0
