@@ -1,4 +1,0 @@
-Error check_elec_ground_state : electronic_minimisation of initial cell failed.
-Current trace stack:
- check_elec_ground_state
- castep
