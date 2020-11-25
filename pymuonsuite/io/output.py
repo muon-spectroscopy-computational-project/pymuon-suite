@@ -78,6 +78,16 @@ Parameter file: {param}
 
             f.write('Clusters for {0}:\n'.format(name))
 
+            if params['clustering_save_type'] is not None:
+                if params['clustering_save_folder'] is not None:
+                    clustering_save_path = safe_create_folder(
+                        params['clustering_save_folder'])
+                else:
+                    clustering_save_path = safe_create_folder(
+                        '{0}_clusters'.format(params['name']))
+                if not clustering_save_path:
+                    raise RuntimeError('Could not create folder {0}')
+
             for calc, clusts in cdata.items():
 
                 # Computer readable
@@ -123,12 +133,23 @@ Parameter file: {param}
                         coll[np.argmin(E)].structures[0].info['name']))
 
                     # Save minimum energy structure
-                    if params['clustering_save_min']:
-                        fname = ('{0}_min_cluster_'
-                                 '{1}.{2}'.format(params['name'], i+1,
-                                                  params
-                                                  ['clustering_save_format']))
-                        io.write(fname, coll[np.argmin(E)].structures[0])
+                    if params['clustering_save_type'] == 'structures':
+                        try:
+                            fname = ('{0}_min_cluster_'
+                                     '{1}.{2}'.format(
+                                        params['name'], i+1,
+                                        params['clustering_save_format']))
+                            io.write(os.path.join(clustering_save_path, fname),
+                                     coll[np.argmin(E)].structures[0])
+                        except (io.formats.UnknownFileTypeError) as e:
+                            print("ERROR: File format '{0}' is not "
+                                  "recognised. Modify 'clustering_save_format'"
+                                  " and try again.".format(e))
+                            return
+                        except ValueError as e:
+                            print("ERROR: {0}. Modify 'clustering_save_format'"
+                                  "and try again.".format(e))
+                            return
 
                     min_energy_structs.append(coll[np.argmin(E)].structures[0])
 
@@ -141,14 +162,8 @@ Parameter file: {param}
 
                 fdat.close()
 
-                if params['clustering_write_input'] is not None:
-                    clustering_write_input_path = safe_create_folder(
-                                                  '{0}_{1}_clustering'
-                                                  '_write_input'
-                                                  .format(params['name'],
-                                                          calc))
-                    if not clustering_write_input_path:
-                        raise RuntimeError('Could not create folder {0}')
+                if params['clustering_save_type'] == 'input':
+                    calc_path = os.path.join(clustering_save_path, calc)
 
                     sname = "{0}_min_cluster".format(params['name'])
 
@@ -156,11 +171,21 @@ Parameter file: {param}
                         'castep': ReadWriteCastep(params),
                         'dftb+': ReadWriteDFTB(params),
                     }
+                    try:
+                        write_method = io_formats[
+                            params['clustering_save_format']].write
+                    except KeyError as e:
+                        print("ERROR: Calculator type {0} is not "
+                              "recognised. Modify 'clustering_save_format'"
+                              " to be one of: {1}".format(
+                                  e, list(io_formats.keys())))
+                        return
 
-                    calcs = [s.strip().lower() for s in params[
-                        'clustering_write_input'].split(',')]
-                    if 'all' in calcs:
-                        calcs = io_formats.keys()
+                    if params['clustering_save_format'] == 'dftb+':
+                        from pymuonsuite.data.dftb_pars import get_license
+                        with open(os.path.join(clustering_save_path,
+                                  'dftb.LICENSE'), 'w') as license_file:
+                            license_file.write(get_license())
 
                     min_energy_structs = AtomsCollection(min_energy_structs)
                     # here we remove the structure's name so the original
@@ -168,15 +193,12 @@ Parameter file: {param}
                     for i, a in enumerate(min_energy_structs):
                         min_energy_structs.structures[i].info.pop('name', None)
 
-                    for cname in calcs:
-                        calc_path = os.path.join(clustering_write_input_path,
-                                                 cname)
-                        min_energy_structs.save_tree(calc_path,
-                                                     io_formats[cname].write,
-                                                     name_root=sname,
-                                                     opt_args={'calc_type':
-                                                               "GEOM_OPT"},
-                                                     safety_check=2)
+                    min_energy_structs.save_tree(calc_path,
+                                                 write_method,
+                                                 name_root=sname,
+                                                 opt_args={
+                                                    'calc_type': 'GEOM_OPT'},
+                                                 safety_check=2)
 
                 # Print distance matrix
 

@@ -104,8 +104,8 @@ MuAirssSchema = Schema({
     Optional('name', default='struct'):
     validate_str,
     # Calculator to generate structure files for. Must be a comma seperated
-    # list of values. Currently supported calculators are CASTEP, DFTB+ and 
-    # UEP. Can also pass all as an option to generate files for all 
+    # list of values. Currently supported calculators are CASTEP, DFTB+ and
+    # UEP. Can also pass all as an option to generate files for all
     # calculators.
     Optional('calculator', default='dftb+'):
     validate_all_of('castep', 'dftb+', 'uep', 'all'),
@@ -183,19 +183,21 @@ MuAirssSchema = Schema({
     # Number of clusters for k-means clustering
     Optional('clustering_kmeans_k', default=4):
     int,
-    # Whether to save the minimum energy structures for each cluster
-    Optional('clustering_save_min', default=False):
-    bool,
+    # Whether to save the minimum energy structures for each cluster,
+    # or input files to another calculator
+    Optional('clustering_save_type', default=None):
+    validate_all_of('structures', 'input', None),
     # Format to use to save the minimum energy structures for each cluster
-    Optional('clustering_save_format', default='cif'):
+    Optional('clustering_save_format', default=None):
+    validate_str,
+    # Name to call the folder used to store the input files
+    # for castep or dftb+ calculations and/or the minimum energy
+    # structures for each cluster
+    Optional('clustering_save_folder', default=None):
     validate_str,
     # Save a file with all muon positions in one
     Optional('allpos_filename', default=None):
     validate_str,
-    # Save input files for castep or dftb+ calculations for the minimum energy
-    # structures for each cluster
-    Optional('clustering_write_input', default=None):
-    validate_all_of('castep', 'dftb+', 'all', None),
 })
 
 # Parameter file schema and defaults
