@@ -267,6 +267,7 @@ def geomopt_entry():
         try:
             results = geomopt(params, outf)
         except Exception as e:
+            print(e)
             return
 
     # Now dump results
