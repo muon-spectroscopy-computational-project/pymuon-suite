@@ -1,5 +1,6 @@
 #!/bin/bash
 BASE=`pwd`
+echo $BASE
 for d in ethyleneMu_opt_displaced/*
 do	
 	echo "Running " "$d"

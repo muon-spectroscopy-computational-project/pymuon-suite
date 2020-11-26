@@ -17,7 +17,7 @@ from ase import io
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data/ethyleneMu")
 
-_RUN_DFTB = True
+_RUN_DFTB = False
 #  Setting _RUN_DFTB to True requires dftb+ to be installed locally
 #  and will test generating dftb phonons files, and running the
 #  dftb+ files generated using pm-nq
@@ -45,15 +45,14 @@ class TestQuantum(unittest.TestCase):
                 self.remove_phonons_data(os.listdir(_TESTDATA_DIR))
 
     def test_nq(self):
-        folder = _TESTDATA_DIR + "/dftb-phonons"
+        folder = _TESTDATA_DIR + "/dftb-phonons/"
         os.chdir(folder)
         yaml_file = "quantum.yaml"
         sys.argv[1:] = ["-w", yaml_file]
         nq_entry()
 
         if _RUN_DFTB:
-            subprocess.call(os.path.join(_TESTDATA_DIR,
-                            "run_dftb.sh"))
+            subprocess.call(os.path.join(folder, "run_dftb.sh"))
         else:
             os.chdir(_TESTDATA_DIR + "/dftb-nq-results")
 
@@ -62,9 +61,9 @@ class TestQuantum(unittest.TestCase):
         self.assertTrue(os.path.exists("averages.dat"))
 
         os.remove("averages.dat")
-        os.remove("ethyleneMu_opt_allconf.xyz")
         if not _RUN_DFTB:
             os.chdir(folder)
+        os.remove("ethyleneMu_opt_allconf.xyz")
         shutil.rmtree("ethyleneMu_opt_displaced")
 
 
