@@ -264,11 +264,7 @@ def geomopt_entry():
         params['chden_seed'] = seedname  # Default is the same
 
     with open(seedpath + '.uep', 'w') as outf:
-        try:
-            results = geomopt(params, outf)
-        except Exception as e:
-            print(e)
-            return
+        results = geomopt(params, outf)
 
     # Now dump results
     if params['save_pickle']:

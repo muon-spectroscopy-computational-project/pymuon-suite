@@ -109,8 +109,9 @@ class ReadWriteCastep(ReadWrite):
                           .format(os.path.abspath(folder)))
         except OSError as e:
             raise IOError("ERROR: {}".format(e))
-        except Exception as e:
-            raise IOError("ERROR: Could not read {file}"
+        except (io.formats.UnknownFileTypeError, ValueError, TypeError,
+                Exception) as e:
+            raise IOError("ERROR: Invalid file: {file}"
                           .format(file=sname + '.castep'))
 
     def _read_castep_hyperfine_magres(self, atoms, folder, sname=None):

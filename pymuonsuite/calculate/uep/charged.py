@@ -70,9 +70,12 @@ class ChargeDistribution(object):
         self._elec_den = FMTReader(seedpath + '.den_fmt')
         try:
             self._struct = io.read(seedpath + '.castep')
-        except Exception as e:
-            print(seedpath + '.castep' + ' could not be read.')
-            return
+        except FileNotFoundError:
+            print("ERROR: {}.".format(e))
+        except (io.formats.UnknownFileTypeError, ValueError, TypeError,
+                Exception) as e:
+            print("ERROR: Invalid file: {file}"
+                  .format(file=seedpath + '.castep'))
 
         ppots = parse_castep_ppots(seedpath + '.castep')
 
