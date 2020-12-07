@@ -26,7 +26,7 @@ from ase.io.castep import read_param
 from ase.build import make_supercell
 from ase.calculators.castep import Castep
 from ase.calculators.dftb import Dftb
-from soprano.utils import safe_input, customize_warnings
+from soprano.utils import customize_warnings
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 from soprano.analyse.phylogen import PhylogenCluster, Gene
@@ -34,9 +34,10 @@ from soprano.analyse.phylogen import PhylogenCluster, Gene
 import pymuonsuite.constants as cnst
 from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
-from pymuonsuite.io.castep import add_to_castep_block, ReadWriteCastep
+from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
-from pymuonsuite.io.uep import UEPCalculator, ReadWriteUEP
+from pymuonsuite.io.uep import ReadWriteUEP
+from pymuonsuite.io.gaussian import ReadWriteGaussian
 from pymuonsuite.io.output import write_cluster_report
 
 customize_warnings()
@@ -136,7 +137,8 @@ def save_muairss_collection(struct, params, batch_path=''):
     io_formats = {
         'castep': ReadWriteCastep(params),
         'dftb+': ReadWriteDFTB(params),
-        'uep': ReadWriteUEP(params)
+        'uep': ReadWriteUEP(params),
+        'gaussian': ReadWriteGaussian(params)
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
@@ -179,7 +181,8 @@ def load_muairss_collection(struct, params, batch_path=''):
     load_formats = {
         'castep': ReadWriteCastep(),
         'dftb+': ReadWriteDFTB(),
-        'uep': ReadWriteUEP()
+        'uep': ReadWriteUEP(),
+        'gaussian': ReadWriteGaussian()
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
