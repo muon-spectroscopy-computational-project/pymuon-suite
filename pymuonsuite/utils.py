@@ -5,9 +5,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import shutil
+import os
 import numpy as np
-from ase import Atoms
-from soprano.utils import minimum_periodic
+from soprano.utils import minimum_periodic, safe_input
+
 
 def find_ipso_hydrogen(a_i, cell, symbol):
     """Find closest hydrogen to atom at index a_i in cell
@@ -33,6 +34,7 @@ def find_ipso_hydrogen(a_i, cell, symbol):
     ipso_i = iH[np.argmin(distH)]
 
     return ipso_i
+
 
 def list_to_string(arr):
     """Create a str from a list an array of list of numbers
@@ -75,7 +77,7 @@ def make_3x3(a):
         raise ValueError('Invalid argument passed do make_3x3')
 
 
-def safe_create_folder(path):
+def safe_create_folder(folder_name):
     """Create a folder at path with safety checks for overwriting.
 
     | Args:
@@ -85,20 +87,18 @@ def safe_create_folder(path):
     |   success (bool): True if the operation was successful
 
     """
-
-    while os.path.isdir(path):
-        ans = raw_input(('Folder {} exists, overwrite (y/N)? '
-                         ).format(path))
+    while os.path.isdir(folder_name):
+        ans = safe_input(('Folder {} exists, overwrite (y/N)? '
+                          ).format(folder_name))
         if ans == 'y':
-            shutil.rmtree(path)
+            shutil.rmtree(folder_name)
         else:
-            return False
+            folder_name = safe_input('Please input new folder name:\n')
     try:
-        os.mkdir(path)
+        os.mkdir(folder_name)
     except OSError:
-        return False
-
-    return True
+        pass  # It's fine, it already exists
+    return folder_name
 
 
 def make_process_slices(N, M):
@@ -152,6 +152,7 @@ def create_plane_grid(hkl, cell, f0, f1, N=20):
     xyzgrid += p0[:, None, None]
 
     return xyzgrid
+
 
 class BackupFile():
     """Backup a file before performing an operation
