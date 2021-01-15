@@ -11,27 +11,18 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import glob
-import pickle
 import numpy as np
-from copy import deepcopy
 
-from ase import io, Atoms
-from ase.io.castep import read_param
-from ase.calculators.castep import Castep
-from ase.calculators.dftb import Dftb
+from ase import io
 from soprano.utils import seedname
 from soprano.collection import AtomsCollection
 
 # Internal imports
 from pymuonsuite import constants
-from pymuonsuite.io.castep import (parse_castep_masses, add_to_castep_block,
-                                   ReadWriteCastep)
-from pymuonsuite.io.dftb import (parse_spinpol_dftb, ReadWriteDFTB)
-from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
+from pymuonsuite.io.castep import (parse_castep_masses, ReadWriteCastep)
+from pymuonsuite.io.dftb import ReadWriteDFTB
 from pymuonsuite.quantum.vibrational.schemes import (IndependentDisplacements,
                                                      MonteCarloDisplacements)
-from pymuonsuite.calculate.hfine import compute_hfine_mullpop
 
 
 class MuonAverageError(Exception):
@@ -57,7 +48,7 @@ def read_castep_gamma_phonons(seed, path='.'):
 
     # Parse CASTEP phonon data into casteppy object
     pd = QpointPhononModes.from_castep(os.path.join(path,
-                                       seed + '.phonon'))
+                                                    seed + '.phonon'))
     # Convert frequencies back to cm-1
     pd.frequencies_unit = '1/cm'
     # Get phonon frequencies+modes
@@ -116,7 +107,6 @@ def muon_vibrational_average_write(cell_file, method='independent',
     cell = io.read(cell_file)
     path = os.path.split(cell_file)[0]
     sname = seedname(cell_file)
-    num_atoms = len(cell)
 
     cell.info['name'] = sname
 
@@ -156,7 +146,7 @@ def muon_vibrational_average_write(cell_file, method='independent',
         atoms = io_formats[phonon_source_type].read(phpath, phfile)
         ph_evals = atoms.info['ph_evals']
         ph_evecs = atoms.info['ph_evecs']
-    except IOError as e:
+    except IOError:
         raise
         return
     except KeyError:
@@ -164,7 +154,7 @@ def muon_vibrational_average_write(cell_file, method='independent',
         if phonon_source_type == "dftb+":
             phonon_source_file = phonon_source_file + 's.pkl'
         raise(IOError("Phonon file {0} could not be read."
-              .format(phonon_source_file)))
+                      .format(phonon_source_file)))
         return
 
     # Fetch masses
@@ -232,10 +222,7 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
                                   average_file='averages.dat',
                                   **kwargs):
     # Open the structure file
-    cell = io.read(cell_file)
-    path = os.path.split(cell_file)[0]
     sname = seedname(cell_file)
-    num_atoms = len(cell)
 
     io_formats = {
         'castep': ReadWriteCastep(),
@@ -246,7 +233,7 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
         displaced_coll = AtomsCollection.load_tree(sname + '_displaced',
                                                    io_formats[calculator].read,
                                                    safety_check=2)
-    except Exception as e:
+    except Exception:
         raise
         return
 
@@ -295,7 +282,6 @@ All values, by configuration:
 
         """.format(property=avgname, cell=cell_file,
                    scheme=displsch, avg=avg, vals='\n'.join([
-                       'Conf: {0} (Weight = {1})\n{2}\n'.format(i,
-                                                                displsch.weights[i],
-                                                                v)
+                       'Conf: {0} (Weight = {1})\n{2}\n'.format(
+                           i, displsch.weights[i], v)
                        for i, v in enumerate(to_avg)])))

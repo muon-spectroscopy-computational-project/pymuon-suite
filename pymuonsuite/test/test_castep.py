@@ -1,15 +1,11 @@
 """Tests for ReadWriteCastep methods"""
 
 import unittest
-import numpy as np
 
 import os
-import sys
 import shutil
 
-from copy import deepcopy
-
-from ase import Atoms, io
+from ase import io
 from ase.io.castep import read_param
 
 from pymuonsuite.utils import list_to_string
@@ -38,7 +34,6 @@ class TestReadWriteCastep(unittest.TestCase):
         # tests castep file being read:
         self.assertTrue(reader.read(folder, sname))
         atoms = reader.read(folder, sname)
-        atom_arrays_castep = deepcopy(reader.read(folder, sname).arrays)
 
         #  checks if phonon info has been loaded into atom object:
         self.assertIn('ph_evecs', atoms.info.keys())
@@ -88,7 +83,6 @@ class TestReadWriteCastep(unittest.TestCase):
             cell_file = os.path.join(input_folder, 'Si2.cell')
             param_file = os.path.join(input_folder, 'Si2.param')
             input_params = load_input_file(yaml_file, MuAirssSchema)
-            input_atoms = io.read(cell_file)
             castep_param = read_param(param_file).param
 
             atoms = io.read(cell_file)
@@ -103,9 +97,9 @@ class TestReadWriteCastep(unittest.TestCase):
 
             # # read back in and check that atom locations are preserved
             geom_opt_atoms = io.read(os.path.join(output_folder,
-                                     "Si2_geom_opt.cell"))
+                                                  "Si2_geom_opt.cell"))
             magres_atoms = io.read(os.path.join(output_folder,
-                                   "Si2_magres.cell"))
+                                                "Si2_magres.cell"))
             equal = atoms.positions == geom_opt_atoms.positions
             # self.assertTrue(equal.all()) # is not true due to to rounding
             equal = geom_opt_atoms.positions == magres_atoms.positions
@@ -117,9 +111,9 @@ class TestReadWriteCastep(unittest.TestCase):
 
             # Test if parameters file have correct tasks:
             geom_params = read_param(os.path.join(output_folder,
-                                     "Si2_geom_opt.param")).param
+                                                  "Si2_geom_opt.param")).param
             magres_params = read_param(os.path.join(output_folder,
-                                       "Si2_magres.param")).param
+                                                    "Si2_magres.param")).param
             self.assertEqual(geom_params.task.value,
                              "GeometryOptimization")
             self.assertEqual(magres_params.task.value, "Magres")
@@ -141,7 +135,7 @@ class TestReadWriteCastep(unittest.TestCase):
                              castep_param.cut_off_energy)
             self.assertEqual(magres_params.elec_energy_tol,
                              castep_param.elec_energy_tol)
-            
+
         finally:
             shutil.rmtree(output_folder)
 
