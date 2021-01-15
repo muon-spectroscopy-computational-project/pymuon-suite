@@ -6,6 +6,7 @@ from __future__ import unicode_literals
 
 import os
 import glob
+import numpy as np
 # import warnings
 
 from copy import deepcopy
@@ -15,6 +16,7 @@ from ase import Atoms
 from ase.calculators.gaussian import Gaussian
 
 # from soprano.utils import customize_warnings
+from soprano.utils import seedname
 
 from pymuonsuite import constants
 from pymuonsuite.io.readwrite import ReadWrite
@@ -25,7 +27,7 @@ from pymuonsuite.io.readwrite import ReadWrite
 class ReadWriteGaussian(ReadWrite):
     def __init__(self, params={}, script=None, calc=None):
         '''
-        |   params (dict)           Contains basis set
+        |   params (dict):           Contains basis set
         |   script (str):           Path to a file containing a submission
         |                           script to copy to the input folder. The
         |                           script can contain the argument
@@ -103,7 +105,6 @@ class ReadWriteGaussian(ReadWrite):
                           .format(file=sname + '.out'))
 
     def write(self, a, folder, sname=None, calc_type=None):
-
         """Writes input files for an Atoms object with a Gaussian
         calculator.
 
@@ -123,6 +124,10 @@ class ReadWriteGaussian(ReadWrite):
         print("FOLDER: ", folder)
 
         a = self._reposition_muon(a)
+        # We will no longer need to reposition the muon, when the changes to
+        # ASE have been made
+        # TODO: replace with:
+        a = self._add_muon_properties(a)
 
         self._calc = deepcopy(self._calc)
 
@@ -139,7 +144,7 @@ class ReadWriteGaussian(ReadWrite):
 
         print("LABEL: ", a.calc.label)
 
-        a.calc.write_input(a) #TODO: test this compared to below
+        a.calc.write_input(a)  # TODO: test this compared to below
         #io.write(os.path.join(folder, sname + '.com'), a)
 
         if self.script is not None:
@@ -149,6 +154,7 @@ class ReadWriteGaussian(ReadWrite):
                 sf.write(stxt)
 
     def _reposition_muon(self, a):
+        # TODO: delete this method when the changes to ASE have been made
         mu_symbol = self.params.get('mu_symbol', 'H:mu')
         mu_index = list(a.arrays['castep_custom_species']).index(mu_symbol)
         # move muons to front of atoms, so we can set the mass
@@ -157,6 +163,25 @@ class ReadWriteGaussian(ReadWrite):
         a = Atoms('H', [mu.position], magmoms=[mu.magmom]) + a
         a.pbc = None
         a.cell = None
+        return a
+
+    def _add_muon_properties(self, a):
+        mu_symbol = self.params.get('mu_symbol', 'H:mu')
+        if mu_symbol in a.arrays['castep_custom_species']:
+            mu_index = list(a.arrays['castep_custom_species']).index(mu_symbol)
+        else:
+            # otherwise, the muon is in the final position:
+            mu_index = len(a.positions)-1
+        masses = a.get_masses()
+        NMagMs = a.arrays.get('gaussian_NMagM', None)
+        masses[mu_index] = str(constants.m_mu_amu)
+        a.set_masses(masses)
+        if NMagMs is None:
+            NMagMs = [None]*len(masses)
+            a.set_array('gaussian_NMagM', np.array(NMagMs))
+        NMagMs[mu_index] = str(constants.mu_nmagm)
+        a.arrays['gaussian_NMagM'] = NMagMs
+
         return a
 
     def _create_calculator(self, folder, sname):
@@ -169,13 +194,13 @@ class ReadWriteGaussian(ReadWrite):
             if pfile is not None:
                 route = self._read_route_section(pfile)
                 calc.parameters = {'method': '',
-                                'extra': route}
+                                   'extra': route}
             else:
                 atoms = io.read("example_in.com")
                 calc.parameters = {'method': 'uB3LYP',
-                                'basis': 'EPR-III',
-                                'opt': 'Tight, MaxCyc=100',
-                                'integral': "Ultrafine"}
+                                   'basis': 'EPR-III',
+                                   'opt': 'Tight, MaxCyc=100',
+                                   'integral': "Ultrafine"}
 
             calc.parameters.update({'nprocshared': 16,
                                     'charge': 0,
