@@ -35,7 +35,7 @@ if __name__ == '__main__':
               'pyyaml',
               'schema',
               'spglib>0.8',
-              'soprano>=0.8.9',
+              'soprano>=0.8.10',
               'parse-fmt>=0.5',
               'euphonic==0.3.2'
           ],
