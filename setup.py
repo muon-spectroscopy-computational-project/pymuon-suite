@@ -19,7 +19,8 @@ if __name__ == '__main__':
         setname = os.path.split(g)[1]
         sk_pkgdata += [os.path.join('data/dftb_pars/', setname, '*'),
                        os.path.join('data/dftb_pars/', setname, setname,
-                                    '*.skf')]
+                                    '*.skf'),
+                       os.path.join('data/dftb_pars/', '*')]
 
     setup(name='PyMuonSuite',
           version='0.0.1',
