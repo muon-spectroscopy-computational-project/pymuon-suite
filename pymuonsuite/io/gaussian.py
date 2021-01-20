@@ -40,9 +40,8 @@ class ReadWriteGaussian(ReadWrite):
             raise ValueError('params should be a dict, not ', type(params))
             return
         else:
-            self.params = params
+            self.set_params(params)
         self.script = script
-        self._calc = calc
         # if calc is not None and self.params != {}:
         #     self._create_calculator()
 
@@ -168,7 +167,11 @@ class ReadWriteGaussian(ReadWrite):
         else:
             self._calc = Gaussian()
 
-
+        # read the gaussian input file:
+        if 'gaussian_input' in self.params:
+            in_file = self.params['gaussian_input']
+            self._calc.parameters = io.read(
+                in_file, get_calculator=True).calc.parameters
         self._calc.label = sname
 
         return self._calc

@@ -44,13 +44,12 @@ class TestReadWriteGaussian(unittest.TestCase):
                                    0.66748000])
         atoms = atoms + muon
         atoms.calc = Gaussian()
-        params = {'chk': 'example.chk', 'nprocshared': '16',
-                  'output_type': 'N', 'method': 'B3LYP',
-                  'basis': "EPR-III", 'opt': 'Tight, MaxCyc=100',
-                  'integral': 'Ultrafine', 'charge': 0,
-                  'mult': 2}
+        params = {'chk': 'ethylene-SP.chk', 'nprocshared': '16',
+                  'output_type': 'T', 'b3lyp': None, 'epr-iii': None,
+                  'charge': 0, 'mult': 1}
         atoms.calc.parameters = params
-        gaussian_io = ReadWriteGaussian()
+        gaussian_io = ReadWriteGaussian(
+            params={'gaussian_input': 'ethylene-SP.com'})
 
         atoms_copy = atoms.copy()
         atoms_copy.calc = copy.copy(atoms.calc)
