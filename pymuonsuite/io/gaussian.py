@@ -12,7 +12,6 @@ import numpy as np
 from copy import deepcopy
 
 from ase import io
-from ase import Atoms
 from ase.calculators.gaussian import Gaussian
 
 # from soprano.utils import customize_warnings
@@ -27,7 +26,7 @@ from pymuonsuite.io.readwrite import ReadWrite
 class ReadWriteGaussian(ReadWrite):
     def __init__(self, params={}, script=None, calc=None):
         '''
-        |   params (dict):           Contains basis set
+        |   params (dict):          Contains ?? TODO: Sort out what this is
         |   script (str):           Path to a file containing a submission
         |                           script to copy to the input folder. The
         |                           script can contain the argument
@@ -44,8 +43,8 @@ class ReadWriteGaussian(ReadWrite):
             self.params = params
         self.script = script
         self._calc = calc
-        if calc is not None and self.params != {}:
-            self._create_calculator()
+        # if calc is not None and self.params != {}:
+        #     self._create_calculator()
 
     def set_params(self, params):
         '''
@@ -100,7 +99,7 @@ class ReadWriteGaussian(ReadWrite):
         except OSError as e:
             raise IOError("ERROR: {}".format(e))
         except (io.formats.UnknownFileTypeError, ValueError, TypeError,
-                Exception) as e:
+                Exception):
             raise IOError("ERROR: Invalid file: {file}"
                           .format(file=sname + '.out'))
 
@@ -120,13 +119,10 @@ class ReadWriteGaussian(ReadWrite):
         if sname is None:
             sname = os.path.split(folder)[-1]  # Same as folder name
 
-        print("SEEDNAME: ", sname)
-        print("FOLDER: ", folder)
+        # print("SEEDNAME: ", sname)
+        # print("FOLDER: ", folder)
+        # print("Atoms calc:", a.calc)
 
-        a = self._reposition_muon(a)
-        # We will no longer need to reposition the muon, when the changes to
-        # ASE have been made
-        # TODO: replace with:
         a = self._add_muon_properties(a)
 
         self._calc = deepcopy(self._calc)
@@ -142,8 +138,6 @@ class ReadWriteGaussian(ReadWrite):
 
         a.set_calculator(self._calc)
 
-        print("LABEL: ", a.calc.label)
-
         a.calc.write_input(a)  # TODO: test this compared to below
         #io.write(os.path.join(folder, sname + '.com'), a)
 
@@ -153,25 +147,9 @@ class ReadWriteGaussian(ReadWrite):
             with open(os.path.join(folder, 'script.sh'), 'w') as sf:
                 sf.write(stxt)
 
-    def _reposition_muon(self, a):
-        # TODO: delete this method when the changes to ASE have been made
-        mu_symbol = self.params.get('mu_symbol', 'H:mu')
-        mu_index = list(a.arrays['castep_custom_species']).index(mu_symbol)
-        # move muons to front of atoms, so we can set the mass
-        # correctly in the input file:
-        mu = a.pop(mu_index)
-        a = Atoms('H', [mu.position], magmoms=[mu.magmom]) + a
-        a.pbc = None
-        a.cell = None
-        return a
-
     def _add_muon_properties(self, a):
-        mu_symbol = self.params.get('mu_symbol', 'H:mu')
-        if mu_symbol in a.arrays['castep_custom_species']:
-            mu_index = list(a.arrays['castep_custom_species']).index(mu_symbol)
-        else:
-            # otherwise, the muon is in the final position:
-            mu_index = len(a.positions)-1
+        # the muon is in the final position:
+        mu_index = len(a.positions)-1
         masses = a.get_masses()
         NMagMs = a.arrays.get('gaussian_NMagM', None)
         masses[mu_index] = str(constants.m_mu_amu)
@@ -186,47 +164,25 @@ class ReadWriteGaussian(ReadWrite):
 
     def _create_calculator(self, folder, sname):
         if self._calc is not None and isinstance(self._calc, Gaussian):
-            calc = deepcopy(self._calc)
+            self._calc = deepcopy(self._calc)
         else:
-            calc = Gaussian()
-            # Read the parameters
-            pfile = self.params.get('gaussian_input', None)
-            if pfile is not None:
-                route = self._read_route_section(pfile)
-                calc.parameters = {'method': '',
-                                   'extra': route}
-            else:
-                atoms = io.read("example_in.com")
-                calc.parameters = {'method': 'uB3LYP',
-                                   'basis': 'EPR-III',
-                                   'opt': 'Tight, MaxCyc=100',
-                                   'integral': "Ultrafine"}
+            self._calc = Gaussian()
 
-            calc.parameters.update({'nprocshared': 16,
-                                    'charge': 0,
-                                    'mult': 2,
-                                    'freq': 'ReadIso',
-                                    'addsec': str(constants.m_mu_amu)})
 
-        calc.parameters.update({'chk': sname + '.chk'})
-        calc.label = os.path.join(folder, sname)
-
-        print("PARAMS", calc.parameters)
-
-        self._calc = calc
+        self._calc.label = sname
 
         return self._calc
 
-    def _read_route_section(self, in_file):
-        route = ""
-        route_section = False
-        with open(in_file) as gaussian_input:
-            for line in gaussian_input:
-                if str(line)[:1] == '#':
-                    route += str(line[3:])
-                    route_section = True
-                elif route_section and str(line) != '\n':
-                    route += str(line)
-                elif route_section and str(line) == '\n':
-                    return route.strip("\n")
-        return route.strip("\n")
+    # def _read_route_section(self, in_file):
+    #     route = ""
+    #     route_section = False
+    #     with open(in_file) as gaussian_input:
+    #         for line in gaussian_input:
+    #             if str(line)[:1] == '#':
+    #                 route += str(line[3:])
+    #                 route_section = True
+    #             elif route_section and str(line) != '\n':
+    #                 route += str(line)
+    #             elif route_section and str(line) == '\n':
+    #                 return route.strip("\n")
+    #     return route.strip("\n")
