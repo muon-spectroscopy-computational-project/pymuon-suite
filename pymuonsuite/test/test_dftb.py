@@ -1,24 +1,13 @@
 """Tests for ReadWriteDFTB methods"""
 
 import unittest
-import numpy as np
 
 import os
-import sys
 import shutil
 
-from copy import deepcopy
+from ase import io
 
-from ase import Atoms, io
-from ase.io.castep import read_param
-
-from pymuonsuite.utils import list_to_string
 from pymuonsuite.io.dftb import ReadWriteDFTB
-from pymuonsuite.schemas import (load_input_file, MuAirssSchema,
-                                 AsePhononsSchema)
-
-import argparse as ap
-
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
@@ -42,7 +31,6 @@ class TestReadWriteDFTB(unittest.TestCase):
                               "ethyleneMu_opt_displaced_0")
         # tests dftb files being read:
         self.assertTrue(reader.read(folder))
-        atom_arrays = deepcopy(reader.read(folder).arrays)
 
         # tests hyperfine being read:
         atoms = reader.read(folder)
@@ -66,7 +54,6 @@ class TestReadWriteDFTB(unittest.TestCase):
                   "geom_force_tol": 0.01, 'dftb_set': '3ob-3-1',
                   'dftb_optionals': [], 'geom_steps': 500,
                   "max_scc_steps": 20, "charged": False, "dftb_pbc": False}
-        folder = _TESTDATA_DIR  # does not contain any castep files
         reader = ReadWriteDFTB(params=params)
 
         calc_geom_opt = reader._create_calculator(calc_type="GEOM_OPT")

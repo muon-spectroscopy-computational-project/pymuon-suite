@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 import shutil
 import os
 import numpy as np
-from ase import Atoms
 from soprano.utils import minimum_periodic, safe_input
 
 
@@ -35,6 +34,7 @@ def find_ipso_hydrogen(a_i, cell, symbol):
     ipso_i = iH[np.argmin(distH)]
 
     return ipso_i
+
 
 def list_to_string(arr):
     """Create a str from a list an array of list of numbers
@@ -152,6 +152,7 @@ def create_plane_grid(hkl, cell, f0, f1, N=20):
     xyzgrid += p0[:, None, None]
 
     return xyzgrid
+
 
 class BackupFile():
     """Backup a file before performing an operation

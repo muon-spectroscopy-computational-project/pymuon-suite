@@ -47,7 +47,8 @@ class TestDisplacements(unittest.TestCase):
     def assertSmallRelativeError(self, x0, x1, tol):
         err = abs((x1-x0)/x0)
         if err > tol:
-            raise AssertionError('Error {0} is bigger than {1}'.format(err, tol))
+            raise AssertionError(
+                'Error {0} is bigger than {1}'.format(err, tol))
 
     def testHarmonic(self):
         # Simple tests for the core theory functions

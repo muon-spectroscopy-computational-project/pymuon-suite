@@ -1,10 +1,7 @@
 """Tests for muairss with uep, dftb+ and castep"""
 
 import unittest
-import numpy as np
-import scipy.constants as cnst
 
-import argparse
 import os
 import sys
 import shutil
@@ -81,7 +78,6 @@ class TestMuairss(unittest.TestCase):
             cell_file = os.path.join(_TESTDATA_DIR, 'Si2.cell')
             param_file = os.path.join(_TESTDATA_DIR, 'Si2.param')
             input_params = load_input_file(yaml_file, MuAirssSchema)
-            input_atoms = io.read(cell_file)
             castep_param = read_param(param_file).param
 
             # Run Muairss write:

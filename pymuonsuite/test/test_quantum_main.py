@@ -1,18 +1,14 @@
 """Tests for quantum averaging methods"""
 
 import unittest
-import numpy as np
-import scipy.constants as cnst
 
-import argparse
 import os
 import sys
 import shutil
 import subprocess
 
 from pymuonsuite.quantum.__main__ import asephonons_entry, nq_entry
-from pymuonsuite.schemas import load_input_file, MuAirssSchema, UEPOptSchema
-from ase import io
+
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data/ethyleneMu")

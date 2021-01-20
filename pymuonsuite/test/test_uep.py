@@ -1,18 +1,12 @@
 """Tests for ReadWriteUEP methods"""
 
 import unittest
-import numpy as np
 
 import os
-import sys
 import shutil
 
-from copy import deepcopy
+from ase import io
 
-from ase import Atoms, io
-from ase.io.castep import read_param
-
-from pymuonsuite.utils import list_to_string
 from pymuonsuite.io.uep import ReadWriteUEP
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
@@ -72,7 +66,7 @@ class TestReadWriteUEP(unittest.TestCase):
             reader.write(atoms, output_folder)
 
             self.assertTrue(os.path.exists(os.path.join(output_folder,
-                            "test_save.yaml")))
+                                                        "test_save.yaml")))
 
             params['charged'] = False
 
