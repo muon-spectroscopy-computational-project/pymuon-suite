@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 
 import os
+import shutil
 import copy
 
 from ase import Atoms, io, Atom
@@ -39,6 +40,9 @@ class TestReadWriteGaussian(unittest.TestCase):
 
     def test_write(self):
         os.chdir(_TESTDATA_DIR)
+        out_folder = "test_gaussian"
+        os.mkdir(out_folder)
+        sname = out_folder
         atoms = Atoms('C2H4', positions=_positions)
         muon = Atom('H', position=[1.00000000, 0.00000000,
                                    0.66748000])
@@ -53,7 +57,7 @@ class TestReadWriteGaussian(unittest.TestCase):
 
         atoms_copy = atoms.copy()
         atoms_copy.calc = copy.copy(atoms.calc)
-        gaussian_io.write(atoms_copy, '.', 'test_gaussian')
+        gaussian_io.write(atoms_copy, out_folder, sname)
 
         # add muon properties to atoms to simulate what the write method
         # should be doing:
@@ -67,7 +71,7 @@ class TestReadWriteGaussian(unittest.TestCase):
         atoms.new_array('gaussian_NMagM', np.array(NMagMs))
 
         # check if OG atoms should be modified if we don't save a copy
-        atoms_read = io.read('test_gaussian.com', get_calculator=True)
+        atoms_read = io.read(os.path.join(out_folder,'test_gaussian.com'), get_calculator=True)
 
         # Checks properties of the atoms are written out correctly
         assert np.all(atoms_read.numbers == atoms.numbers)
@@ -88,7 +92,7 @@ class TestReadWriteGaussian(unittest.TestCase):
 
         assert (len(params) == len(matching_params))
 
-        os.remove('test_gaussian.com')
+        shutil.rmtree('test_gaussian')
 
 
 if __name__ == "__main__":
