@@ -133,12 +133,11 @@ class ReadWriteGaussian(ReadWrite):
         if self._calc is None:
             if isinstance(a.calc, Gaussian):
                 self._calc = deepcopy(a.calc)
-        self._create_calculator(folder, sname)
+        self._create_calculator(sname)
 
         a.set_calculator(self._calc)
 
-        a.calc.write_input(a)  # TODO: test this compared to below
-        #io.write(os.path.join(folder, sname + '.com'), a)
+        io.write(os.path.join(folder, sname + '.com'), a, **self._calc.parameters)
 
         if self.script is not None:
             stxt = open(self.script).read()
@@ -161,7 +160,7 @@ class ReadWriteGaussian(ReadWrite):
 
         return a
 
-    def _create_calculator(self, folder, sname):
+    def _create_calculator(self):
         if self._calc is not None and isinstance(self._calc, Gaussian):
             self._calc = deepcopy(self._calc)
         else:
@@ -172,20 +171,6 @@ class ReadWriteGaussian(ReadWrite):
             in_file = self.params['gaussian_input']
             self._calc.parameters = io.read(
                 in_file, get_calculator=True).calc.parameters
-        self._calc.label = sname
 
         return self._calc
 
-    # def _read_route_section(self, in_file):
-    #     route = ""
-    #     route_section = False
-    #     with open(in_file) as gaussian_input:
-    #         for line in gaussian_input:
-    #             if str(line)[:1] == '#':
-    #                 route += str(line[3:])
-    #                 route_section = True
-    #             elif route_section and str(line) != '\n':
-    #                 route += str(line)
-    #             elif route_section and str(line) == '\n':
-    #                 return route.strip("\n")
-    #     return route.strip("\n")
