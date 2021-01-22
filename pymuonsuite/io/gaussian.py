@@ -26,7 +26,8 @@ from pymuonsuite.io.readwrite import ReadWrite
 class ReadWriteGaussian(ReadWrite):
     def __init__(self, params={}, script=None, calc=None):
         '''
-        |   params (dict):          Contains ?? TODO: Sort out what this is
+        |   params (dict):          Contains gaussian input file and whether
+        |                           to make the muon charged
         |   script (str):           Path to a file containing a submission
         |                           script to copy to the input folder. The
         |                           script can contain the argument
@@ -133,7 +134,7 @@ class ReadWriteGaussian(ReadWrite):
         if self._calc is None:
             if isinstance(a.calc, Gaussian):
                 self._calc = deepcopy(a.calc)
-        self._create_calculator(sname)
+        self._create_calculator()
 
         a.set_calculator(self._calc)
 
