@@ -14,19 +14,18 @@ import warnings
 
 from copy import deepcopy
 
-from ase import Atoms
-from ase import io
-from ase.io.castep import write_param
+from ase import Atoms, io
+from ase.io.magres import read_magres
+from ase.io.castep import write_param, read_param
 from ase.calculators.castep import Castep
+
 from soprano.selection import AtomSelection
 from soprano.utils import seedname, customize_warnings
 
 from pymuonsuite import constants
-from pymuonsuite.utils import list_to_string
-from pymuonsuite.utils import find_ipso_hydrogen
+from pymuonsuite.utils import list_to_string, find_ipso_hydrogen
 from pymuonsuite.io.readwrite import ReadWrite
-from ase.io.castep import read_param
-from ase.io.magres import read_magres
+from pymuonsuite.optional import requireEuphonicQPM
 
 customize_warnings()
 
@@ -126,33 +125,23 @@ class ReadWriteCastep(ReadWrite):
             warnings.warn("No .magres files found in {}."
                           .format(os.path.abspath(folder)))
 
-    def _read_castep_gamma_phonons(self, atoms, folder, sname=None):
+    @requireEuphonicQPM('QpointPhononModes')
+    def _read_castep_gamma_phonons(self, atoms, folder, sname=None,
+                                   QpointPhononModes=None):
         """Parse CASTEP phonon data into a casteppy object,
         and return eigenvalues and eigenvectors at the gamma point.
         """
-        try:
-            from euphonic import QpointPhononModes
-        except ImportError:
-            raise ImportError("""
-        Can't use castep phonon interface due to Euphonic not being installed.
-        Please download and install Euphonic from Github:
-
-        HTTPS:  https://github.com/pace-neutrons/Euphonic.git
-        SSH:    git@github.com:pace-neutrons/Euphonic.git
-
-        and try again.""")
 
         # Parse CASTEP phonon data into casteppy object
-        #
         try:
             if sname is not None:
-                pd = QpointPhononModes.from_castep(os.path.join(folder,
-                                                   sname + '.phonon'))
+                pd = QpointPhononModes.from_castep(os.path.join(
+                    folder, sname + '.phonon'))
             else:
                 pd = QpointPhononModes.from_castep(glob.glob(
-                                    os.path.join(folder, '*.phonon'))[0])
+                    os.path.join(folder, '*.phonon'))[0])
                 sname = seedname(glob.glob(
-                        os.path.join(folder, '*.phonon'))[0])
+                    os.path.join(folder, '*.phonon'))[0])
             # Convert frequencies back to cm-1
             pd.frequencies_unit = '1/cm'
             # Get phonon frequencies+modes
@@ -183,7 +172,6 @@ class ReadWriteCastep(ReadWrite):
                           .format(file=sname + '.phonon'))
 
     def write(self, a, folder, sname=None, calc_type="GEOM_OPT"):
-
         """Writes input files for an Atoms object with a Castep
         calculator.
 
@@ -227,7 +215,8 @@ class ReadWriteCastep(ReadWrite):
                     sf.write(stxt)
         else:
             raise(NotImplementedError("Calculation type {} is not implemented."
-                  " Please choose 'GEOM_OPT' or 'MAGRES'".format(calc_type)))
+                                      " Please choose 'GEOM_OPT' or 'MAGRES'"
+                                      .format(calc_type)))
 
     def _create_calculator(self):
         if self._calc is not None and isinstance(self._calc, Castep):
