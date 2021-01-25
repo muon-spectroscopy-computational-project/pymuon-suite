@@ -56,7 +56,7 @@ class ReadWriteUEP(ReadWrite):
             calc.read()
         except ValueError as e:
             raise(IOError("Error: could not read UEP file in {0}"
-                  .format(folder)))
+                          .format(folder)))
             return
 
         a = calc.atoms + Atoms('H', positions=[calc._x_opt])
@@ -93,12 +93,14 @@ class ReadWriteUEP(ReadWrite):
                              label=sname)
 
         if not params['charged']:
-            raise RuntimeError("Error: Can't use UEP method for neutral system")
+            raise RuntimeError(
+                "Error: Can't use UEP method for neutral system")
 
         calc.path = folder
         calc.gw_factor = params['uep_gw_factor']
         calc.geom_steps = params['geom_steps']
         calc.opt_tol = params['geom_force_tol']
+        calc.save_structs = params['uep_save_structs']
 
         return calc
 
@@ -126,6 +128,7 @@ class UEPCalculator(object):
         self.opt_tol = 1e-5
         self.gw_factor = 5.0
         self.opt_method = 'trust-exact'
+        self.save_structs = True
 
         # Results
         self._Eclass = None
@@ -187,6 +190,7 @@ class UEPCalculator(object):
             'opt_method': self.opt_method,
             'gw_factor': self.gw_factor,
             'save_pickle': True,  # Always save it with a "calculator"
+            'save_structs': self.save_structs
         }
 
         yaml.dump(outdata, open(os.path.join(self.path, self.label + '.yaml'),

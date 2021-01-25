@@ -270,6 +270,7 @@ def geomopt_entry():
     if params['save_pickle']:
         pickle.dump(results, open(seedpath + '.uep.pkl', 'wb'))
         muon = Atoms('H', positions=[results['x']])
+    if params['save_structs']:
         io.write(seedpath + '.xyz', results['struct'] + muon)
 
 

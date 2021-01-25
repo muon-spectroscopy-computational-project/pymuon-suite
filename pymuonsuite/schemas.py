@@ -160,6 +160,10 @@ MuAirssSchema = Schema({
     # that muon-airss generates.
     Optional('out_folder', default='./muon-airss-out'):
     validate_str,
+    # Save structure file for each optimised
+    # struct + muon in .xyz format when running uep
+    Optional('uep_save_structs', default=True):
+    bool,
     # The symbol to use for the muon when writing out the castep custom
     # species.
     Optional('mu_symbol', default='H:mu'):
@@ -313,6 +317,10 @@ UEPOptSchema.update({
     float,
     # Save pickled output
     Optional('save_pickle', default=True):
+    bool,
+    # Save structure file for each optimised
+    # struct + muon in .xyz format
+    Optional('save_structs', default=True):
     bool
 })
 UEPOptSchema = Schema(UEPOptSchema)
@@ -322,7 +330,8 @@ UEPPlotSchema = UEPSchema.schema.copy()
 UEPPlotSchema.update({
     # Specifications for paths.
     # Possible formats:
-    # - [[crystallographic direction], [starting point], length, number of points]
+    # - [[crystallographic direction], [starting point], length,
+    #   number of points]
     # - [[starting point], [end point], number of points],
     # - [starting atom, end atom, number of points]
     Optional('line_plots', default=[]):
