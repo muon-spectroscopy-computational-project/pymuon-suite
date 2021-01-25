@@ -123,7 +123,7 @@ def save_muairss_collection(struct, params, batch_path=''):
 
     # Output folder
     out_path = safe_create_folder(os.path.join(batch_path,
-                                  params['out_folder']))
+                                               params['out_folder']))
 
     if not out_path:
         raise RuntimeError('Could not create folder {0}')
@@ -268,10 +268,10 @@ def muairss_cluster(struct, collection, params, name=None):
         ccoll = ccoll.filter(calc_filter)
         if len(ccoll) < n:
             warnings.warn('Calculation failed for {0}% of structures.'
-                          ' If greater than 10% of the calculations failed,'
+                          ' If more than 10% of the calculations failed,'
                           ' we advise adjusting the parameters and re-running'
                           ' the optimisation for the runs that failed.'.format(
-                           round((1-len(ccoll)/n)*100)))
+                              round((1-len(ccoll)/n)*100)))
 
         # Start by extracting the muon positions
         genes = [Gene('energy', 1, {}),
