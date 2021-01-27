@@ -1,0 +1,13 @@
+FROM python:3.8
+
+# install pymuon-suite
+RUN git clone https://github.com/muon-spectroscopy-computational-project/pymuon-suite.git /tmp/pymuon-suite
+RUN pip install /tmp/pymuon-suite
+RUN rm -rf /tmp/pymuon-suite
+
+# create working directory
+RUN mkdir /home/pymuon-suite
+WORKDIR /home/pymuon-suite
+
+# launch to bash, not Python
+ENTRYPOINT ["/bin/bash"]
