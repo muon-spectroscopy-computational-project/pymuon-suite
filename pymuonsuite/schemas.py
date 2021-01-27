@@ -27,9 +27,13 @@ def validate_supercell(value):
             (validate_matrix_shape(value) and np.array(value).dtype == int))
 
 
-def validate_all_of(*options):
+def validate_all_of(*options, case_sensitive=True):
     def validator(values):
-        return all([x.strip() in options for x in values.split(',')])
+        if case_sensitive:
+            return all([x.strip() in options for x in values.split(',')])
+        else:
+            return all([x.strip().lower() in
+                        options for x in values.split(',')])
     return validator
 
 
@@ -104,11 +108,11 @@ MuAirssSchema = Schema({
     Optional('name', default='struct'):
     validate_str,
     # Calculator to generate structure files for. Must be a comma seperated
-    # list of values. Currently supported calculators are CASTEP, DFTB+ and 
-    # UEP. Can also pass all as an option to generate files for all 
+    # list of values. Currently supported calculators are CASTEP, DFTB+ and
+    # UEP. Can also pass all as an option to generate files for all
     # calculators.
     Optional('calculator', default='dftb+'):
-    validate_all_of('castep', 'dftb+', 'uep', 'all'),
+    validate_all_of('castep', 'dftb+', 'uep', 'all', case_sensitive=False),
     # Command to use to run CASTEP.
     Optional('castep_command', default='castep.serial'):
     validate_str,
