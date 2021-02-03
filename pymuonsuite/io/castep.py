@@ -89,7 +89,10 @@ class ReadWriteCastep(ReadWrite):
         """
         atoms = self._read_castep(folder, sname)
         self._read_castep_hyperfine_magres(atoms, folder, sname)
-        self._read_castep_gamma_phonons(atoms, folder, sname)
+        try:
+            self._read_castep_gamma_phonons(atoms, folder, sname)
+        except RuntimeError:
+            pass
         return atoms
 
     def _read_castep(self, folder, sname=None):
