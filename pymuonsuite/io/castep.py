@@ -47,11 +47,10 @@ class ReadWriteCastep(ReadWrite):
         if not (isinstance(params, dict)):
             raise ValueError('params should be a dict, not ', type(params))
             return
-        else:
-            self.params = params
+        self.params = params
         self.script = script
         self._calc = calc
-        if calc is not None and self.params != {}:
+        if calc is not None and params != {}:
             self._create_calculator()
 
     def set_params(self, params):
@@ -201,9 +200,9 @@ class ReadWriteCastep(ReadWrite):
             if self._calc is None:
                 if isinstance(a.calc, Castep):
                     self._calc = deepcopy(a.calc)
-                self._create_calculator()
-
-            self._update_calculator(calc_type)
+                self._create_calculator(calc_type=calc_type)
+            else:
+                self._update_calculator(calc_type)
             a.set_calculator(self._calc)
 
             io.write(os.path.join(folder, sname + '.cell'),
@@ -221,7 +220,7 @@ class ReadWriteCastep(ReadWrite):
                                       " Please choose 'GEOM_OPT' or 'MAGRES'"
                                       .format(calc_type)))
 
-    def _create_calculator(self):
+    def _create_calculator(self, calc_type=None):
         if self._calc is not None and isinstance(self._calc, Castep):
             calc = deepcopy(self._calc)
         else:
@@ -244,8 +243,13 @@ class ReadWriteCastep(ReadWrite):
                                                          'mass')
 
         # Now assign the k-points
-        calc.cell.kpoint_mp_grid = list_to_string(
-            self.params.get('k_points_grid', [1, 1, 1]))
+        k_points_param = self.params.get('k_points_grid')
+
+        if k_points_param is not None:
+            calc.cell.kpoint_mp_grid = list_to_string(k_points_param)
+        else:
+            if calc.cell.kpoint_mp_grid is None:
+                calc.cell.kpoint_mp_grid = list_to_string([1, 1, 1])
 
         # Read the parameters
         pfile = self.params.get('castep_param', None)
@@ -253,6 +257,11 @@ class ReadWriteCastep(ReadWrite):
             calc.param = read_param(self.params['castep_param']).param
 
         self._calc = calc
+
+        if calc_type == "MAGRES":
+            calc = self._create_hfine_castep_calculator()
+        elif calc_type == "GEOM_OPT":
+            calc = self._create_geom_opt_castep_calculator()
 
         return self._calc
 
@@ -297,14 +306,19 @@ class ReadWriteCastep(ReadWrite):
         # Remove cell constraints if they exist
         self._calc.cell.cell_constraints = None
         self._calc.cell.fix_all_cell = True
-        # Necessary for older CASTEP versions
 
-        self._calc.param.charge = self.params.get('charged', False)*1.0
+        self._calc.param.task = 'GeometryOptimization'
 
         # Remove symmetry operations if they exist
         self._calc.cell.symmetry_ops.value = None
 
-        self._calc.param.task = 'GeometryOptimization'
+        charge_param = self.params.get('charged')
+
+        if charge_param is not None:
+            self._calc.param.charge = charge_param*1.0
+        else:
+            if self._calc.param.charge is None:
+                self._calc.param.charge = False*1.0
 
         geom_steps_param = self.params.get('geom_steps')
 

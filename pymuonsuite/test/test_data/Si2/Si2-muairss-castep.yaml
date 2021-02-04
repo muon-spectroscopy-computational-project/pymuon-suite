@@ -12,3 +12,4 @@ dftb_set: pbc-0-3
 out_folder: muon-airss-out-castep
 castep_param: Si2.param
 allpos_filename: all.cell
+script_file: submit.sh
