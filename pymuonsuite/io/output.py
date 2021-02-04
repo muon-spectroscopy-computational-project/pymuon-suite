@@ -78,7 +78,9 @@ Parameter file: {param}
 
             f.write('Clusters for {0}:\n'.format(name))
 
-            if params['clustering_save_type'] is not None:
+            if params['clustering_save_min'] is not None or \
+                    params['clustering_save_type'] is not None:
+
                 if params['clustering_save_folder'] is not None:
                     clustering_save_path = safe_create_folder(
                         params['clustering_save_folder'])
@@ -120,20 +122,30 @@ Parameter file: {param}
                                                                        Estd))
 
                     fdat.write('\t'.join(map(str, [i+1, len(g), Emin,
-                               Eavg, Estd,
-                               coll[np.argmin(E)].structures[0]
-                               .positions[-1][0],
-                               coll[np.argmin(E)].structures[0]
-                               .positions[-1][1],
-                               coll[np.argmin(E)].structures[0]
-                               .positions[-1][2]
-                               ])) + '\n')
+                                                   Eavg, Estd,
+                                                   coll[np.argmin(
+                                                       E)].structures[0]
+                                                   .positions[-1][0],
+                                                   coll[np.argmin(
+                                                       E)].structures[0]
+                                                   .positions[-1][1],
+                                                   coll[np.argmin(
+                                                       E)].structures[0]
+                                                   .positions[-1][2]
+                                                   ])) + '\n')
 
                     f.write('\n\tMinimum energy structure: {0}\n'.format(
                         coll[np.argmin(E)].structures[0].info['name']))
 
                     # Save minimum energy structure
-                    if params['clustering_save_type'] == 'structures':
+                    if params['clustering_save_type'] == 'structures' or \
+                            params['clustering_save_min']:
+                        # For backwards-compatability with old pymuonsuite
+                        # versions
+                        if params['clustering_save_min']:
+                            if params['clustering_save_format'] is None:
+                                params['clustering_save_format'] = 'cif'
+
                         try:
                             calc_path = os.path.join(clustering_save_path,
                                                      calc)
@@ -141,8 +153,8 @@ Parameter file: {param}
                                 os.mkdir(calc_path)
                             fname = ('{0}_{1}_min_cluster_'
                                      '{2}.{3}'.format(
-                                        params['name'], calc, i+1,
-                                        params['clustering_save_format']))
+                                         params['name'], calc, i+1,
+                                         params['clustering_save_format']))
                             io.write(os.path.join(calc_path, fname),
                                      coll[np.argmin(E)].structures[0])
                         except (io.formats.UnknownFileTypeError) as e:
@@ -201,7 +213,7 @@ Parameter file: {param}
                                                  write_method,
                                                  name_root=sname,
                                                  opt_args={
-                                                    'calc_type': 'GEOM_OPT'},
+                                                     'calc_type': 'GEOM_OPT'},
                                                  safety_check=2)
 
                 # Print distance matrix
@@ -270,4 +282,5 @@ def write_phonon_report(args, params, phdata):
                 for k, d in enumerate(m):
                     d = np.real(d)
                     f.write(
-                        '\t\t{0}\t{1: .6f}\t{2: .6f}\t{3: .6f}\n'.format(k+1, *d))
+                        '\t\t{0}\t{1: .6f}\t{2: .6f}\t{3: .6f}\n'
+                        .format(k+1, *d))
