@@ -145,7 +145,7 @@ def save_muairss_collection(struct, params, batch_path=''):
             f.write(get_license())
 
     for cname in calcs:
-        rw = io_formats[cname](params)
+        rw = io_formats[cname](params, script=params.get('script_file'))
         calc_path = os.path.join(out_path, cname)
         dc.save_tree(calc_path, rw.write,
                      name_root=params['name'],
