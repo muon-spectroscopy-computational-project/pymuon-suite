@@ -25,7 +25,7 @@ _positions = [[0.00000000,       0.00000000,       0.66748000],
               [0.00000000,       0.92283200,      -1.23769500],
               [0.00000000,      -0.92283200,      -1.23769500]]
 
-_cell = [[10,0,0],[0,10,0],[0,0,10]]
+_cell = [[10, 0, 0], [0, 10, 0], [0, 0, 10]]
 
 
 class TestReadWriteGaussian(unittest.TestCase):
@@ -46,14 +46,14 @@ class TestReadWriteGaussian(unittest.TestCase):
             out_folder = "test_gaussian"
             os.mkdir(out_folder)
             sname = out_folder
-            atoms = Atoms('C2H4', positions=_positions, cell = _cell, pbc=True)
+            atoms = Atoms('C2H4', positions=_positions, cell=_cell, pbc=True)
             muon = Atom('H', position=[1.00000000, 0.00000000,
-                                    0.66748000])
+                                       0.66748000])
             atoms = atoms + muon
             atoms.calc = Gaussian()
             params = {'chk': 'ethylene-SP.chk', 'nprocshared': '16',
-                    'output_type': 'T', 'b3lyp': None, 'epr-iii': None,
-                    'charge': 0, 'mult': 1}
+                      'output_type': 'P', 'b3lyp': None, 'epr-iii': None,
+                      'charge': 0, 'mult': 2}
             atoms.calc.parameters = params
             gaussian_io = ReadWriteGaussian(
                 params={'gaussian_input': 'ethylene-SP.com'})
@@ -74,11 +74,13 @@ class TestReadWriteGaussian(unittest.TestCase):
             atoms.new_array('gaussian_NMagM', np.array(NMagMs))
 
             # check if OG atoms should be modified if we don't save a copy
-            atoms_read = io.read(os.path.join(out_folder,'test_gaussian.com'), get_calculator=True)
+            atoms_read = io.read(os.path.join(
+                out_folder, 'test_gaussian.com'), get_calculator=True)
 
             # Checks properties of the atoms are written out correctly
             assert np.all(atoms_read.numbers == atoms.numbers)
-            assert np.allclose(atoms_read.positions, atoms.positions, atol=1e-3)
+            assert np.allclose(atoms_read.positions,
+                               atoms.positions, atol=1e-3)
             assert np.all(atoms_read.pbc == atoms.pbc)
             assert np.allclose(atoms_read.cell, atoms.cell)
 
@@ -91,13 +93,12 @@ class TestReadWriteGaussian(unittest.TestCase):
 
             new_params = atoms_read.calc.parameters
             matching_params = {k: new_params[k] for k in new_params
-                            if k in params and new_params[k] == params[k]}
+                               if k in params and new_params[k] == params[k]}
 
             assert (len(params) == len(matching_params))
 
         finally:
             shutil.rmtree('test_gaussian')
-
 
 
 if __name__ == "__main__":
