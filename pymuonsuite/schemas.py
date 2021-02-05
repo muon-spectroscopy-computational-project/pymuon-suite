@@ -12,8 +12,12 @@ from __future__ import unicode_literals
 
 import yaml
 import numpy as np
+import warnings
 from schema import Optional, Schema, SchemaError
 from scipy.constants import physical_constants as pcnst
+from soprano.utils import customize_warnings
+
+customize_warnings()
 
 
 def validate_matrix_shape(x):
@@ -70,6 +74,19 @@ def validate_vec3(value):
     except ValueError:
         return False
     return v.shape == (3,)
+
+
+def validate_save_min(value):
+    warnings.warn("The 'clustering_save_min' option is deprecated. "
+                  "It has been replaced with two options: "
+                  "'clustering_save_type' and 'clustering_save_format."
+                  "'clustering_save_type' : structures/input - for selecting "
+                  "whether to save structure files or input files to another "
+                  "calculator. "
+                  "'clustering_save_format': if structures, this "
+                  "takes an extension (cif, xyz, etc.). If input, takes the "
+                  "name of a program (castep, dftb+, etc.)")
+    return isinstance(value, bool)
 
 
 def load_input_file(fname, param_schema, merge=None):
@@ -168,6 +185,10 @@ MuAirssSchema = Schema({
     # that muon-airss generates.
     Optional('out_folder', default='./muon-airss-out'):
     validate_str,
+    # Save structure file for each optimised
+    # struct + muon in .xyz format when running uep
+    Optional('uep_save_structs', default=True):
+    bool,
     # The symbol to use for the muon when writing out the castep custom
     # species.
     Optional('mu_symbol', default='H:mu'):
@@ -191,6 +212,10 @@ MuAirssSchema = Schema({
     # Number of clusters for k-means clustering
     Optional('clustering_kmeans_k', default=4):
     int,
+    # This option is deprecated:
+    # Whether to save the minimum energy structures for each cluster
+    Optional('clustering_save_min', default=False):
+    validate_save_min,
     # Whether to save the minimum energy structures for each cluster,
     # or input files to another calculator
     Optional('clustering_save_type', default=None):
@@ -321,6 +346,10 @@ UEPOptSchema.update({
     float,
     # Save pickled output
     Optional('save_pickle', default=True):
+    bool,
+    # Save structure file for each optimised
+    # struct + muon in .xyz format
+    Optional('save_structs', default=True):
     bool
 })
 UEPOptSchema = Schema(UEPOptSchema)
@@ -330,7 +359,8 @@ UEPPlotSchema = UEPSchema.schema.copy()
 UEPPlotSchema.update({
     # Specifications for paths.
     # Possible formats:
-    # - [[crystallographic direction], [starting point], length, number of points]
+    # - [[crystallographic direction], [starting point], length,
+    #   number of points]
     # - [[starting point], [end point], number of points],
     # - [starting atom, end atom, number of points]
     Optional('line_plots', default=[]):

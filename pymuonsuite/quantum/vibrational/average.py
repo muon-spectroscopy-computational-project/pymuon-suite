@@ -29,46 +29,6 @@ class MuonAverageError(Exception):
     pass
 
 
-def read_castep_gamma_phonons(seed, path='.'):
-    """Parse CASTEP phonon data into a casteppy object,
-    and return eigenvalues and eigenvectors at the gamma point.
-    """
-
-    try:
-        from euphonic import QpointPhononModes
-    except ImportError:
-        raise ImportError("""
-    Can't use castep phonon interface due to Euphonic not being installed.
-    Please download and install Euphonic from Github:
-
-    HTTPS:  https://github.com/pace-neutrons/Euphonic.git
-    SSH:    git@github.com:pace-neutrons/Euphonic.git
-
-    and try again.""")
-
-    # Parse CASTEP phonon data into casteppy object
-    pd = QpointPhononModes.from_castep(os.path.join(path,
-                                                    seed + '.phonon'))
-    # Convert frequencies back to cm-1
-    pd.frequencies_unit = '1/cm'
-    # Get phonon frequencies+modes
-    evals = np.array(pd.frequencies.magnitude)
-    evecs = np.array(pd.eigenvectors)
-
-    # Only grab the gamma point!
-    gamma_i = None
-    for i, q in enumerate(pd.qpts):
-        if np.isclose(q, [0, 0, 0]).all():
-            gamma_i = i
-            break
-
-    if gamma_i is None:
-        raise MuonAverageError('Could not find gamma point phonons in CASTEP'
-                               ' phonon file')
-
-    return evals[gamma_i], evecs[gamma_i]
-
-
 def muon_vibrational_average_write(cell_file, method='independent',
                                    mu_index=-1,
                                    mu_symbol='H:mu', grid_n=20, sigma_n=3,
@@ -83,24 +43,27 @@ def muon_vibrational_average_write(cell_file, method='independent',
 
     | Pars:
     |   cell_file (str):    Filename for input structure file
-    |   method (str):       Method to use for the average. Options are 'independent',
-    |                       'montecarlo'. Default is 'independent'.
+    |   method (str):       Method to use for the average. Options are
+    |                       'independent', 'montecarlo'.
+    |                       Default is 'independent'.
     |   mu_index (int):     Position of the muon in the given cell file.
     |                       Default is -1.
     |   mu_symbol (str):    Use this symbol to look for the muon among
     |                       CASTEP custom species. Overrides muon_index if
     |                       present in cell.
-    |   grid_n (int):       Number of configurations used for sampling. Applies slightly
+    |   grid_n (int):       Number of configurations used for sampling.
+    |                       Applies slightly
     |                       differently to different schemes.
     |   sigma_n (int):      Number of sigmas of the harmonic wavefunction used
     |                       for sampling.
-    |   avgprop (str):      Property to calculate and average. Default is 'hyperfine'.
+    |   avgprop (str):      Property to calculate and average. Default is
+    |                       'hyperfine'.
     |   calculator (str):   Source of the property to calculate and average.
     |                       Can be 'castep' or 'dftb+'. Default is 'castep'.
-    |   phonon_source (str):Source of the phonon data. Can be 'castep' or 'asedftbp'.
-    |                       Default is 'castep'.
-    |   **kwargs:           Other arguments (such as specific arguments for the given
-    |                       phonon method)
+    |   phonon_source (str):Source of the phonon data. Can be 'castep' or
+    |                       'asedftbp'. Default is 'castep'.
+    |   **kwargs:           Other arguments (such as specific arguments for
+    |                       the given phonon method)
     """
 
     # Open the structure file

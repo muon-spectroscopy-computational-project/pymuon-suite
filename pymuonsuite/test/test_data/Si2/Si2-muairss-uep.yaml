@@ -12,3 +12,4 @@ clustering_hier_t: 0.2
 dftb_set: pbc-0-3
 out_folder: muon-airss-out-uep
 allpos_filename: all.cell
+uep_save_structs: False

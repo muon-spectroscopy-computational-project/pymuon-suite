@@ -90,6 +90,12 @@ class TestMuairss(unittest.TestCase):
                 for s in subDirs:
                     expected_file = os.path.join(
                         "muon-airss-out-castep/castep/" + s, s + ".cell")
+                    script_file = input_params['script_file']
+                    if script_file is not None:
+                        expected_script = os.path.join(
+                            "muon-airss-out-castep/castep/" + s, 'script.sh')
+                        self.assertTrue(os.path.exists(expected_script))
+
                     self.assertTrue(os.path.exists(expected_file))
                     atoms = io.read(expected_file)
                     self.assertEqual(atoms.calc.cell.kpoint_mp_grid.value,

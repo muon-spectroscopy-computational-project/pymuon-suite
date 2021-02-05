@@ -4,6 +4,7 @@ import unittest
 
 import os
 import shutil
+import numpy as np
 
 from ase import io
 
@@ -28,8 +29,25 @@ class TestReadWriteUEP(unittest.TestCase):
         except Exception as e:
             print(e)
         folder = os.path.join(_TESTDATA_DIR, "Si2/uep-result")
-        # # tests uep file being read:
-        self.assertTrue(reader.read(folder, sname))
+        # tests uep file being read, and compares structure to
+        # that in the xyz file - these should be equal
+        read_uep = reader.read(folder, sname)
+        read_xyz = io.read(os.path.join(folder, sname + '.xyz'))
+
+        self.assertTrue(np.all(read_uep.numbers == read_xyz.numbers))
+        self.assertTrue(np.allclose(read_uep.positions,
+                                    read_xyz.positions, atol=1e-3))
+        self.assertTrue(np.all(read_uep.pbc == read_xyz.pbc))
+        self.assertTrue(np.allclose(read_uep.cell, read_xyz.cell))
+
+        # These are results contained in the uep pickle file
+        Eclass = -8.843094140155303
+        Ezp = 0.11128549781255458
+        Etot = -8.731808642342749
+        # Check these have been read correctly:
+        self.assertEqual(read_uep.calc._Eclass, Eclass)
+        self.assertEqual(read_uep.calc._Ezp, Ezp)
+        self.assertEqual(read_uep.calc._Etot, Etot)
 
     def test_create_calc(self):
         folder = os.path.join(_TESTDATA_DIR, "Si2")

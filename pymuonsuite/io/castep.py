@@ -14,19 +14,18 @@ import warnings
 
 from copy import deepcopy
 
-from ase import Atoms
-from ase import io
-from ase.io.castep import write_param
+from ase import Atoms, io
+from ase.io.magres import read_magres
+from ase.io.castep import write_param, read_param
 from ase.calculators.castep import Castep
+
 from soprano.selection import AtomSelection
 from soprano.utils import seedname, customize_warnings
 
 from pymuonsuite import constants
-from pymuonsuite.utils import list_to_string
-from pymuonsuite.utils import find_ipso_hydrogen
+from pymuonsuite.utils import list_to_string, find_ipso_hydrogen
 from pymuonsuite.io.readwrite import ReadWrite
-from ase.io.castep import read_param
-from ase.io.magres import read_magres
+from pymuonsuite.optional import requireEuphonicQPM
 
 customize_warnings()
 
@@ -48,11 +47,10 @@ class ReadWriteCastep(ReadWrite):
         if not (isinstance(params, dict)):
             raise ValueError('params should be a dict, not ', type(params))
             return
-        else:
-            self.params = params
+        self.params = params
         self.script = script
         self._calc = calc
-        if calc is not None and self.params != {}:
+        if calc is not None and params != {}:
             self._create_calculator()
 
     def set_params(self, params):
@@ -126,33 +124,23 @@ class ReadWriteCastep(ReadWrite):
             warnings.warn("No .magres files found in {}."
                           .format(os.path.abspath(folder)))
 
-    def _read_castep_gamma_phonons(self, atoms, folder, sname=None):
+    @requireEuphonicQPM('QpointPhononModes')
+    def _read_castep_gamma_phonons(self, atoms, folder, sname=None,
+                                   QpointPhononModes=None):
         """Parse CASTEP phonon data into a casteppy object,
         and return eigenvalues and eigenvectors at the gamma point.
         """
-        try:
-            from euphonic import QpointPhononModes
-        except ImportError:
-            raise ImportError("""
-        Can't use castep phonon interface due to Euphonic not being installed.
-        Please download and install Euphonic from Github:
-
-        HTTPS:  https://github.com/pace-neutrons/Euphonic.git
-        SSH:    git@github.com:pace-neutrons/Euphonic.git
-
-        and try again.""")
 
         # Parse CASTEP phonon data into casteppy object
-        #
         try:
             if sname is not None:
-                pd = QpointPhononModes.from_castep(os.path.join(folder,
-                                                   sname + '.phonon'))
+                pd = QpointPhononModes.from_castep(os.path.join(
+                    folder, sname + '.phonon'))
             else:
                 pd = QpointPhononModes.from_castep(glob.glob(
-                                    os.path.join(folder, '*.phonon'))[0])
+                    os.path.join(folder, '*.phonon'))[0])
                 sname = seedname(glob.glob(
-                        os.path.join(folder, '*.phonon'))[0])
+                    os.path.join(folder, '*.phonon'))[0])
             # Convert frequencies back to cm-1
             pd.frequencies_unit = '1/cm'
             # Get phonon frequencies+modes
@@ -183,7 +171,6 @@ class ReadWriteCastep(ReadWrite):
                           .format(file=sname + '.phonon'))
 
     def write(self, a, folder, sname=None, calc_type="GEOM_OPT"):
-
         """Writes input files for an Atoms object with a Castep
         calculator.
 
@@ -210,9 +197,9 @@ class ReadWriteCastep(ReadWrite):
             if self._calc is None:
                 if isinstance(a.calc, Castep):
                     self._calc = deepcopy(a.calc)
-                self._create_calculator()
-
-            self._update_calculator(calc_type)
+                self._create_calculator(calc_type=calc_type)
+            else:
+                self._update_calculator(calc_type)
             a.set_calculator(self._calc)
 
             io.write(os.path.join(folder, sname + '.cell'),
@@ -227,9 +214,10 @@ class ReadWriteCastep(ReadWrite):
                     sf.write(stxt)
         else:
             raise(NotImplementedError("Calculation type {} is not implemented."
-                  " Please choose 'GEOM_OPT' or 'MAGRES'".format(calc_type)))
+                                      " Please choose 'GEOM_OPT' or 'MAGRES'"
+                                      .format(calc_type)))
 
-    def _create_calculator(self):
+    def _create_calculator(self, calc_type=None):
         if self._calc is not None and isinstance(self._calc, Castep):
             calc = deepcopy(self._calc)
         else:
@@ -252,8 +240,13 @@ class ReadWriteCastep(ReadWrite):
                                                          'mass')
 
         # Now assign the k-points
-        calc.cell.kpoint_mp_grid = list_to_string(
-            self.params.get('k_points_grid', [1, 1, 1]))
+        k_points_param = self.params.get('k_points_grid')
+
+        if k_points_param is not None:
+            calc.cell.kpoint_mp_grid = list_to_string(k_points_param)
+        else:
+            if calc.cell.kpoint_mp_grid is None:
+                calc.cell.kpoint_mp_grid = list_to_string([1, 1, 1])
 
         # Read the parameters
         pfile = self.params.get('castep_param', None)
@@ -261,6 +254,11 @@ class ReadWriteCastep(ReadWrite):
             calc.param = read_param(self.params['castep_param']).param
 
         self._calc = calc
+
+        if calc_type == "MAGRES":
+            calc = self._create_hfine_castep_calculator()
+        elif calc_type == "GEOM_OPT":
+            calc = self._create_geom_opt_castep_calculator()
 
         return self._calc
 
@@ -305,14 +303,19 @@ class ReadWriteCastep(ReadWrite):
         # Remove cell constraints if they exist
         self._calc.cell.cell_constraints = None
         self._calc.cell.fix_all_cell = True
-        # Necessary for older CASTEP versions
 
-        self._calc.param.charge = self.params.get('charged', False)*1.0
+        self._calc.param.task = 'GeometryOptimization'
 
         # Remove symmetry operations if they exist
         self._calc.cell.symmetry_ops.value = None
 
-        self._calc.param.task = 'GeometryOptimization'
+        charge_param = self.params.get('charged')
+
+        if charge_param is not None:
+            self._calc.param.charge = charge_param*1.0
+        else:
+            if self._calc.param.charge is None:
+                self._calc.param.charge = False*1.0
 
         geom_steps_param = self.params.get('geom_steps')
 

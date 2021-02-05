@@ -19,6 +19,8 @@ from scipy import constants as cnst
 from pymuonsuite.schemas import UEPOptSchema, UEPPlotSchema, load_input_file
 from pymuonsuite.calculate.uep.charged import ChargeDistribution
 
+from parsefmt.fmtreader import FMTError
+
 _header = """
 *********************************
 |   UU  UU   EEEEEE    PPPP     |
@@ -39,9 +41,17 @@ Calculations started on {0}
 
 
 def _make_chdistr(params):
-    return ChargeDistribution(seedname=params['chden_seed'],
-                              path=params['chden_path'],
-                              gw_fac=params['gw_factor'])
+    try:
+        return ChargeDistribution(seedname=params['chden_seed'],
+                                  path=params['chden_path'],
+                                  gw_fac=params['gw_factor'])
+    except FileNotFoundError as e:
+        raise FileNotFoundError("ERROR: {}.".format(e))
+    except FMTError as e:
+        raise FMTError(e)
+    except (io.formats.UnknownFileTypeError, ValueError, TypeError) as e:
+        raise IOError("ERROR due to invalid file {}: {} ".format(
+            params['chden_seed'] + '.castep', e))
 
 
 def geomopt(params, outf=None):
@@ -264,12 +274,17 @@ def geomopt_entry():
         params['chden_seed'] = seedname  # Default is the same
 
     with open(seedpath + '.uep', 'w') as outf:
-        results = geomopt(params, outf)
+        try:
+            results = geomopt(params, outf)
+        except Exception as e:
+            print("Error: ", e)
+            return
 
     # Now dump results
     if params['save_pickle']:
         pickle.dump(results, open(seedpath + '.uep.pkl', 'wb'))
         muon = Atoms('H', positions=[results['x']])
+    if params['save_structs']:
         io.write(seedpath + '.xyz', results['struct'] + muon)
 
 

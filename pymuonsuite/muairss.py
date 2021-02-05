@@ -13,26 +13,22 @@ from __future__ import unicode_literals
 
 import os
 import glob
-import shutil
 import warnings
-from copy import deepcopy
 
 import numpy as np
 import argparse as ap
 from spglib import find_primitive
 
 from ase import Atoms, io
-from ase.io.castep import read_param
 from ase.build import make_supercell
-from ase.calculators.castep import Castep
-from ase.calculators.dftb import Dftb
+
 from soprano.utils import customize_warnings
+
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 from soprano.analyse.phylogen import PhylogenCluster, Gene
 
-import pymuonsuite.constants as cnst
-from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
+from pymuonsuite.utils import make_3x3, safe_create_folder
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
@@ -114,16 +110,16 @@ def save_muairss_collection(struct, params, batch_path=''):
 
     # Output folder
     out_path = safe_create_folder(os.path.join(batch_path,
-                                  params['out_folder']))
+                                               params['out_folder']))
 
     if not out_path:
         raise RuntimeError('Could not create folder {0}')
 
     io_formats = {
-        'castep': ReadWriteCastep(params),
-        'dftb+': ReadWriteDFTB(params),
-        'uep': ReadWriteUEP(params),
-        'gaussian': ReadWriteGaussian(params)
+        'castep': ReadWriteCastep,
+        'dftb+': ReadWriteDFTB,
+        'uep': ReadWriteUEP,
+        'gaussian': ReadWriteGaussian
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
@@ -137,8 +133,9 @@ def save_muairss_collection(struct, params, batch_path=''):
             f.write(get_license())
 
     for cname in calcs:
+        rw = io_formats[cname](params, script=params.get('script_file'))
         calc_path = os.path.join(out_path, cname)
-        dc.save_tree(calc_path, io_formats[cname].write,
+        dc.save_tree(calc_path, rw.write,
                      name_root=params['name'],
                      opt_args={'calc_type': "GEOM_OPT"},
                      safety_check=2)
@@ -163,26 +160,27 @@ def load_muairss_collection(struct, params, batch_path=''):
     # Output folder
     out_path = os.path.join(batch_path, params['out_folder'])
 
-    load_formats = {
-        'castep': ReadWriteCastep(),
-        'dftb+': ReadWriteDFTB(),
-        'uep': ReadWriteUEP(),
-        'gaussian': ReadWriteGaussian()
+    io_formats = {
+        'castep': ReadWriteCastep,
+        'dftb+': ReadWriteDFTB,
+        'uep': ReadWriteUEP,
+        'gaussian': ReadWriteGaussian
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
     if 'all' in calcs:
-        calcs = load_formats.keys()
+        calcs = io_formats.keys()
 
     loaded = {}
 
     for cname in calcs:
+        rw = io_formats[cname](params)
         calc_path = os.path.join(out_path, cname)
 
-        dc = AtomsCollection.load_tree(calc_path, load_formats[cname].read,
+        dc = AtomsCollection.load_tree(calc_path, rw.read,
                                        safety_check=2, tolerant=True)
 
-        print("If greater than 10% of structures could not be loaded, \
+        print("If more than 10% of structures could not be loaded, \
 we advise adjusting the parameters and re-running the {0} \
 optimisation for the structures that failed.".format(cname))
 
@@ -259,10 +257,10 @@ def muairss_cluster(struct, collection, params, name=None):
         ccoll = ccoll.filter(calc_filter)
         if len(ccoll) < n:
             warnings.warn('Calculation failed for {0}% of structures.'
-                          ' If greater than 10% of the calculations failed,'
+                          ' If more than 10% of the calculations failed,'
                           ' we advise adjusting the parameters and re-running'
                           ' the optimisation for the runs that failed.'.format(
-                           round((1-len(ccoll)/n)*100)))
+                              round((1-len(ccoll)/n)*100)))
 
         # Start by extracting the muon positions
         genes = [Gene('energy', 1, {}),
