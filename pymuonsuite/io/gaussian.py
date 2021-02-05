@@ -138,7 +138,8 @@ class ReadWriteGaussian(ReadWrite):
 
         a.set_calculator(self._calc)
 
-        io.write(os.path.join(folder, sname + '.com'), a, **self._calc.parameters)
+        io.write(os.path.join(folder, sname + '.com'),
+                 a, **self._calc.parameters)
 
         if self.script is not None:
             stxt = open(self.script).read()
@@ -168,10 +169,9 @@ class ReadWriteGaussian(ReadWrite):
             self._calc = Gaussian()
 
         # read the gaussian input file:
-        if 'gaussian_input' in self.params:
-            in_file = self.params['gaussian_input']
+        in_file = self.params['gaussian_input']
+        if in_file is not None:
             self._calc.parameters = io.read(
                 in_file, get_calculator=True).calc.parameters
 
         return self._calc
-
