@@ -91,7 +91,9 @@ class ReadWriteDFTB(ReadWrite):
 
         if params == {}:
             params = {'dftb_set': '3ob-3-1', 'k_points_grid': None,
-                      'geom_force_tol': 0.01, 'dftb_optionals': []}
+                      'dftb_pbc': False,
+                      'dftb_optionals': [], 'geom_force_tol': 0.05,
+                      'geom_steps': 30, 'max_scc_steps': 200, 'charged': False}
 
         self.params = params
         # resetting this to None makes sure that the calc is recreated after
@@ -166,7 +168,7 @@ class ReadWriteDFTB(ReadWrite):
                 print("Phonons filename was not given, searching for any"
                       " .phonons.pkl file.")
                 phonon_source_file = glob.glob(os.path.join(folder,
-                                               '*.phonons.pkl'))[0]
+                                                            '*.phonons.pkl'))[0]
             self._read_dftb_phonons(atoms, phonon_source_file)
         except IndexError:
             warnings.warn("No .phonons.pkl files found in {}."
@@ -199,7 +201,6 @@ class ReadWriteDFTB(ReadWrite):
                                     'point data').format(phonon_source_file))
 
     def write(self, a, folder, sname=None, calc_type="GEOM_OPT"):
-
         """Writes input files for an Atoms object with a Dftb+
         calculator.
 
@@ -240,7 +241,7 @@ class ReadWriteDFTB(ReadWrite):
                     sf.write(stxt)
         else:
             raise(NotImplementedError("Calculation type {} is not implemented."
-                  " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
+                                      " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
 
     def _create_calculator(self, calc_type="GEOM_OPT"):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
@@ -275,7 +276,7 @@ class ReadWriteDFTB(ReadWrite):
                     warnings.warn('Warning: optional DFTB+ file {0} not'
                                   'available for {1}'
                                   ' parameter set, skipping').format(
-                                  opt, self.params['dftb_set'])
+                        opt, self.params['dftb_set'])
         args.update(dargs.args)
 
         if calc_type == "GEOM_OPT":
@@ -297,7 +298,7 @@ class ReadWriteDFTB(ReadWrite):
             self._calc.do_forces = True
         else:
             raise(NotImplementedError("Calculation type {} is not implemented."
-                  " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
+                                      " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
 
         self._calc.parameters.update(args)
 
