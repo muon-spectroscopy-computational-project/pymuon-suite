@@ -12,8 +12,12 @@ from __future__ import unicode_literals
 
 import yaml
 import numpy as np
+import warnings
 from schema import Optional, Schema, SchemaError
 from scipy.constants import physical_constants as pcnst
+from soprano.utils import customize_warnings
+
+customize_warnings()
 
 
 def validate_matrix_shape(x):
@@ -70,6 +74,19 @@ def validate_vec3(value):
     except ValueError:
         return False
     return v.shape == (3,)
+
+
+def validate_save_min(value):
+    warnings.warn("The 'clustering_save_min' option is deprecated. "
+                  "It has been replaced with two options: "
+                  "'clustering_save_type' and 'clustering_save_format."
+                  "'clustering_save_type' : structures/input - for selecting "
+                  "whether to save structure files or input files to another "
+                  "calculator. "
+                  "'clustering_save_format': if structures, this "
+                  "takes an extension (cif, xyz, etc.). If input, takes the "
+                  "name of a program (castep, dftb+, etc.)")
+    return isinstance(value, bool)
 
 
 def load_input_file(fname, param_schema, merge=None):
@@ -164,19 +181,23 @@ MuAirssSchema = Schema({
     # that muon-airss generates.
     Optional('out_folder', default='./muon-airss-out'):
     validate_str,
+    # Save structure file for each optimised
+    # struct + muon in .xyz format when running uep
+    Optional('uep_save_structs', default=True):
+    bool,
     # The symbol to use for the muon when writing out the castep custom
     # species.
     Optional('mu_symbol', default='H:mu'):
     validate_str,
     # Maximum number of geometry optimisation steps
-    Optional('geom_steps', default=30):
+    Optional('geom_steps', default=None):
     int,
     # Tolerance on geometry optimisation in units of eV/AA.
-    Optional('geom_force_tol', default=0.05):
+    Optional('geom_force_tol', default=None):
     float,
     # Max number of SCC steps to perform before giving up. Default is
     # 200 which is also the default for DFTB+.
-    Optional('max_scc_steps', default=200):
+    Optional('max_scc_steps', default=None):
     int,
     # Clustering method to use
     Optional('clustering_method', default='hier'):
@@ -187,15 +208,25 @@ MuAirssSchema = Schema({
     # Number of clusters for k-means clustering
     Optional('clustering_kmeans_k', default=4):
     int,
+    # This option is deprecated:
     # Whether to save the minimum energy structures for each cluster
     Optional('clustering_save_min', default=False):
-    bool,
+    validate_save_min,
+    # Whether to save the minimum energy structures for each cluster,
+    # or input files to another calculator
+    Optional('clustering_save_type', default=None):
+    validate_all_of('structures', 'input', None),
     # Format to use to save the minimum energy structures for each cluster
-    Optional('clustering_save_format', default='cif'):
+    Optional('clustering_save_format', default=None):
+    validate_str,
+    # Name to call the folder used to store the input files
+    # for castep or dftb+ calculations and/or the minimum energy
+    # structures for each cluster
+    Optional('clustering_save_folder', default=None):
     validate_str,
     # Save a file with all muon positions in one
     Optional('allpos_filename', default=None):
-    validate_str
+    validate_str,
 })
 
 # Parameter file schema and defaults
@@ -311,6 +342,10 @@ UEPOptSchema.update({
     float,
     # Save pickled output
     Optional('save_pickle', default=True):
+    bool,
+    # Save structure file for each optimised
+    # struct + muon in .xyz format
+    Optional('save_structs', default=True):
     bool
 })
 UEPOptSchema = Schema(UEPOptSchema)
@@ -320,7 +355,8 @@ UEPPlotSchema = UEPSchema.schema.copy()
 UEPPlotSchema.update({
     # Specifications for paths.
     # Possible formats:
-    # - [[crystallographic direction], [starting point], length, number of points]
+    # - [[crystallographic direction], [starting point], length,
+    #   number of points]
     # - [[starting point], [end point], number of points],
     # - [starting atom, end atom, number of points]
     Optional('line_plots', default=[]):

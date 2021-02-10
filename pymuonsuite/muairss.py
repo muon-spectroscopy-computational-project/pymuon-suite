@@ -15,30 +15,26 @@ import os
 import glob
 import shutil
 import warnings
-from copy import deepcopy
 
 import numpy as np
 import argparse as ap
 from spglib import find_primitive
 
 from ase import Atoms, io
-from ase.io.castep import read_param
 from ase.build import make_supercell
-from ase.calculators.castep import Castep
-from ase.calculators.dftb import Dftb
-from soprano.utils import safe_input
+from soprano.utils import safe_input, customize_warnings
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 from soprano.analyse.phylogen import PhylogenCluster, Gene
 
-import pymuonsuite.constants as cnst
-from pymuonsuite.utils import make_3x3, safe_create_folder, list_to_string
+from pymuonsuite.utils import make_3x3, safe_create_folder
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
-from pymuonsuite.io.castep import (castep_write_input, castep_read_input,
-                                   add_to_castep_block)
-from pymuonsuite.io.dftb import dftb_write_input, dftb_read_input
-from pymuonsuite.io.uep import UEPCalculator, uep_write_input, uep_read_input
+from pymuonsuite.io.castep import ReadWriteCastep
+from pymuonsuite.io.dftb import ReadWriteDFTB
+from pymuonsuite.io.uep import ReadWriteUEP
 from pymuonsuite.io.output import write_cluster_report
+
+customize_warnings()
 
 
 def find_primitive_structure(struct):
@@ -118,114 +114,6 @@ def parse_structure_name(file_name):
     return base
 
 
-def create_muairss_castep_calculator(a, params={}, calc=None):
-    """Create a calculator containing all the necessary parameters
-    for a geometry optimization."""
-
-    if not isinstance(calc, Castep):
-        calc = Castep()
-    else:
-        calc = deepcopy(calc)
-
-    musym = params.get('mu_symbol', 'H:mu')
-
-    # Start by ensuring that the muon mass and gyromagnetic ratios are included
-    mass_block = calc.cell.species_mass.value
-    calc.cell.species_mass = add_to_castep_block(mass_block, musym,
-                                                 cnst.m_mu_amu,
-                                                 'mass')
-
-    gamma_block = calc.cell.species_gamma.value
-    calc.cell.species_gamma = add_to_castep_block(gamma_block, musym,
-                                                  851586494.1, 'gamma')
-
-    # Now assign the k-points
-    calc.cell.kpoint_mp_grid = list_to_string(
-        params.get('k_points_grid', [1, 1, 1]))
-
-    # Remove cell constraints if they exist
-    calc.cell.cell_constraints = None
-    calc.cell.fix_all_cell = True   # Necessary for older CASTEP versions
-
-    calc.param.charge = params.get('charged', False)*1.0
-
-    # Remove symmetry operations if they exist
-    calc.cell.symmetry_ops.value = None
-
-    # Read the parameters
-    pfile = params.get('castep_param', None)
-    if pfile is not None:
-        calc.param = read_param(params['castep_param']).param
-
-    calc.param.task = 'GeometryOptimization'
-    calc.param.geom_max_iter = params.get('geom_steps', 30)
-    calc.param.geom_force_tol = params.get('geom_force_tol', 0.05)
-    calc.param.max_scf_cycles = params.get('max_scc_steps', 30)
-
-    return calc
-
-
-def create_muairss_dftb_calculator(a, params={}, calc=None):
-
-    from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
-
-    if not isinstance(calc, Dftb):
-        args = {}
-    else:
-        args = calc.todict()
-
-    dargs = DFTBArgs(params['dftb_set'])
-
-    for opt in params['dftb_optionals']:
-        try:
-            dargs.set_optional(opt, True)
-        except KeyError:
-            print(('WARNING: optional DFTB+ file {0} not available for {1}'
-                   ' parameter set, skipping').format(opt, params['dftb_set'])
-                  )
-
-    args.update(dargs.args)
-    args = dargs.args
-    args['Driver_'] = 'ConjugateGradient'
-    args['Driver_Masses_'] = ''
-    args['Driver_Masses_Mass_'] = ''
-    args['Driver_Masses_Mass_Atoms'] = '-1'
-    args['Driver_Masses_Mass_MassPerAtom [amu]'] = str(cnst.m_mu_amu)
-
-    args['Driver_MaxForceComponent [eV/AA]'] = params['geom_force_tol']
-    args['Driver_MaxSteps'] = params['geom_steps']
-    args['Driver_MaxSccIterations'] = params['max_scc_steps']
-    args['Hamiltonian_Charge'] = 1.0 if params['charged'] else 0.0
-
-    if params['dftb_pbc']:
-        calc = Dftb(kpts=params['k_points_grid'],
-                    **args)
-    else:
-        calc = Dftb(**args)
-
-    return calc
-
-
-def create_muairss_uep_calculator(a, params={}, calc=None):
-
-    if not isinstance(calc, UEPCalculator):
-        calc = UEPCalculator(atoms=a, chden=params['uep_chden'])
-    else:
-        dummy = UEPCalculator(chden=params['uep_chden'])
-        calc.chden_path = dummy.chden_path
-        calc.chden_seed = dummy.chden_seed
-
-    if not params['charged']:
-        raise RuntimeError("Can't use UEP method for neutral system")
-
-    calc.label = params['name']
-    calc.gw_factor = params['uep_gw_factor']
-    calc.geom_steps = params['geom_steps']
-    calc.opt_tol = params['geom_force_tol']
-
-    return calc
-
-
 def save_muairss_collection(struct, params, batch_path=''):
     """Generate input files for a single structure and configuration file"""
 
@@ -234,32 +122,21 @@ def save_muairss_collection(struct, params, batch_path=''):
     dc.info['muairss_params'] = dict(params)
 
     # Output folder
-    out_path = safe_create_folder(os.path.join(batch_path, params['out_folder']))
+    out_path = safe_create_folder(os.path.join(batch_path,
+                                               params['out_folder']))
 
     if not out_path:
         raise RuntimeError('Could not create folder {0}')
 
-    # Now save in the appropriate format
-    save_formats = {
-        'castep': castep_write_input,
-        'dftb+': dftb_write_input,
-        'uep': uep_write_input
+    io_formats = {
+        'castep': ReadWriteCastep,
+        'dftb+': ReadWriteDFTB,
+        'uep': ReadWriteUEP
     }
 
-    # Which calculators?
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
     if 'all' in calcs:
-        calcs = save_formats.keys()
-
-    # Make the actual calculators
-    make_calcs = {
-        'castep': create_muairss_castep_calculator,
-        'dftb+': create_muairss_dftb_calculator,
-        'uep': create_muairss_uep_calculator
-    }
-
-    calcs = {c: make_calcs[c](struct, params=params, calc=struct.calc)
-             for c in calcs}
+        calcs = io_formats.keys()
 
     # Save LICENSE file for DFTB+ parameters
     if 'dftb+' in calcs:
@@ -267,10 +144,12 @@ def save_muairss_collection(struct, params, batch_path=''):
         with open(os.path.join(out_path, 'dftb.LICENSE'), 'w') as f:
             f.write(get_license())
 
-    for cname, calc in calcs.items():
+    for cname in calcs:
+        rw = io_formats[cname](params, script=params.get('script_file'))
         calc_path = os.path.join(out_path, cname)
-        dc.save_tree(calc_path, save_formats[cname], name_root=params['name'],
-                     opt_args={'calc': calc, 'script': params['script_file']},
+        dc.save_tree(calc_path, rw.write,
+                     name_root=params['name'],
+                     opt_args={'calc_type': "GEOM_OPT"},
                      safety_check=2)
 
     # Do we also save a collective structure?
@@ -293,27 +172,33 @@ def load_muairss_collection(struct, params, batch_path=''):
     # Output folder
     out_path = os.path.join(batch_path, params['out_folder'])
 
-    load_formats = {
-        'dftb+': dftb_read_input,
-        'castep': castep_read_input,
-        'uep': uep_read_input
+    io_formats = {
+        'castep': ReadWriteCastep,
+        'dftb+': ReadWriteDFTB,
+        'uep': ReadWriteUEP
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
     if 'all' in calcs:
-        calcs = load_formats.keys()
+        calcs = io_formats.keys()
 
     loaded = {}
 
-
     for cname in calcs:
-        opt_args = {}
-        if cname == 'uep':
-            opt_args['atoms'] = struct
-
+        rw = io_formats[cname](params)
         calc_path = os.path.join(out_path, cname)
-        dc = AtomsCollection.load_tree(calc_path, load_formats[cname],
-                                       opt_args=opt_args, safety_check=2)
+
+        dc = AtomsCollection.load_tree(calc_path, rw.read,
+                                       safety_check=2, tolerant=True)
+
+        print("If more than 10% of structures could not be loaded, \
+we advise adjusting the parameters and re-running the {0} \
+optimisation for the structures that failed.".format(cname))
+
+        total_structures = len(dc.structures)
+        if total_structures == 0:
+            return
+
         loaded[cname] = dc
 
     return loaded
@@ -382,7 +267,11 @@ def muairss_cluster(struct, collection, params, name=None):
         n = len(ccoll)
         ccoll = ccoll.filter(calc_filter)
         if len(ccoll) < n:
-            warnings.warn('Calculation failed for {0} structures'.format(n-len(ccoll)))
+            warnings.warn('Calculation failed for {0}% of structures.'
+                          ' If more than 10% of the calculations failed,'
+                          ' we advise adjusting the parameters and re-running'
+                          ' the optimisation for the runs that failed.'.format(
+                              round((1-len(ccoll)/n)*100)))
 
         # Start by extracting the muon positions
         genes = [Gene('energy', 1, {}),

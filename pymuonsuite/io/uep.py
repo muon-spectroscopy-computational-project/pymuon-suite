@@ -11,7 +11,98 @@ import yaml
 import pickle
 import subprocess as sp
 from ase import Atoms
+from ase import io
 from scipy.constants import physical_constants as pcnst
+from pymuonsuite.io.readwrite import ReadWrite
+
+
+class ReadWriteUEP(ReadWrite):
+    def __init__(self, params={}, script=None):
+        self.script = script
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
+        else:
+            self.params = params
+
+    def set_script(self, script):
+        '''
+        |   script (str):           Path to a file containing a submission
+        |                           script to copy to the input folder. The
+        |                           script can contain the argument
+        |                           {seedname} in curly braces, and it will
+        |                           be appropriately replaced.
+        '''
+        self.script = script
+
+    def set_params(self, params):
+        '''
+        |   params (dict)           Contains muon symbol, parameter file,
+        |                           k_points_grid.
+        '''
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
+        else:
+            self.params = params
+
+    def read(self, folder, sname=None):
+        if sname is None:
+            sname = os.path.split(folder)[-1]
+
+        calc = UEPCalculator(label=sname, path=folder)
+
+        try:
+            calc.read()
+        except ValueError as e:
+            raise(IOError("Error: could not read UEP file in {0}"
+                          .format(folder)))
+            return
+
+        a = calc.atoms + Atoms('H', positions=[calc._x_opt])
+
+        a.info['name'] = sname
+
+        calc.atoms = a
+        a.set_calculator(calc)
+
+        return a
+
+    def write(self, a, folder, sname=None, calc_type=None):
+
+        if sname is None:
+            sname = os.path.split(folder)[-1]
+
+        try:
+            calc = self._create_calculator(a, folder, sname)
+            calc.write_input()
+        except (ValueError, RuntimeError) as e:
+            raise
+            return
+
+        if self.script is not None:
+            stxt = open(self.script).read()
+            stxt = stxt.format(seedname=sname)
+            with open(os.path.join(folder, 'script.sh'), 'w') as sf:
+                sf.write(stxt)
+
+    def _create_calculator(self, a, folder, sname):
+        params = self.params
+
+        calc = UEPCalculator(atoms=a, chden=params['uep_chden'], path=folder,
+                             label=sname)
+
+        if not params['charged']:
+            raise RuntimeError(
+                "Error: Can't use UEP method for neutral system")
+
+        calc.path = folder
+        calc.gw_factor = params['uep_gw_factor']
+        calc.geom_steps = params['geom_steps']
+        calc.opt_tol = params['geom_force_tol']
+        calc.save_structs = params['uep_save_structs']
+
+        return calc
 
 
 class UEPCalculator(object):
@@ -37,6 +128,7 @@ class UEPCalculator(object):
         self.opt_tol = 1e-5
         self.gw_factor = 5.0
         self.opt_method = 'trust-exact'
+        self.save_structs = True
 
         # Results
         self._Eclass = None
@@ -97,7 +189,8 @@ class UEPCalculator(object):
             'opt_tol': self.opt_tol,
             'opt_method': self.opt_method,
             'gw_factor': self.gw_factor,
-            'save_pickle': True,                # Always save it with a "calculator"
+            'save_pickle': True,  # Always save it with a "calculator"
+            'save_structs': self.save_structs
         }
 
         yaml.dump(outdata, open(os.path.join(self.path, self.label + '.yaml'),
@@ -124,46 +217,7 @@ class UEPCalculator(object):
             self._Etot = results['Etot']
             self._x_opt = results['x']
             self._fx_opt = results['fx']
+            self.atoms = results['struct']
         except FileNotFoundError:
             self.run()
             self.read()
-
-
-def uep_write_input(a, folder, calc=None, name=None, script=None):
-
-    if name is None:
-        name = os.path.split(folder)[-1]
-
-    if calc is None:
-        calc = UEPCalculator()
-
-    calc.path = folder
-    calc.label = name
-    calc.atoms = a
-
-    calc.write_input()
-
-    if script is not None:
-        stxt = open(script).read()
-        stxt = stxt.format(seedname=name)
-        with open(os.path.join(folder, 'script.sh'), 'w') as sf:
-            sf.write(stxt)
-
-def uep_read_input(folder, name=None, atoms=None):
-
-    if name is None:
-        name = os.path.split(folder)[-1]        
-
-    calc = UEPCalculator(label=name, path=folder)
-    calc.read()
-
-    a = Atoms('H', positions=[calc._x_opt])
-
-    if atoms is not None:
-        a = atoms + a
-
-    a.info['name'] = name
-    a.set_calculator(calc)
-    calc.atoms = a
-
-    return a

@@ -13,11 +13,12 @@ import pickle
 import argparse as ap
 
 from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
-from pymuonsuite.quantum.vibrational.average import (muon_vibrational_average_write,
-                                                     muon_vibrational_average_read)
+from pymuonsuite.quantum.vibrational.average import (
+    muon_vibrational_average_write, muon_vibrational_average_read)
 from pymuonsuite.schemas import (load_input_file, MuonHarmonicSchema,
                                  AsePhononsSchema)
 from pymuonsuite.io.output import write_phonon_report
+from pymuonsuite.io.dftb import ReadWriteDFTB
 
 
 def nq_entry():
@@ -25,7 +26,8 @@ def nq_entry():
     parser.add_argument('parameter_file', type=str,
                         help="YAML file containing relevant input parameters")
     parser.add_argument('-w',   action='store_true', default=False,
-                        help="Create and write input files instead of parsing the results")
+                        help="Create and write input files instead of parsing"
+                        " the results")
 
     args = parser.parse_args()
 
@@ -37,7 +39,10 @@ def nq_entry():
         params['average_T'] = params['displace_T']
 
     if args.w:
-        muon_vibrational_average_write(**params)
+        try:
+            muon_vibrational_average_write(**params)
+        except IOError as e:
+            print(e)
     else:
         try:
             muon_vibrational_average_read(**params)
@@ -73,6 +78,7 @@ def asephonons_entry():
 
     # Load structure
     a = io.read(args.structure_file)
+
     # Create a Dftb calculator
     dargs = DFTBArgs(params['dftb_set'])
     # Is it periodic?
@@ -88,10 +94,16 @@ def asephonons_entry():
                     **dargs.args)
         ph_kpts = None
     a.set_calculator(calc)
-    phdata = ase_phonon_calc(a, kpoints=ph_kpts,
-                             ftol=params['force_tol'],
-                             force_clean=params['force_clean'],
-                             name=params['name'])
+    try:
+        phdata = ase_phonon_calc(a, kpoints=ph_kpts,
+                                 ftol=params['force_tol'],
+                                 force_clean=params['force_clean'],
+                                 name=params['name'])
+    except Exception as e:
+        print(e)
+        print("Error: Could not write phonons file, see asephonons.out for"
+              " details.")
+        return
 
     # Save optimised structure
     io.write(params['name'] + '_opt' + fext, phdata.structure)

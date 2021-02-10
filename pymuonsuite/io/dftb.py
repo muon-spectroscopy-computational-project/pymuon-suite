@@ -5,104 +5,305 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
-import json
-
+import pickle
+import glob
+import warnings
 import numpy as np
+
+from copy import deepcopy
+
+from soprano.utils import customize_warnings
 
 from ase import io
 from ase.calculators.dftb import Dftb
 from ase.calculators.singlepoint import SinglePointCalculator
 
 from pymuonsuite.utils import BackupFile
+from pymuonsuite.calculate.hfine import compute_hfine_mullpop
+from pymuonsuite import constants
+
+from pymuonsuite.io.readwrite import ReadWrite
+
+_geom_opt_args = {'Driver_': 'ConjugateGradient', 'Driver_Masses_': '',
+                  'Driver_Masses_Mass_': '', 'Driver_Masses_Mass_Atoms': '-1',
+                  'Driver_Masses_Mass_MassPerAtom [amu]':
+                  str(constants.m_mu_amu)}
+
+_spinpol_args = {'Hamiltonian_SpinPolarisation_': 'Colinear',
+                 'Hamiltonian_SpinPolarisation_UnpairedElectrons': 1,
+                 'Hamiltonian_SpinPolarisation_InitialSpins_': '',
+                 'Hamiltonian_SpinPolarisation_InitialSpins_Atoms': '-1',
+                 'Hamiltonian_SpinPolarisation_InitialSpins_SpinPerAtom': 1}
+
+customize_warnings()
 
 
-def dftb_write_input(a, folder, calc=None, name=None, script=None):
-    """Writes input files for an Atoms object with a Dftb+
-    calculator.
+class ReadWriteDFTB(ReadWrite):
+    def __init__(self, params={}, script=None, calc=None):
+        '''
+        |   Args:
+        |   params (dict):          Contains dftb_set, k_points_grid,
+        |                           geom_force_tol and dftb_optionals.
+        |                           geom_steps, max_scc_steps, and
+        |                           charged are also required in the case
+        |                           of writing geom_opt input files
+        |   script (str):           Path to a file containing a submission
+        |                           script to copy to the input folder. The
+        |                           script can contain the argument
+        |                           {seedname} in curly braces, and it will
+        |                           be appropriately replaced.
+        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+        |                           present, the pre-existent one will
+        |                           be ignored.
+        '''
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
 
-    | Args:
-    |   a (ase.Atoms):          Atoms object to write. Can have a Dftb
-    |                           calculator attached to carry
-    |                           arguments.
-    |   folder (str):           Path to save the input files to.
-    |   calc (ase.Calculator):  Calculator to attach to Atoms. If
-    |                           present, the pre-existent one will
-    |                           be ignored.
-    |   name (str):             Seedname to save the files with. If not
-    |                           given, use the name of the folder.
-    |   script (str):           Path to a file containing a submission script
-    |                           to copy to the input folder. The script can 
-    |                           contain the argument {seedname} in curly braces,
-    |                           and it will be appropriately replaced.
-    """
+        self.set_params(params)
+        self.script = script
+        self._calc = calc
+        self._calc_type = None
 
-    if name is None:
-        name = os.path.split(folder)[-1]  # Same as folder name
+    def set_script(self, script):
+        '''
+        |   Args:
+        |   script (str):           Path to a file containing a submission
+        |                           script to copy to the input folder. The
+        |                           script can contain the argument
+        |                           {seedname} in curly braces, and it will
+        |                           be appropriately replaced.
+        '''
+        self.script = script
 
-    if calc is not None:
-        calc.atoms = a
-        a.set_calculator(calc)
+    def set_params(self, params):
+        '''
+        |   Args:
+        |   params (dict):          Contains dftb_set, k_points_grid,
+        |                           geom_force_tol and dftb_optionals.
+        |                           geom_steps, max_scc_steps, and
+        |                           charged are also required in the case
+        |                           of writing geom_opt input files
+        '''
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
 
-    if not isinstance(a.calc, Dftb):
-        a = a.copy()
-        calc = Dftb(label=name, atoms=a)
-        a.set_calculator(calc)
+        if params == {}:
+            params = {'dftb_set': '3ob-3-1', 'k_points_grid': None,
+                      'geom_force_tol': 0.01, 'dftb_optionals': []}
 
-    a.calc.label = name
-    a.calc.directory = folder
-    a.calc.write_input(a)
+        self.params = params
+        # resetting this to None makes sure that the calc is recreated after
+        # the params are updated:
+        self._calc_type = None
 
-    if script is not None:
-        stxt = open(script).read()
-        stxt = stxt.format(seedname=name)
-        with open(os.path.join(folder, 'script.sh'), 'w') as sf:
-            sf.write(stxt)
+    def read(self, folder, sname=None):
+        ''' Read a DFTB+ output non-destructively.
+        |
+        |   Args:
+        |   folder (str) :          path to a directory to load DFTB+ results
+        |   sname (str):            name to label the atoms with and/or of the
+        |                           .phonons.pkl file to be read
+        |   Returns:
+        |   atoms (ase.Atoms):      an atomic structure with the results
+        |                           attached in a SinglePointCalculator
+        '''
 
+        try:
+            atoms = io.read(os.path.join(folder, 'geo_end.gen'))
 
-def dftb_read_input(folder):
-    """Read a DFTB+ output non-destructively.
+        except IOError:
+            raise IOError("ERROR: No geo_end.gen file found in {}."
+                          .format(os.path.abspath(folder)))
+        except Exception as e:
+            raise IOError("ERROR: Could not read {file}, due to error: {error}"
+                          .format(file='geo_end.gen', error=e))
+        if sname is None:
+            atoms.info['name'] = os.path.split(folder)[-1]
+        else:
+            atoms.info['name'] = sname
+        results_file = os.path.join(folder, "results.tag")
+        if os.path.isfile(results_file):
+            # DFTB+ was used to perform the optimisation
+            temp_file = os.path.join(folder, "results.tag.bak")
 
-    Args:
-      directory (str): path to a directory to load DFTB+ results
+            # We need to backup the results file here because
+            # .read_results() will remove the results file
+            with BackupFile(results_file, temp_file):
+                calc = Dftb(atoms=atoms)
+                calc.atoms_input = atoms
+                calc.directory = folder
+                calc.do_forces = True
+                calc.read_results()
 
-    Returns:
-      atoms (ase.Atoms): an atomic structure with the results attached in a
-      SinglePointCalculator
-    """
+            energy = calc.get_potential_energy()
+            forces = calc.get_forces()
+            charges = calc.get_charges(atoms)
 
-    atoms = io.read(os.path.join(folder, 'geo_end.gen'))
-    atoms.info['name'] = os.path.split(folder)[-1]
-    results_file = os.path.join(folder, "results.tag")
-    if os.path.isfile(results_file):
-        # DFTB+ was used to perform the optimisation
-        temp_file = os.path.join(folder, "results.tag.bak")
+            calc = SinglePointCalculator(atoms, energy=energy,
+                                         forces=forces, charges=charges)
 
-        # We need to backup the results file here because
-        # .read_results() will remove the results file
-        with BackupFile(results_file, temp_file):
-            calc = Dftb(atoms=atoms)
-            calc.atoms_input = atoms
-            calc.directory = folder
-            calc.do_forces = True
-            calc.read_results()
+            atoms.calc = calc
 
-        energy = calc.get_potential_energy()
-        forces = calc.get_forces()
-        charges = calc.get_charges(atoms)
+        try:
+            pops = parse_spinpol_dftb(folder)
+            hfine = []
+            for i in range(len(atoms)):
+                hf = compute_hfine_mullpop(atoms, pops, self_i=i, fermi=True,
+                                           fermi_neigh=True)
+                hfine.append(hf)
+            atoms.set_array('hyperfine', np.array(hfine))
+        except (IndexError, IOError) as e:
+            warnings.warn('Could not read hyperfine details due to error: '
+                          '{0}'.format(e))
 
-        calc = SinglePointCalculator(atoms, energy=energy,
-                                     forces=forces, charges=charges)
+        try:
+            if sname is not None:
+                phonon_source_file = os.path.join(folder, sname +
+                                                  '.phonons.pkl')
+            else:
+                print("Phonons filename was not given, searching for any"
+                      " .phonons.pkl file.")
+                phonon_source_file = glob.glob(os.path.join(folder,
+                                               '*.phonons.pkl'))[0]
+            self._read_dftb_phonons(atoms, phonon_source_file)
+        except IndexError:
+            warnings.warn("No .phonons.pkl files found in {}."
+                          .format(os.path.abspath(folder)))
+        except IOError:
+            warnings.warn("{} could not be found."
+                          .format(phonon_source_file))
+        except Exception as e:
+            warnings.warn('Could not read {file} due to error: {error}'
+                          .format(file=phonon_source_file, error=e))
 
-        atoms.calc = calc
+        return atoms
 
-    return atoms
+    def _read_dftb_phonons(self, atoms, phonon_source_file):
+        with open(phonon_source_file, 'rb') as f:
+            phdata = pickle.load(f)
+            # Find the gamma point
+            gamma_i = None
+            for i, p in enumerate(phdata.path):
+                if (p == 0).all():
+                    gamma_i = i
+                    break
+            try:
+                ph_evals = phdata.frequencies[gamma_i]
+                ph_evecs = phdata.modes[gamma_i]
+                atoms.info['ph_evals'] = ph_evals
+                atoms.info['ph_evecs'] = ph_evecs
+            except TypeError:
+                raise RuntimeError(('Phonon file {0} does not contain gamma '
+                                    'point data').format(phonon_source_file))
 
+    def write(self, a, folder, sname=None, calc_type="GEOM_OPT"):
 
-def load_muonconf_dftb(folder):
-    """Duplicate of dftb_read_input.
-    Implemented here for backwards compatibility.
-    """
-    return dftb_read_input(folder)
+        """Writes input files for an Atoms object with a Dftb+
+        calculator.
+
+        | Args:
+        |   a (ase.Atoms):          Atoms object to write. Can have a Dftb
+        |                           calculator attached to carry
+        |                           arguments.
+        |   folder (str):           Path to save the input files to.
+        |   sname (str):            Seedname to save the files with. If not
+        |                           given, use the name of the folder.
+        |   calc_type (str):        Calculation which will be performed:
+        |                           "GEOM_OPT" or "SPINPOL"
+        """
+
+        if calc_type == "GEOM_OPT" or calc_type == "SPINPOL":
+            if sname is None:
+                sname = os.path.split(folder)[-1]  # Same as folder name
+
+            if self._calc is None and isinstance(a.calc, Dftb):
+                self._calc = a.calc
+
+            self._calc = deepcopy(self._calc)
+
+            # only create a new calc if the calc type requested is different
+            # to that already saved.
+            if calc_type != self._calc_type:
+                self._create_calculator(calc_type=calc_type)
+
+            a.set_calculator(self._calc)
+            a.calc.label = sname
+            a.calc.directory = folder
+            a.calc.write_input(a)
+
+            if self.script is not None:
+                stxt = open(self.script).read()
+                stxt = stxt.format(seedname=sname)
+                with open(os.path.join(folder, 'script.sh'), 'w') as sf:
+                    sf.write(stxt)
+        else:
+            raise(NotImplementedError("Calculation type {} is not implemented."
+                  " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
+
+    def _create_calculator(self, calc_type="GEOM_OPT"):
+        from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
+
+        if not isinstance(self._calc, Dftb):
+            args = {}
+        else:
+            args = self._calc.todict()
+
+        dargs = DFTBArgs(self.params['dftb_set'])
+
+        if calc_type == "SPINPOL":
+            if 'dftb_optionals' not in self.params:
+                self.params['dftb_optionals'] = []
+            self.params['dftb_optionals'].append('spinpol.json')
+            if self.params['k_points_grid'] is not None:
+                self.params['dftb_pbc'] = True
+
+        if self.params['dftb_pbc']:
+            self._calc = Dftb(kpts=self.params['k_points_grid'])
+        else:
+            self._calc = Dftb()
+
+        for opt in self.params['dftb_optionals']:
+            try:
+                dargs.set_optional(opt, True)
+            except KeyError:
+                if opt == 'spinpol.json':
+                    raise ValueError('DFTB+ parameter set does not allow spin'
+                                     'polarised calculations')
+                else:
+                    warnings.warn('Warning: optional DFTB+ file {0} not'
+                                  'available for {1}'
+                                  ' parameter set, skipping').format(
+                                  opt, self.params['dftb_set'])
+        args.update(dargs.args)
+
+        if calc_type == "GEOM_OPT":
+            args.update(_geom_opt_args)
+            geom_opt_param_args = {'Driver_MaxForceComponent [eV/AA]':
+                                   self.params['geom_force_tol'],
+                                   'Driver_MaxSteps':
+                                   self.params['geom_steps'],
+                                   'Driver_MaxSccIterations':
+                                   self.params['max_scc_steps'],
+                                   'Hamiltonian_Charge': 1.0 if
+                                   self.params['charged'] else 0.0}
+
+            args.update(geom_opt_param_args)
+
+        elif calc_type == "SPINPOL":
+            del(args['Hamiltonian_SpinPolarisation'])
+            args.update(_spinpol_args)
+            self._calc.do_forces = True
+        else:
+            raise(NotImplementedError("Calculation type {} is not implemented."
+                  " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
+
+        self._calc.parameters.update(args)
+
+        self._calc_type = calc_type
+
+        return self._calc
 
 
 def parse_spinpol_dftb(folder):
@@ -170,61 +371,3 @@ def parse_spinpol_dftb(folder):
                     nlm, 0.0)+p*sign
 
     return pops
-
-# Deprecated, left in for compatibility
-
-
-def save_muonconf_dftb(a, folder, params, dftbargs={}):
-
-    from pymuonsuite.data.dftb_pars import DFTBArgs
-
-    name = os.path.split(folder)[-1]
-
-    a.set_pbc(params['dftb_pbc'])
-
-    dargs = DFTBArgs(params['dftb_set'])
-
-    custom_species = a.get_array('castep_custom_species')
-    muon_index = np.where(custom_species == params['mu_symbol'])[0][0]
-
-    is_spinpol = params.get('spin_polarized', False)
-    if is_spinpol:
-        dargs.set_optional('spinpol.json', True)
-
-    # Add muon mass
-    args = dargs.args
-    args['Driver_'] = 'ConjugateGradient'
-    args['Driver_Masses_'] = ''
-    args['Driver_Masses_Mass_'] = ''
-    args['Driver_Masses_Mass_Atoms'] = '{}'.format(muon_index)
-    args['Driver_Masses_Mass_MassPerAtom [amu]'] = '0.1138'
-
-    args['Driver_MaxForceComponent [eV/AA]'] = params['geom_force_tol']
-    args['Driver_MaxSteps'] = params['geom_steps']
-    args['Driver_MaxSccIterations'] = params['max_scc_steps']
-
-    if is_spinpol:
-        # Configure initial spins
-        spins = np.array(a.get_initial_magnetic_moments())
-        args['Hamiltonian_SpinPolarisation_InitialSpins'] = '{'
-        args['Hamiltonian_SpinPolarisation_' +
-             'InitialSpins_AllAtomSpins'] = '{' + '\n'.join(
-            map(str, spins)) + '}'
-        args['Hamiltonian_SpinPolarisation_UnpairedElectrons'] = str(
-            np.sum(spins))
-
-    # Add any custom arguments
-    if isinstance(dftbargs, DFTBArgs):
-        args.update(dftbargs.args)
-    else:
-        args.update(dftbargs)
-
-    if params['dftb_pbc']:
-        dcalc = Dftb(label=name, atoms=a,
-                     kpts=params['k_points_grid'], 
-                     **args)
-    else:
-        dcalc = Dftb(label=name, atoms=a, **args)
-
-    dcalc.directory = folder
-    dcalc.write_input(a)

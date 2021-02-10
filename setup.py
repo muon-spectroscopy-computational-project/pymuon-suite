@@ -19,7 +19,8 @@ if __name__ == '__main__':
         setname = os.path.split(g)[1]
         sk_pkgdata += [os.path.join('data/dftb_pars/', setname, '*'),
                        os.path.join('data/dftb_pars/', setname, setname,
-                                    '*.skf')]
+                                    '*.skf'),
+                       os.path.join('data/dftb_pars/', '*')]
 
     setup(name='PyMuonSuite',
           version='0.0.1',
@@ -35,7 +36,7 @@ if __name__ == '__main__':
               'pyyaml',
               'schema',
               'spglib>0.8',
-              'soprano>=0.8.7',
+              'soprano>=0.8.10',
               'parse-fmt>=0.5',
               'euphonic==0.3.2'
           ],

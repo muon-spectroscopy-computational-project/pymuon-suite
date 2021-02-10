@@ -8,9 +8,16 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import os
 from ase import io
 import numpy as np
 from datetime import datetime
+
+from pymuonsuite.utils import safe_create_folder
+from pymuonsuite.io.castep import ReadWriteCastep
+from pymuonsuite.io.dftb import ReadWriteDFTB
+
+from soprano.collection import AtomsCollection
 
 
 def write_tensors(tensors, filename, symbols):
@@ -71,6 +78,18 @@ Parameter file: {param}
 
             f.write('Clusters for {0}:\n'.format(name))
 
+            if params['clustering_save_min'] is not None or \
+                    params['clustering_save_type'] is not None:
+
+                if params['clustering_save_folder'] is not None:
+                    clustering_save_path = safe_create_folder(
+                        params['clustering_save_folder'])
+                else:
+                    clustering_save_path = safe_create_folder(
+                        '{0}_clusters'.format(params['name']))
+                if not clustering_save_path:
+                    raise RuntimeError('Could not create folder {0}')
+
             for calc, clusts in cdata.items():
 
                 # Computer readable
@@ -81,6 +100,8 @@ Parameter file: {param}
                 (cinds, cgroups), ccolls, gvecs = clusts
 
                 f.write('\t{0} clusters found\n'.format(max(cinds)))
+
+                min_energy_structs = []
 
                 for i, g in enumerate(cgroups):
 
@@ -100,18 +121,53 @@ Parameter file: {param}
                                                                        Eavg,
                                                                        Estd))
 
-                    fdat.write('\t'.join(map(str, [i+1, len(g),
-                                                   Emin, Eavg, Estd])) + '\n')
+                    fdat.write('\t'.join(map(str, [i+1, len(g), Emin,
+                                                   Eavg, Estd,
+                                                   coll[np.argmin(
+                                                       E)].structures[0]
+                                                   .positions[-1][0],
+                                                   coll[np.argmin(
+                                                       E)].structures[0]
+                                                   .positions[-1][1],
+                                                   coll[np.argmin(
+                                                       E)].structures[0]
+                                                   .positions[-1][2]
+                                                   ])) + '\n')
 
                     f.write('\n\tMinimum energy structure: {0}\n'.format(
                         coll[np.argmin(E)].structures[0].info['name']))
 
                     # Save minimum energy structure
-                    if params['clustering_save_min']:
-                        fname = ('{0}_min_cluster_'
-                                 '{1}.{2}'.format(params['name'], i+1,
-                                                  params['clustering_save_format']))
-                        io.write(fname, coll[np.argmin(E)].structures[0])
+                    if params['clustering_save_type'] == 'structures' or \
+                            params['clustering_save_min']:
+                        # For backwards-compatability with old pymuonsuite
+                        # versions
+                        if params['clustering_save_min']:
+                            if params['clustering_save_format'] is None:
+                                params['clustering_save_format'] = 'cif'
+
+                        try:
+                            calc_path = os.path.join(clustering_save_path,
+                                                     calc)
+                            if not os.path.exists(calc_path):
+                                os.mkdir(calc_path)
+                            fname = ('{0}_{1}_min_cluster_'
+                                     '{2}.{3}'.format(
+                                         params['name'], calc, i+1,
+                                         params['clustering_save_format']))
+                            io.write(os.path.join(calc_path, fname),
+                                     coll[np.argmin(E)].structures[0])
+                        except (io.formats.UnknownFileTypeError) as e:
+                            print("ERROR: File format '{0}' is not "
+                                  "recognised. Modify 'clustering_save_format'"
+                                  " and try again.".format(e))
+                            return
+                        except ValueError as e:
+                            print("ERROR: {0}. Modify 'clustering_save_format'"
+                                  "and try again.".format(e))
+                            return
+
+                    min_energy_structs.append(coll[np.argmin(E)].structures[0])
 
                     f.write('\n\n\tStructure list:')
 
@@ -121,6 +177,44 @@ Parameter file: {param}
                         f.write('{0}\t'.format(s.info['name']))
 
                 fdat.close()
+
+                if params['clustering_save_type'] == 'input':
+                    calc_path = os.path.join(clustering_save_path, calc)
+
+                    sname = "{0}_min_cluster".format(params['name'])
+
+                    io_formats = {
+                        'castep': ReadWriteCastep(params),
+                        'dftb+': ReadWriteDFTB(params),
+                    }
+                    try:
+                        write_method = io_formats[
+                            params['clustering_save_format']].write
+                    except KeyError as e:
+                        print("ERROR: Calculator type {0} is not "
+                              "recognised. Modify 'clustering_save_format'"
+                              " to be one of: {1}".format(
+                                  e, list(io_formats.keys())))
+                        return
+
+                    if params['clustering_save_format'] == 'dftb+':
+                        from pymuonsuite.data.dftb_pars import get_license
+                        with open(os.path.join(clustering_save_path,
+                                  'dftb.LICENSE'), 'w') as license_file:
+                            license_file.write(get_license())
+
+                    min_energy_structs = AtomsCollection(min_energy_structs)
+                    # here we remove the structure's name so the original
+                    # numbering of the structs is removed:
+                    for i, a in enumerate(min_energy_structs):
+                        min_energy_structs.structures[i].info.pop('name', None)
+
+                    min_energy_structs.save_tree(calc_path,
+                                                 write_method,
+                                                 name_root=sname,
+                                                 opt_args={
+                                                     'calc_type': 'GEOM_OPT'},
+                                                 safety_check=2)
 
                 # Print distance matrix
 
@@ -136,9 +230,8 @@ Parameter file: {param}
                     c1 = inds[0][i]
                     c2 = inds[1][i]
                     d = dmat[c1, c2]
-                    f.write('\t{0} <--> {1} (distance = {2:.3f})\n'.format(c1,
-                                                                           c2,
-                                                                           d))
+                    f.write('\t{0} <--> {1} (distance = {2:.3f})\n'
+                            .format(c1+1, c2+1, d))
 
             f.write('\n--------------------------\n\n')
 
@@ -189,4 +282,5 @@ def write_phonon_report(args, params, phdata):
                 for k, d in enumerate(m):
                     d = np.real(d)
                     f.write(
-                        '\t\t{0}\t{1: .6f}\t{2: .6f}\t{3: .6f}\n'.format(k+1, *d))
+                        '\t\t{0}\t{1: .6f}\t{2: .6f}\t{3: .6f}\n'
+                        .format(k+1, *d))
