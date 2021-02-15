@@ -66,7 +66,7 @@ class TestReadWriteDFTB(unittest.TestCase):
                 calc_params['Driver_MaxForceComponent [eV/AA]'],
                 params['geom_force_tol'])
             self.assertEqual(
-                calc_params['Driver_MaxSccIterations'],
+                calc_params['Hamiltonian_MaxSccIterations'],
                 params['max_scc_steps'])
 
         # In the case that a params dict is provided, the values for the
@@ -91,7 +91,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         args = {'Hamiltonian_Charge': params['charged']*1.0,
                 'Driver_MaxSteps': params['geom_steps'],
                 'Driver_MaxForceComponent [eV/AA]': params['geom_force_tol'],
-                'Driver_MaxSccIterations': params['max_scc_steps']}
+                'Hamiltonian_MaxSccIterations': params['max_scc_steps']}
         dargs = DFTBArgs(params['dftb_set'])
         dargs.set_optional('spinpol.json', True)
         args.update(dargs.args)
@@ -127,22 +127,23 @@ class TestReadWriteDFTB(unittest.TestCase):
         # atoms used to generate them.
         try:
             params = {'geom_force_tol': 0.01, 'dftb_set': '3ob-3-1',
-                      'geom_steps': 50, "max_scc_steps": 200,
-                      'dftb_pbc': False}
+                      'geom_steps': 10, 'max_scc_steps': 200,
+                      'dftb_pbc': True, 'kpoints_grid': [2, 2, 2]}
 
             output_folder = os.path.join(_TESTDATA_DIR, "test_save")
             os.mkdir(output_folder)
 
             # read in cell file to get atom:
-            atoms = io.read(os.path.join(_TESTDATA_DIR, "Si2/Si2.cell"))
+            atoms = io.read(os.path.join(
+                _TESTDATA_DIR, "ethyleneMu/ethyleneMu.xyz"))
 
             # test writing input files
             reader = ReadWriteDFTB(params=params)
-            reader.write(atoms, output_folder, sname="Si2_geom_opt",
+            reader.write(atoms, output_folder, sname="ethylene_geom_opt",
                          calc_type="SPINPOL")
             atoms_read = reader.read(output_folder)
             self.assertEqual(atoms, atoms_read)
-            reader.write(atoms, output_folder, sname="Si2_geom_opt",
+            reader.write(atoms, output_folder, sname="ethylene_geom_opt",
                          calc_type="GEOM_OPT")
             atoms_read = reader.read(output_folder)
             self.assertEqual(atoms, atoms_read)

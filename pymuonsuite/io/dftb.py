@@ -317,10 +317,10 @@ class ReadWriteDFTB(ReadWrite):
 
             max_scf_cycles_param = self.params.get('max_scc_steps')
             if max_scf_cycles_param is not None:
-                args['Driver_MaxSccIterations'] = max_scf_cycles_param
+                args['Hamiltonian_MaxSccIterations'] = max_scf_cycles_param
             else:
-                if args.get('Driver_MaxSccIterations') is None:
-                    args['Driver_MaxSccIterations'] = 200
+                if args.get('Hamiltonian_MaxSccIterations') is None:
+                    args['Hamiltonian_MaxSccIterations'] = 200
 
         elif calc_type == "SPINPOL":
             del(args['Hamiltonian_SpinPolarisation'])
@@ -333,8 +333,6 @@ class ReadWriteDFTB(ReadWrite):
         self._calc.parameters.update(args)
 
         self._calc_type = calc_type
-
-        print("final kpts: ", self._calc.kpts)
 
         return self._calc
 
