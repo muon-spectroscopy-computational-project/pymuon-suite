@@ -14,16 +14,15 @@ import warnings
 
 from copy import deepcopy
 
-from ase import Atoms, io
+from ase import io
 from ase.io.magres import read_magres
 from ase.io.castep import write_param, read_param
 from ase.calculators.castep import Castep
 
-from soprano.selection import AtomSelection
 from soprano.utils import seedname, customize_warnings
 
 from pymuonsuite import constants
-from pymuonsuite.utils import list_to_string, find_ipso_hydrogen
+from pymuonsuite.utils import list_to_string
 from pymuonsuite.io.readwrite import ReadWrite
 from pymuonsuite.optional import requireEuphonicQPM
 
@@ -308,6 +307,12 @@ class ReadWriteCastep(ReadWrite):
 
         # Remove symmetry operations if they exist
         self._calc.cell.symmetry_ops.value = None
+
+        # If the following parameters are set in the params dict we take
+        # their values from there.
+        # Otherwise, we take their values from the calculator that has
+        # been provided.
+        # If neither of these have been set, we use the default values.
 
         charge_param = self.params.get('charged')
 
