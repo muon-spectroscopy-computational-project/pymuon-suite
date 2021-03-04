@@ -25,7 +25,7 @@ class TestReadWriteCastep(unittest.TestCase):
         reader = ReadWriteCastep()
         # test that we do not get any result for trying to read
         # an empty folder:
-        with self.assertRaises(OSError) as e:
+        with self.assertRaises(IOError) as e:
             reader.read(folder, sname)
             self.assertTrue('no such file or directory' in e)
 
