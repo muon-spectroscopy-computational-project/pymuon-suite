@@ -25,15 +25,15 @@ class TestReadWriteCastep(unittest.TestCase):
         reader = ReadWriteCastep()
         # test that we do not get any result for trying to read
         # an empty folder:
-        try:
+        with self.assertRaises(OSError) as e:
             reader.read(folder, sname)
-        except Exception as e:
-            print(e)
+            self.assertTrue('no such file or directory' in e)
 
         folder = os.path.join(_TESTDATA_DIR, sname)
         # tests castep file being read:
-        self.assertTrue(reader.read(folder, sname))
-        atoms = reader.read(folder, sname)
+        self.assertTrue(reader.read(
+            folder, sname, read_magres=True, read_phonons=True))
+        atoms = reader.read(folder, sname, read_magres=True, read_phonons=True)
 
         #  checks if phonon info has been loaded into atom object:
         self.assertIn('ph_evecs', atoms.info.keys())
@@ -42,9 +42,6 @@ class TestReadWriteCastep(unittest.TestCase):
         # # tests hyperfine being read:
         # checks if loading .magres file has added hyperfine to atom array:
         self.assertIn('hyperfine', atoms.arrays.keys())
-
-        # tests phonons being read:
-        self.assertTrue(reader.read(folder, sname))
 
     def test_create_calc(self):
         params = {"mu_symbol": "mu", "k_points_grid": [7, 7, 7]}

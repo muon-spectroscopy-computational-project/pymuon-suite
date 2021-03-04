@@ -21,10 +21,9 @@ class TestReadWriteDFTB(unittest.TestCase):
         reader = ReadWriteDFTB()
         # test that we do not get any result for trying to read
         # an empty folder:
-        try:
+        with self.assertRaises(OSError) as e:
             reader.read(folder)
-        except Exception as e:
-            print(e)
+            self.assertTrue('no such file or directory' in e)
 
         folder = os.path.join(folder,
                               "dftb-nq-results/ethyleneMu_opt_displaced/"
@@ -33,7 +32,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         self.assertTrue(reader.read(folder))
 
         # tests hyperfine being read:
-        atoms = reader.read(folder)
+        atoms = reader.read(folder, read_spinpol=True)
         # checks if added hyperfine to atom array:
         self.assertIn('hyperfine', atoms.arrays.keys())
 
@@ -45,7 +44,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         # phonon file in this folder:
         folder = os.path.join(_TESTDATA_DIR, "ethyleneMu/dftb-phonons")
         self.assertTrue(reader.read(folder))
-        atoms2 = reader.read(folder)
+        atoms2 = reader.read(folder, read_phonons=True)
         self.assertIn('ph_evecs', atoms2.info.keys())
         self.assertIn('ph_evals', atoms2.info.keys())
 
