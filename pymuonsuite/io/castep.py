@@ -44,10 +44,7 @@ class ReadWriteCastep(ReadWrite):
         |                           present, the pre-existent one will
         |                           be ignored.
         '''
-        if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
-            return
-        self.params = params
+        self.set_params(params)
         self.script = script
         self._calc = calc
         if calc is not None and params != {}:
@@ -78,7 +75,7 @@ class ReadWriteCastep(ReadWrite):
         '''
         self.script = script
 
-    def read(self, folder, sname=None):
+    def read(self, folder, sname=None, read_magres=False, read_phonons=False):
         """Reads Castep output files.
 
         | Args:
@@ -87,8 +84,10 @@ class ReadWriteCastep(ReadWrite):
         |                           given, use the name of the folder.
         """
         atoms = self._read_castep(folder, sname)
-        self._read_castep_hyperfine_magres(atoms, folder, sname)
-        self._read_castep_gamma_phonons(atoms, folder, sname)
+        if read_magres:
+            self._read_castep_hyperfine_magres(atoms, folder, sname)
+        if read_phonons:
+            self._read_castep_gamma_phonons(atoms, folder, sname)
         return atoms
 
     def _read_castep(self, folder, sname=None):
