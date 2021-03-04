@@ -56,12 +56,9 @@ class ReadWriteDFTB(ReadWrite):
         |                           present, the pre-existent one will
         |                           be ignored.
         '''
-        if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
-            return
 
         self.set_params(params)
-        self.script = script
+        self.set_script(script)
         self._calc = calc
         self._calc_type = None
 
@@ -89,11 +86,7 @@ class ReadWriteDFTB(ReadWrite):
             raise ValueError('params should be a dict, not ', type(params))
             return
 
-        if params == {}:
-            params = {'dftb_set': '3ob-3-1', 'k_points_grid': None,
-                      'geom_force_tol': 0.01, 'dftb_optionals': []}
-
-        self.params = params
+        self.params = deepcopy(params)
         # resetting this to None makes sure that the calc is recreated after
         # the params are updated:
         self._calc_type = None
@@ -147,6 +140,7 @@ class ReadWriteDFTB(ReadWrite):
 
             atoms.calc = calc
 
+<<<<<<< HEAD
         if read_spinpol:
             try:
                 pops = parse_spinpol_dftb(folder)
@@ -180,6 +174,39 @@ class ReadWriteDFTB(ReadWrite):
             except Exception as e:
                 warnings.warn('Could not read {file} due to error: {error}'
                               .format(file=phonon_source_file, error=e))
+=======
+        try:
+            pops = parse_spinpol_dftb(folder)
+            hfine = []
+            for i in range(len(atoms)):
+                hf = compute_hfine_mullpop(atoms, pops, self_i=i, fermi=True,
+                                           fermi_neigh=True)
+                hfine.append(hf)
+            atoms.set_array('hyperfine', np.array(hfine))
+        except (IndexError, IOError) as e:
+            warnings.warn('Could not read hyperfine details due to error: '
+                          '{0}'.format(e))
+
+        try:
+            if sname is not None:
+                phonon_source_file = os.path.join(folder, sname +
+                                                  '.phonons.pkl')
+            else:
+                print("Phonons filename was not given, searching for any"
+                      " .phonons.pkl file.")
+                phonon_source_file = glob.glob(
+                    os.path.join(folder, '*.phonons.pkl'))[0]
+            self._read_dftb_phonons(atoms, phonon_source_file)
+        except IndexError:
+            warnings.warn("No .phonons.pkl files found in {}."
+                          .format(os.path.abspath(folder)))
+        except IOError:
+            warnings.warn("{} could not be found."
+                          .format(phonon_source_file))
+        except Exception as e:
+            warnings.warn('Could not read {file} due to error: {error}'
+                          .format(file=phonon_source_file, error=e))
+>>>>>>> master
 
         return atoms
 
@@ -247,24 +274,37 @@ class ReadWriteDFTB(ReadWrite):
     def _create_calculator(self, calc_type="GEOM_OPT"):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
 
-        if not isinstance(self._calc, Dftb):
-            args = {}
-        else:
+        if isinstance(self._calc, Dftb):
+            calc_kpts = deepcopy(self._calc.kpts)
             args = self._calc.todict()
+        else:
+            calc_kpts = None
+            args = {}
 
-        dargs = DFTBArgs(self.params['dftb_set'])
-
-        if calc_type == "SPINPOL":
-            if 'dftb_optionals' not in self.params:
-                self.params['dftb_optionals'] = []
-            self.params['dftb_optionals'].append('spinpol.json')
-            if self.params['k_points_grid'] is not None:
-                self.params['dftb_pbc'] = True
-
-        if self.params['dftb_pbc']:
+        # We set kpoints if dftb_pbc has been set to true,
+        # or there are kpoints set in the provided calc:
+        if self.params.get('dftb_pbc'):
+            if self.params.get('k_points_grid') is None:
+                self.params['k_points_grid'] = calc_kpts
+                if self.params.get('k_points_grid') is None:
+                    self.params['k_points_grid'] = np.ones(3).astype(int)
             self._calc = Dftb(kpts=self.params['k_points_grid'])
         else:
-            self._calc = Dftb()
+            self.params['k_points_grid'] = calc_kpts
+            if self.params.get('k_points_grid') is None:
+                self._calc = Dftb()
+            else:
+                self._calc = Dftb(kpts=self.params['k_points_grid'])
+
+        dftb_set_param = self.params.get('dftb_set', '3ob-3-1')
+
+        dargs = DFTBArgs(dftb_set_param)
+
+        if 'dftb_optionals' not in self.params:
+            self.params['dftb_optionals'] = []
+
+        if calc_type == "SPINPOL":
+            self.params['dftb_optionals'].append('spinpol.json')
 
         for opt in self.params['dftb_optionals']:
             try:
@@ -282,16 +322,42 @@ class ReadWriteDFTB(ReadWrite):
 
         if calc_type == "GEOM_OPT":
             args.update(_geom_opt_args)
-            geom_opt_param_args = {'Driver_MaxForceComponent [eV/AA]':
-                                   self.params['geom_force_tol'],
-                                   'Driver_MaxSteps':
-                                   self.params['geom_steps'],
-                                   'Driver_MaxSccIterations':
-                                   self.params['max_scc_steps'],
-                                   'Hamiltonian_Charge': 1.0 if
-                                   self.params['charged'] else 0.0}
 
-            args.update(geom_opt_param_args)
+            # If the following parameters are set in the params dict we take
+            # their values from there.
+            # Otherwise, we take their values from the calculator that has
+            # been provided.
+            # If neither of these have been set, we use the default values.
+
+            charge_param = self.params.get('charged')
+            if charge_param is not None:
+                args['Hamiltonian_Charge'] = 1.0*charge_param
+            else:
+                if args.get('Hamiltonian_Charge') is None:
+                    args['Hamiltonian_Charge'] = 0.0
+
+            geom_steps_param = self.params.get('geom_steps')
+
+            if geom_steps_param is not None:
+                args['Driver_MaxSteps'] = geom_steps_param
+            else:
+                if args.get('Driver_MaxSteps') is None:
+                    args['Driver_MaxSteps'] = 30
+
+            geom_force_tol_param = self.params.get('geom_force_tol')
+
+            if geom_force_tol_param is not None:
+                args['Driver_MaxForceComponent [eV/AA]'] = geom_force_tol_param
+            else:
+                if args.get('Driver_MaxForceComponent [eV/AA]') is None:
+                    args['Driver_MaxForceComponent [eV/AA]'] = 0.05
+
+            max_scf_cycles_param = self.params.get('max_scc_steps')
+            if max_scf_cycles_param is not None:
+                args['Hamiltonian_MaxSccIterations'] = max_scf_cycles_param
+            else:
+                if args.get('Hamiltonian_MaxSccIterations') is None:
+                    args['Hamiltonian_MaxSccIterations'] = 200
 
         elif calc_type == "SPINPOL":
             del(args['Hamiltonian_SpinPolarisation'])
