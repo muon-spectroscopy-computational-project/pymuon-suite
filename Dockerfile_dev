@@ -4,7 +4,7 @@ ENV PYMUONDIR /home/pymuon-suite
 ENV TEMPDIR /tmp/pymuon-suite
 
 # clone repository
-RUN git clone --branch eli/add-dev-environment https://github.com/muon-spectroscopy-computational-project/pymuon-suite.git ${TEMPDIR}
+RUN git clone https://github.com/muon-spectroscopy-computational-project/pymuon-suite.git ${TEMPDIR}
 
 # create working directory
 RUN mkdir -p ${PYMUONDIR}
