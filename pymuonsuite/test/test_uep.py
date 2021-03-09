@@ -11,6 +11,7 @@ from ase import io
 from pymuonsuite.io.uep import ReadWriteUEP
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
+from soprano.utils import silence_stdio
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
@@ -56,7 +57,8 @@ class TestReadWriteUEP(unittest.TestCase):
         params = load_input_file(param_file, MuAirssSchema)
 
         reader = ReadWriteUEP(params=params)
-        a = io.read(os.path.join(folder, "Si2.cell"))
+        with silence_stdio():
+            a = io.read(os.path.join(folder, "Si2.cell"))
 
         self.assertTrue(reader._create_calculator(a, folder, "Si2"))
         calc = reader._create_calculator(a, folder, "Si2")
@@ -73,7 +75,8 @@ class TestReadWriteUEP(unittest.TestCase):
             output_folder = "test_save"
             os.mkdir(output_folder)
 
-            atoms = io.read("Si2.cell")
+            with silence_stdio():
+                atoms = io.read("Si2.cell")
 
             # test writing geom_opt output
             param_file = "Si2-muairss-uep.yaml"

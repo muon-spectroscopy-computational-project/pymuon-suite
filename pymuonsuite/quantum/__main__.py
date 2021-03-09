@@ -18,6 +18,7 @@ from pymuonsuite.quantum.vibrational.average import (
 from pymuonsuite.schemas import (load_input_file, MuonHarmonicSchema,
                                  AsePhononsSchema)
 from pymuonsuite.io.output import write_phonon_report
+from soprano.utils import silence_stdio
 
 
 def nq_entry():
@@ -76,7 +77,8 @@ def asephonons_entry():
         params['name'] = fname
 
     # Load structure
-    a = io.read(args.structure_file)
+    with silence_stdio():
+        a = io.read(args.structure_file)
 
     # Create a Dftb calculator
     dargs = DFTBArgs(params['dftb_set'])
@@ -105,7 +107,8 @@ def asephonons_entry():
         return
 
     # Save optimised structure
-    io.write(params['name'] + '_opt' + fext, phdata.structure)
+    with silence_stdio():
+        io.write(params['name'] + '_opt' + fext, phdata.structure)
 
     # And write out the phonons
     outf = params['name'] + '_opt.phonons.pkl'

@@ -16,6 +16,7 @@ import numpy as np
 from ase import io
 from soprano.utils import seedname
 from soprano.collection import AtomsCollection
+from soprano.utils import silence_stdio
 
 # Internal imports
 from pymuonsuite import constants
@@ -67,7 +68,8 @@ def muon_vibrational_average_write(cell_file, method='independent',
     """
 
     # Open the structure file
-    cell = io.read(cell_file)
+    with silence_stdio():
+        cell = io.read(cell_file)
     path = os.path.split(cell_file)[0]
     sname = seedname(cell_file)
 
@@ -93,8 +95,8 @@ def muon_vibrational_average_write(cell_file, method='independent',
     cell.set_array('castep_custom_species', species)
 
     io_formats = {
-        'castep': ReadWriteCastep(),
-        'dftb+': ReadWriteDFTB()
+        'castep': ReadWriteCastep,
+        'dftb+': ReadWriteDFTB
     }
 
     # Load the phonons
@@ -106,8 +108,8 @@ def muon_vibrational_average_write(cell_file, method='independent',
         phfile = sname
 
     try:
-        atoms = io_formats[phonon_source_type].read(
-            phpath, phfile, read_phonons=True)
+        rw = io_formats[phonon_source_type]()
+        atoms = rw.read(phpath, phfile, read_phonons=True)
         ph_evals = atoms.info['ph_evals']
         ph_evecs = atoms.info['ph_evecs']
     except IOError:
@@ -153,10 +155,11 @@ def muon_vibrational_average_write(cell_file, method='independent',
     if kwargs['write_allconf']:
         # Write a global configuration structure
         allconf = sum(displaced_cells, cell.copy())
-        if all(allconf.get_pbc()):
-            io.write(sname + '_allconf.cell', allconf)
-        else:
-            io.write(sname + '_allconf.xyz', allconf)
+        with silence_stdio():
+            if all(allconf.get_pbc()):
+                io.write(sname + '_allconf.cell', allconf)
+            else:
+                io.write(sname + '_allconf.xyz', allconf)
 
     # Get a calculator
     if calculator == 'castep':
@@ -189,13 +192,13 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
     sname = seedname(cell_file)
 
     io_formats = {
-        'castep': ReadWriteCastep(),
-        'dftb+': ReadWriteDFTB()
+        'castep': ReadWriteCastep,
+        'dftb+': ReadWriteDFTB
     }
 
     try:
         displaced_coll = AtomsCollection.load_tree(
-            sname + '_displaced', io_formats[calculator].read,
+            sname + '_displaced', io_formats[calculator]().read,
             opt_args={'read_magres': True},
             safety_check=2)
     except Exception:

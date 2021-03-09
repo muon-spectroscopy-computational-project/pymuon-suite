@@ -12,7 +12,7 @@ import numpy as np
 
 from copy import deepcopy
 
-from soprano.utils import customize_warnings
+from soprano.utils import customize_warnings, silence_stdio
 
 from ase import io
 from ase.calculators.dftb import Dftb
@@ -105,7 +105,8 @@ class ReadWriteDFTB(ReadWrite):
         '''
 
         try:
-            atoms = io.read(os.path.join(folder, 'geo_end.gen'))
+            with silence_stdio():
+                atoms = io.read(os.path.join(folder, 'geo_end.gen'))
 
         except IOError:
             raise IOError("ERROR: No geo_end.gen file found in {}."

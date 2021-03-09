@@ -11,7 +11,6 @@ import yaml
 import pickle
 import subprocess as sp
 from ase import Atoms
-from ase import io
 from scipy.constants import physical_constants as pcnst
 from pymuonsuite.io.readwrite import ReadWrite
 

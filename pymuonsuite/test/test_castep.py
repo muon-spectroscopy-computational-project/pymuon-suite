@@ -12,6 +12,7 @@ from pymuonsuite.utils import list_to_string
 from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
+from soprano.utils import silence_stdio
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
@@ -31,8 +32,6 @@ class TestReadWriteCastep(unittest.TestCase):
 
         folder = os.path.join(_TESTDATA_DIR, sname)
         # tests castep file being read:
-        self.assertTrue(reader.read(
-            folder, sname, read_magres=True, read_phonons=True))
         atoms = reader.read(folder, sname, read_magres=True, read_phonons=True)
 
         #  checks if phonon info has been loaded into atom object:
@@ -46,10 +45,8 @@ class TestReadWriteCastep(unittest.TestCase):
     def test_create_calc(self):
         params = {"mu_symbol": "mu", "k_points_grid": [7, 7, 7]}
         reader = ReadWriteCastep(params=params)
-        calc = reader._create_calculator()
-        self.assertTrue(calc)
+        reader._create_calculator()
         calc_geom = reader._update_calculator("GEOM_OPT")
-        self.assertTrue(calc_geom)
 
         self.assertEqual(calc_geom.param.task.value,
                          "GeometryOptimization")
@@ -80,9 +77,10 @@ class TestReadWriteCastep(unittest.TestCase):
             cell_file = os.path.join(input_folder, 'Si2.cell')
             param_file = os.path.join(input_folder, 'Si2.param')
             input_params = load_input_file(yaml_file, MuAirssSchema)
-            castep_param = read_param(param_file).param
 
-            atoms = io.read(cell_file)
+            with silence_stdio():
+                castep_param = read_param(param_file).param
+                atoms = io.read(cell_file)
 
             # test writing geom_opt output
             reader = ReadWriteCastep(params=input_params)
@@ -93,10 +91,11 @@ class TestReadWriteCastep(unittest.TestCase):
                          calc_type="MAGRES")
 
             # # read back in and check that atom locations are preserved
-            geom_opt_atoms = io.read(os.path.join(output_folder,
-                                                  "Si2_geom_opt.cell"))
-            magres_atoms = io.read(os.path.join(output_folder,
-                                                "Si2_magres.cell"))
+            with silence_stdio():
+                geom_opt_atoms = io.read(os.path.join(output_folder,
+                                                      "Si2_geom_opt.cell"))
+                magres_atoms = io.read(os.path.join(output_folder,
+                                                    "Si2_magres.cell"))
             equal = atoms.positions == geom_opt_atoms.positions
             # self.assertTrue(equal.all()) # is not true due to to rounding
             equal = geom_opt_atoms.positions == magres_atoms.positions
@@ -107,10 +106,11 @@ class TestReadWriteCastep(unittest.TestCase):
                              list_to_string(input_params['k_points_grid']))
 
             # Test if parameters file have correct tasks:
-            geom_params = read_param(os.path.join(output_folder,
-                                                  "Si2_geom_opt.param")).param
-            magres_params = read_param(os.path.join(output_folder,
-                                                    "Si2_magres.param")).param
+            with silence_stdio():
+                geom_params = read_param(os.path.join(output_folder,
+                                         "Si2_geom_opt.param")).param
+                magres_params = read_param(os.path.join(output_folder,
+                                           "Si2_magres.param")).param
             self.assertEqual(geom_params.task.value,
                              "GeometryOptimization")
             self.assertEqual(magres_params.task.value, "Magres")

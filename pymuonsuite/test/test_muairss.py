@@ -11,6 +11,7 @@ from pymuonsuite.muairss import main as run_muairss
 from pymuonsuite.schemas import load_input_file, MuAirssSchema, UEPOptSchema
 from ase.io.castep import read_param
 from pymuonsuite.utils import list_to_string
+from soprano.utils import silence_stdio
 from ase import io
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -78,7 +79,8 @@ class TestMuairss(unittest.TestCase):
             cell_file = os.path.join(_TESTDATA_DIR, 'Si2.cell')
             param_file = os.path.join(_TESTDATA_DIR, 'Si2.param')
             input_params = load_input_file(yaml_file, MuAirssSchema)
-            castep_param = read_param(param_file).param
+            with silence_stdio(True, True):
+                castep_param = read_param(param_file).param
 
             # Run Muairss write:
             sys.argv[1:] = ["-tw", cell_file, yaml_file]
@@ -97,14 +99,17 @@ class TestMuairss(unittest.TestCase):
                         self.assertTrue(os.path.exists(expected_script))
 
                     self.assertTrue(os.path.exists(expected_file))
-                    atoms = io.read(expected_file)
+                    with silence_stdio():
+                        atoms = io.read(expected_file)
                     self.assertEqual(atoms.calc.cell.kpoint_mp_grid.value,
                                      list_to_string(input_params
                                                     ['k_points_grid']))
                     expected_param_file = os.path.join(
                         "muon-airss-out-castep/castep/" + s, s + ".param")
                     self.assertTrue(os.path.exists(expected_param_file))
-                    output_castep_param = read_param(expected_param_file).param
+                    with silence_stdio():
+                        output_castep_param = read_param(
+                            expected_param_file).param
                     self.assertEqual(output_castep_param.cut_off_energy,
                                      castep_param.cut_off_energy)
                     self.assertEqual(output_castep_param.elec_energy_tol,
@@ -130,14 +135,17 @@ class TestMuairss(unittest.TestCase):
                     expected_file = os.path.join(
                         calc_folder + s, s + ".cell")
                     self.assertTrue(os.path.exists(expected_file))
-                    atoms = io.read(expected_file)
+                    with silence_stdio():
+                        atoms = io.read(expected_file)
                     self.assertEqual(atoms.calc.cell.kpoint_mp_grid.value,
                                      list_to_string(input_params
                                                     ['k_points_grid']))
                     expected_param_file = os.path.join(
                         calc_folder + s, s + ".param")
                     self.assertTrue(os.path.exists(expected_param_file))
-                    output_castep_param = read_param(expected_param_file).param
+                    with silence_stdio():
+                        output_castep_param = read_param(
+                            expected_param_file).param
                     self.assertEqual(output_castep_param.cut_off_energy,
                                      castep_param.cut_off_energy)
                     self.assertEqual(output_castep_param.elec_energy_tol,
@@ -155,7 +163,8 @@ class TestMuairss(unittest.TestCase):
             yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-dftb.yaml')
             cell_file = os.path.join(_TESTDATA_DIR, 'Si2.cell')
             input_params = load_input_file(yaml_file, MuAirssSchema)
-            input_atoms = io.read(cell_file)
+            with silence_stdio(True, True):
+                input_atoms = io.read(cell_file)
 
             # Run Muairss write:
             sys.argv[1:] = ["-tw", cell_file, yaml_file]
@@ -172,7 +181,8 @@ class TestMuairss(unittest.TestCase):
                         f = os.path.join("muon-airss-out-dftb/dftb+/" + s, f)
                         self.assertTrue(os.path.exists(f))
                         if count == 0:
-                            atoms = io.read(f)
+                            with silence_stdio(True, True):
+                                atoms = io.read(f)
                             equal = atoms.cell == input_atoms.cell
                             self.assertTrue(equal.all())
                         count += 1
