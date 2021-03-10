@@ -12,4 +12,5 @@ else
     echo "Directory $(pwd)/pymuonsuite is empty."
     echo "The container was probably started without mounting the required folders."
     echo "Make sure you are using the Docker Compose file provided at https://github.com/muon-spectroscopy-computational-project/pymuon-suite/blob/master/docker-compose-dev.yaml"
+    echo "Exiting..."
 fi
