@@ -51,10 +51,10 @@ class TestReadWriteGaussian(unittest.TestCase):
                                        0.66748000])
             atoms = atoms + muon
             atoms.calc = Gaussian()
-            params = {'chk': 'ethylene-SP.chk', 'nprocshared': '16',
-                      'output_type': 'P', 'b3lyp': None, 'epr-iii': None,
+            params = {'chk': 'ethylene-sp.chk', 'nprocshared': '16',
+                      'output_type': 'p', 'b3lyp': None, 'epr-iii': None,
                       'charge': 0, 'mult': 2}
-            atoms.calc.parameters = params
+
             gaussian_io = ReadWriteGaussian(
                 params={'gaussian_input': 'ethylene-SP.com'})
 
@@ -71,11 +71,16 @@ class TestReadWriteGaussian(unittest.TestCase):
 
             NMagMs = [None] * len(atoms.numbers)
             NMagMs[-1] = constants.mu_nmagm
-            atoms.new_array('gaussian_NMagM', np.array(NMagMs))
+            params['nmagmlist'] = NMagMs
+            atoms.calc.parameters = params
 
             # check if OG atoms should be modified if we don't save a copy
             atoms_read = io.read(os.path.join(
-                out_folder, 'test_gaussian.com'), get_calculator=True)
+                out_folder, 'test_gaussian.com'), attach_calculator=True)
+
+            # The masses that are read get saved in the 'isolist' property
+            # of the calculator. We have to retrieve them:
+            atoms_read.set_masses(atoms_read.calc.parameters.pop('isolist'))
 
             # Checks properties of the atoms are written out correctly
             assert np.all(atoms_read.numbers == atoms.numbers)
@@ -88,10 +93,9 @@ class TestReadWriteGaussian(unittest.TestCase):
             # ReadWrite class:
 
             assert np.allclose(atoms_read.get_masses(), atoms.get_masses())
-            assert (atoms_read.arrays['gaussian_NMagM']
-                    == atoms.arrays['gaussian_NMagM']).all()
 
             new_params = atoms_read.calc.parameters
+
             matching_params = {k: new_params[k] for k in new_params
                                if k in params and new_params[k] == params[k]}
 

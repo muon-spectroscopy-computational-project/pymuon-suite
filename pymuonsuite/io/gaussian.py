@@ -6,21 +6,16 @@ from __future__ import unicode_literals
 
 import os
 import glob
-import numpy as np
-# import warnings
 
 from copy import deepcopy
 
 from ase import io
 from ase.calculators.gaussian import Gaussian
 
-# from soprano.utils import customize_warnings
 from soprano.utils import seedname
 
 from pymuonsuite import constants
 from pymuonsuite.io.readwrite import ReadWrite
-
-# customize_warnings()
 
 
 class ReadWriteGaussian(ReadWrite):
@@ -37,25 +32,25 @@ class ReadWriteGaussian(ReadWrite):
         |                           present, the pre-existent one will
         |                           be ignored.
         '''
+        self.params = self._validate_params(params)
+        self.script = script
+        self._calc = None
+        # if calc is not None and self.params != {}:
+        #     self._create_calculator()
+
+    def _validate_params(self, params):
         if not (isinstance(params, dict)):
             raise ValueError('params should be a dict, not ', type(params))
             return
         else:
-            self.set_params(params)
-        self.script = script
-        # if calc is not None and self.params != {}:
-        #     self._create_calculator()
+            return params
 
     def set_params(self, params):
         '''
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
         '''
-        if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
-            return
-        else:
-            self.params = params
+        self.params = self._validate_params(params)
         # if the params have been changed, the calc has to be remade
         # from scratch:
         self._calc = None
@@ -91,6 +86,7 @@ class ReadWriteGaussian(ReadWrite):
                 sname = seedname(gfile)
             atoms = io.read(gfile)
             atoms.info['name'] = sname
+            # TODO: adjust muon mass?
             return atoms
 
         except IndexError:
@@ -119,12 +115,6 @@ class ReadWriteGaussian(ReadWrite):
         if sname is None:
             sname = os.path.split(folder)[-1]  # Same as folder name
 
-        # print("SEEDNAME: ", sname)
-        # print("FOLDER: ", folder)
-        # print("Atoms calc:", a.calc)
-
-        a = self._add_muon_properties(a)
-
         self._calc = deepcopy(self._calc)
 
         # We only use the calculator attached to the atoms object if a calc
@@ -138,6 +128,8 @@ class ReadWriteGaussian(ReadWrite):
 
         a.set_calculator(self._calc)
 
+        a = self._add_muon_properties(a)
+
         io.write(os.path.join(folder, sname + '.com'),
                  a, **self._calc.parameters)
 
@@ -149,16 +141,14 @@ class ReadWriteGaussian(ReadWrite):
 
     def _add_muon_properties(self, a):
         # the muon is in the final position:
-        mu_index = len(a.positions)-1
         masses = a.get_masses()
-        NMagMs = a.arrays.get('gaussian_NMagM', None)
-        masses[mu_index] = str(constants.m_mu_amu)
+        masses[-1] = str(constants.m_mu_amu)
         a.set_masses(masses)
+        NMagMs = a.calc.parameters.get('nmagmlist', None)
         if NMagMs is None:
             NMagMs = [None]*len(masses)
-            a.set_array('gaussian_NMagM', np.array(NMagMs))
-        NMagMs[mu_index] = str(constants.mu_nmagm)
-        a.arrays['gaussian_NMagM'] = NMagMs
+        NMagMs[-1] = str(constants.mu_nmagm)
+        a.calc.parameters['nmagmlist'] = NMagMs
 
         return a
 
@@ -172,6 +162,6 @@ class ReadWriteGaussian(ReadWrite):
         in_file = self.params['gaussian_input']
         if in_file is not None:
             self._calc.parameters = io.read(
-                in_file, get_calculator=True).calc.parameters
+                in_file, attach_calculator=True).calc.parameters
 
         return self._calc
