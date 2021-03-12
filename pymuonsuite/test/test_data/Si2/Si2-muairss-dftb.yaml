@@ -13,3 +13,5 @@ dftb_set: pbc-0-3
 out_folder: muon-airss-out-dftb
 dftb_pbc: True
 allpos_filename: all.cell
+clustering_save_type: structures
+clustering_save_format: cif

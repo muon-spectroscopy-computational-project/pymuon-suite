@@ -6,8 +6,11 @@ import os
 import shutil
 
 from ase import io
+from ase.calculators.dftb import Dftb
 
+from pymuonsuite.data.dftb_pars import DFTBArgs
 from pymuonsuite.io.dftb import ReadWriteDFTB
+
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
@@ -50,43 +53,102 @@ class TestReadWriteDFTB(unittest.TestCase):
         self.assertIn('ph_evals', atoms2.info.keys())
 
     def test_create_calc(self):
-        params = {"mu_symbol": "mu", "k_points_grid": [2, 2, 2],
-                  "geom_force_tol": 0.01, 'dftb_set': '3ob-3-1',
+        # Tests whether the correct values of the parameters are set
+        # when creating a calculator that would be used for writing
+        # a dftb input file.
+
+        def check_geom_opt_params(params, calc_params):
+            self.assertEqual(
+                calc_params['Hamiltonian_Charge'], params['charged']*1.0)
+            self.assertEqual(
+                calc_params['Driver_MaxSteps'], params['geom_steps'])
+            self.assertEqual(
+                calc_params['Driver_MaxForceComponent [eV/AA]'],
+                params['geom_force_tol'])
+            self.assertEqual(
+                calc_params['Hamiltonian_MaxSccIterations'],
+                params['max_scc_steps'])
+
+        # In the case that a params dict is provided, the values for the
+        # parameters should be taken from here.
+        params = {"k_points_grid": [2, 2, 2],
+                  "geom_force_tol": 0.01, 'dftb_set': 'pbc-0-3',
                   'dftb_optionals': [], 'geom_steps': 500,
-                  "max_scc_steps": 20, "charged": False, "dftb_pbc": False}
+                  "max_scc_steps": 150, "charged": False, "dftb_pbc": True}
         reader = ReadWriteDFTB(params=params)
-
+        # First test a geom opt calculator:
         calc_geom_opt = reader._create_calculator(calc_type="GEOM_OPT")
-        calc_magres = reader._create_calculator(calc_type="SPINPOL")
-        self.assertTrue(calc_geom_opt)
-        self.assertTrue(calc_magres)
+        calc_params = calc_geom_opt.parameters
+        check_geom_opt_params(params, calc_params)
+        self.assertEqual(calc_geom_opt.kpts, params["k_points_grid"])
 
-        self.assertEqual(calc_geom_opt.kpts, None)
+        # Next a spinpol calculator:
+        calc_magres = reader._create_calculator(calc_type="SPINPOL")
+        self.assertEqual(calc_magres.kpts, params["k_points_grid"])
+
+        # In the case that a calculator is provided, the new calculator should
+        # retain the same properties.
+        args = {'Hamiltonian_Charge': params['charged']*1.0,
+                'Driver_MaxSteps': params['geom_steps'],
+                'Driver_MaxForceComponent [eV/AA]': params['geom_force_tol'],
+                'Hamiltonian_MaxSccIterations': params['max_scc_steps']}
+        dargs = DFTBArgs(params['dftb_set'])
+        dargs.set_optional('spinpol.json', True)
+        args.update(dargs.args)
+        calc = Dftb(kpts=params["k_points_grid"], **args)
+        reader = ReadWriteDFTB(calc=calc)
+        # First test a geom opt calculator:
+        calc_geom_opt = reader._create_calculator(calc_type="GEOM_OPT")
+        calc_params = calc_geom_opt.parameters
+        check_geom_opt_params(params, calc_params)
+        self.assertEqual(calc_geom_opt.kpts, params["k_points_grid"])
+        # Next a spinpol calculator:
+        calc_magres = reader._create_calculator(calc_type="SPINPOL")
+        self.assertEqual(calc_magres.kpts, params["k_points_grid"])
+
+        # In the case that we do not supply a params dict or a calculator,
+        # the new calculator should get the default settings:
+        params = {'k_points_grid': None, 'geom_force_tol': 0.05,
+                  'dftb_set': '3ob-3-1', 'geom_steps': 30,
+                  'max_scc_steps': 200, 'charged': False}
+        reader = ReadWriteDFTB()
+        # First test a geom opt calculator:
+        calc_geom_opt = reader._create_calculator(calc_type="GEOM_OPT")
+        calc_params = calc_geom_opt.parameters
+        self.assertEqual(calc_geom_opt.kpts, params["k_points_grid"])
+        check_geom_opt_params(params, calc_params)
+        # Next a spinpol calculator:
+        calc_magres = reader._create_calculator(calc_type="SPINPOL")
         self.assertEqual(calc_magres.kpts, params["k_points_grid"])
 
     def test_write(self):
-        params = {"mu_symbol": "mu", "k_points_grid": [2, 2, 2],
-                  "geom_force_tol": 0.01, 'dftb_set': '3ob-3-1',
-                  'dftb_optionals': [], 'geom_steps': 500,
-                  "max_scc_steps": 20, "charged": False, "dftb_pbc": False,
-                  'pbc': False, "force_tol": 0.01, "force_clean": False,
-                  'name': 'test'}
+        # Tests writing DFTB+ input files, and checks that the
+        # atoms read from those input files is the same as the
+        # atoms used to generate them.
+        try:
+            params = {'geom_force_tol': 0.01, 'dftb_set': '3ob-3-1',
+                      'geom_steps': 10, 'max_scc_steps': 200,
+                      'dftb_pbc': True, 'kpoints_grid': [2, 2, 2]}
 
-        # read in cell file to get atom
-        output_folder = os.path.join(_TESTDATA_DIR, "test_save")
-        os.mkdir(output_folder)
+            output_folder = os.path.join(_TESTDATA_DIR, "test_save")
+            os.mkdir(output_folder)
 
-        atoms = io.read(os.path.join(_TESTDATA_DIR, "Si2/Si2.cell"))
+            # read in cell file to get atom:
+            atoms = io.read(os.path.join(
+                _TESTDATA_DIR, "ethyleneMu/ethyleneMu.xyz"))
 
-        # test writing geom_opt output
-        reader = ReadWriteDFTB(params=params)
-        reader.write(atoms, output_folder, sname="Si2_geom_opt",
-                     calc_type="GEOM_OPT")
-        atoms_read = reader.read(output_folder)
-        self.assertTrue(reader.read(output_folder))
-        self.assertEqual(atoms, atoms_read)
-
-        shutil.rmtree(output_folder)
+            # test writing input files
+            reader = ReadWriteDFTB(params=params)
+            reader.write(atoms, output_folder, sname="ethylene_geom_opt",
+                         calc_type="SPINPOL")
+            atoms_read = reader.read(output_folder)
+            self.assertEqual(atoms, atoms_read)
+            reader.write(atoms, output_folder, sname="ethylene_geom_opt",
+                         calc_type="GEOM_OPT")
+            atoms_read = reader.read(output_folder)
+            self.assertEqual(atoms, atoms_read)
+        finally:
+            shutil.rmtree(output_folder)
 
 
 if __name__ == "__main__":
