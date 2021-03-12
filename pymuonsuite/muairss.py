@@ -33,7 +33,6 @@ from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
 from pymuonsuite.io.uep import ReadWriteUEP
-from pymuonsuite.io.gaussian import ReadWriteGaussian
 from pymuonsuite.io.output import write_cluster_report
 
 customize_warnings()
@@ -119,7 +118,6 @@ def save_muairss_collection(struct, params, batch_path=''):
         'castep': ReadWriteCastep,
         'dftb+': ReadWriteDFTB,
         'uep': ReadWriteUEP,
-        'gaussian': ReadWriteGaussian
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
@@ -164,7 +162,6 @@ def load_muairss_collection(struct, params, batch_path=''):
         'castep': ReadWriteCastep,
         'dftb+': ReadWriteDFTB,
         'uep': ReadWriteUEP,
-        'gaussian': ReadWriteGaussian
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
