@@ -40,6 +40,11 @@ class TestReadWriteGaussian(unittest.TestCase):
         assert np.all(atoms_read.pbc == atoms.pbc)
         assert np.allclose(atoms_read.cell, atoms.cell)
 
+        expected_hyperfine = '-3.74456'
+        hyperfine = reader.read(".", 'test-to-delete',
+                                read_hyperfine=True).get_array('hyperfine')[-1]
+        assert(hyperfine == expected_hyperfine)
+
     def test_write(self):
         try:
             os.chdir(_TESTDATA_DIR)

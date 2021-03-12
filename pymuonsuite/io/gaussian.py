@@ -7,6 +7,7 @@ from __future__ import unicode_literals
 import os
 import glob
 
+import numpy as np
 from copy import deepcopy
 
 from ase import io
@@ -66,7 +67,7 @@ class ReadWriteGaussian(ReadWrite):
         '''
         self.script = script
 
-    def read(self, folder, sname=None):
+    def read(self, folder, sname=None, read_hyperfine=False):
         """Reads Gaussian output files.
 
         | Args:
@@ -74,10 +75,10 @@ class ReadWriteGaussian(ReadWrite):
         |   sname (str):            Seedname to save the files with. If not
         |                           given, use the name of the folder.
         """
-        atoms = self._read_gaussian(folder, sname)
+        atoms = self._read_gaussian(folder, sname, read_hyperfine)
         return atoms
 
-    def _read_gaussian(self, folder, sname=None):
+    def _read_gaussian(self, folder, sname=None, read_hyperfine=False):
         try:
             if sname is not None:
                 gfile = os.path.join(folder, sname + '.out')
@@ -86,7 +87,8 @@ class ReadWriteGaussian(ReadWrite):
                 sname = seedname(gfile)
             atoms = io.read(gfile)
             atoms.info['name'] = sname
-            # TODO: adjust muon mass?
+            if read_hyperfine:
+                self._read_gaussian_hyperfine(gfile, atoms)
             return atoms
 
         except IndexError:
@@ -98,6 +100,28 @@ class ReadWriteGaussian(ReadWrite):
                 Exception):
             raise IOError("ERROR: Invalid file: {file}"
                           .format(file=sname + '.out'))
+
+    def _read_gaussian_hyperfine(self, filename, a):
+        # Reads fermi contact terms from filename and attaches these to the
+        # atoms (a) as a custom array called hyperfine
+        first_line = -1
+        target_line = -1
+        fermi_contact_terms = None
+        with open(filename) as fd:
+            for i, line in enumerate(fd):
+                if 'Isotropic Fermi Contact Couplings' in line:
+                    fermi_contact_terms = []
+                    first_line = i+2
+                    target_line = i+len(a.symbols)+1
+                if first_line <= i <= target_line:
+                    print(line.split()[4])
+                    fermi_contact_terms.append(line.split()[4])
+
+        if fermi_contact_terms:
+            a.set_array('hyperfine', np.array(
+                fermi_contact_terms))
+
+        return a
 
     def write(self, a, folder, sname=None, calc_type=None):
         """Writes input files for an Atoms object with a Gaussian
