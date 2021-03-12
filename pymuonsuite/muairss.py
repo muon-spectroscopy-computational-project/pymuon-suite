@@ -120,7 +120,7 @@ def save_muairss_collection(struct, params, batch_path=''):
     io_formats = {
         'castep': ReadWriteCastep,
         'dftb+': ReadWriteDFTB,
-        'uep': ReadWriteUEP,
+        'uep': ReadWriteUEP
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
@@ -164,7 +164,7 @@ def load_muairss_collection(struct, params, batch_path=''):
     io_formats = {
         'castep': ReadWriteCastep,
         'dftb+': ReadWriteDFTB,
-        'uep': ReadWriteUEP,
+        'uep': ReadWriteUEP
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
