@@ -36,8 +36,6 @@ class ReadWriteGaussian(ReadWrite):
         self.params = self._validate_params(params)
         self.script = script
         self._calc = None
-        # if calc is not None and self.params != {}:
-        #     self._create_calculator()
 
     def _validate_params(self, params):
         if not (isinstance(params, dict)):
@@ -74,6 +72,11 @@ class ReadWriteGaussian(ReadWrite):
         |   folder (str):           Path to folder from which to read files.
         |   sname (str):            Seedname to save the files with. If not
         |                           given, use the name of the folder.
+        |   read_hyperfine (bool):  If true, reads the fermi contact terms
+        |                           (MHz) for the atoms from the output file
+        |                           and attaches these to the atoms as a
+        |                           custom array called 'hyperfine'.
+        |
         """
         atoms = self._read_gaussian(folder, sname, read_hyperfine)
         return atoms
@@ -102,8 +105,8 @@ class ReadWriteGaussian(ReadWrite):
                           .format(file=sname + '.out'))
 
     def _read_gaussian_hyperfine(self, filename, a):
-        # Reads fermi contact terms from filename and attaches these to the
-        # atoms (a) as a custom array called hyperfine
+        '''Reads fermi contact terms (MHz) from filename and attaches these to
+        the atoms (a) as a custom array called hyperfine'''
         first_line = -1
         target_line = -1
         fermi_contact_terms = None
@@ -124,7 +127,9 @@ class ReadWriteGaussian(ReadWrite):
 
     def write(self, a, folder, sname=None, calc_type=None):
         """Writes input files for an Atoms object with a Gaussian
-        calculator.
+        calculator. This assumes that the muon is in the final
+        position, and adds to this atom's properties the muon
+        mass and nuclear magnetic moment.
 
         | Args:
         |   a (ase.Atoms):          Atoms object to write. Can have a Gaussian

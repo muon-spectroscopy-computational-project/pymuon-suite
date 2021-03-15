@@ -32,6 +32,9 @@ _cell = [[10, 0, 0], [0, 10, 0], [0, 0, 10]]
 class TestReadWriteGaussian(unittest.TestCase):
 
     def test_read(self):
+        ''' Tests reading a gaussian output file, checking
+        that the positions, atomic numbers, pbc and fermi
+        contact term have been correctly read'''
         reader = ReadWriteGaussian()
         atoms = Atoms('C2H5', positions=_positions)
         atoms_read = reader.read(".", 'ethylene-mu')
@@ -48,6 +51,12 @@ class TestReadWriteGaussian(unittest.TestCase):
 
     def test_write(self):
         try:
+            ''' Tests writing a gaussian input file, then reads this back in,
+            checking that the structure has been set correctly, along with the
+            muon mass and magnetic moment.
+            Checks all of the calculator's properties have been set as we
+            expect.'''
+
             os.chdir(_TESTDATA_DIR)
             out_folder = "test_gaussian"
             os.mkdir(out_folder)
