@@ -114,7 +114,7 @@ class ReadWriteGaussian(ReadWrite):
                     first_line = i+2
                     target_line = i+len(a.symbols)+1
                 if first_line <= i <= target_line:
-                    fermi_contact_terms.append(line.split()[4])
+                    fermi_contact_terms.append(line.split()[3])
 
         if fermi_contact_terms:
             a.set_array('hyperfine', np.array(

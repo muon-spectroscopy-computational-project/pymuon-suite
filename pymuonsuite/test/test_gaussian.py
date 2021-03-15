@@ -7,7 +7,7 @@ import os
 import shutil
 import copy
 
-from ase import Atoms, io, Atom
+from ase import Atoms, io
 from ase.calculators.gaussian import Gaussian
 
 from pymuonsuite import constants
@@ -18,12 +18,13 @@ _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data/ethyleneMu")
 os.chdir(_TESTDATA_DIR)
 
-_positions = [[0.00000000,       0.00000000,       0.66748000],
-              [0.00000000,       0.00000000,      -0.66748000],
-              [0.00000000,       0.92283200,      1.23769500],
-              [0.00000000,      -0.92283200,       1.23769500],
-              [0.00000000,       0.92283200,      -1.23769500],
-              [0.00000000,      -0.92283200,      -1.23769500]]
+_positions = [[0.241132,  0.,        0.708084],
+              [-0.04628,  -0.,       -0.747689],
+              [-0.164565, 0.885014,  1.20288],
+              [-0.164565, -0.885014,  1.20288],
+              [-0.094178,  0.924421, -1.305393],
+              [-0.094178, -0.924421, -1.305393],
+              [1.322635,  0.,        0.91211]]
 
 _cell = [[10, 0, 0], [0, 10, 0], [0, 0, 10]]
 
@@ -32,16 +33,16 @@ class TestReadWriteGaussian(unittest.TestCase):
 
     def test_read(self):
         reader = ReadWriteGaussian()
-        atoms = Atoms('C2H4', positions=_positions)
-        atoms_read = reader.read(".", 'ethylene-SP')
+        atoms = Atoms('C2H5', positions=_positions)
+        atoms_read = reader.read(".", 'ethylene-mu')
 
         assert np.all(atoms_read.numbers == atoms.numbers)
         assert np.allclose(atoms_read.positions, atoms.positions, atol=1e-3)
         assert np.all(atoms_read.pbc == atoms.pbc)
         assert np.allclose(atoms_read.cell, atoms.cell)
 
-        expected_hyperfine = '-3.74456'
-        hyperfine = reader.read(".", 'test-to-delete',
+        expected_hyperfine = '163.07409'
+        hyperfine = reader.read(".", 'ethylene-mu',
                                 read_hyperfine=True).get_array('hyperfine')[-1]
         assert(hyperfine == expected_hyperfine)
 
@@ -51,10 +52,7 @@ class TestReadWriteGaussian(unittest.TestCase):
             out_folder = "test_gaussian"
             os.mkdir(out_folder)
             sname = out_folder
-            atoms = Atoms('C2H4', positions=_positions, cell=_cell, pbc=True)
-            muon = Atom('H', position=[1.00000000, 0.00000000,
-                                       0.66748000])
-            atoms = atoms + muon
+            atoms = Atoms('C2H5', positions=_positions, cell=_cell, pbc=True)
             atoms.calc = Gaussian()
             params = {'chk': 'ethylene-sp.chk', 'nprocshared': '16',
                       'output_type': 'p', 'b3lyp': None, 'epr-iii': None,
