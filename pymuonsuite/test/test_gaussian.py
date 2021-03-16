@@ -28,16 +28,27 @@ _positions = [[0.241132,  0.,        0.708084],
 
 _cell = [[10, 0, 0], [0, 10, 0], [0, 0, 10]]
 
+# Set to False by default because we haven't included a gaussian
+# output file in pymuonsuite:
+_TEST_READ = False
 
-def _test_write(params, input_file=None):
+
+def _test_write(expected_params, input_file=None, calc=None, atoms_calc=None):
     ''' Tests writing a gaussian input file. If input_file (str) has been set,
         then the input file is written out with the settings that have been
         read from the file named input_file.
+        If calc (gaussian calculator) is set, this is given as input to the
+        ReadWrite class and its parameters should be written out to the input
+        file.
+        If atoms_calc (gaussian calculator) is set, this is attached to the
+        atoms object given to the write method in the ReadWrite class, and its
+        parameters sould be written out to the output file (same behaviour as
+        above)
         Then reads this back in, checking that the structure
         has been set correctly, along with the muon mass and magnetic
         moment.
-        Checks that the parameters of the resulting calculator (from reading)
-        the file we have generated are equal to the params (dict)
+        Checks that the parameters of the resulting calculator (from reading
+        the file we have generated) are equal to the expected_params (dict)
 
         '''
     try:
@@ -49,19 +60,22 @@ def _test_write(params, input_file=None):
         # These are the atoms we will write to our input file - ethylene
         # plus an extra H, which will be a muon:
         atoms = Atoms('C2H5', positions=_positions, cell=_cell, pbc=True)
-        atoms.calc = Gaussian()
+        if atoms_calc is not None:
+            atoms.calc = atoms_calc
 
         atoms_copy = atoms.copy()
         atoms_copy.calc = copy.copy(atoms.calc)
 
         # We will read the parameters from the file: ethylene-SP.com
         gaussian_io = ReadWriteGaussian(
-            params={'gaussian_input': input_file})
+            params={'gaussian_input': input_file}, calc=calc)
 
         gaussian_io.write(atoms, sname)
 
         # add muon properties to atoms to simulate what the write method
         # should be doing:
+
+        atoms.calc = Gaussian()
 
         masses = [None] * len(atoms.numbers)
         masses[-1] = constants.m_mu_amu
@@ -69,8 +83,8 @@ def _test_write(params, input_file=None):
 
         NMagMs = [None] * len(atoms.numbers)
         NMagMs[-1] = constants.mu_nmagm
-        params['nmagmlist'] = NMagMs
-        atoms.calc.parameters = params
+        expected_params['nmagmlist'] = NMagMs
+        atoms.calc.parameters = expected_params
 
         # Read back in the gaussian input file that we wrote out.
         atoms_read = io.read(os.path.join(
@@ -96,12 +110,18 @@ def _test_write(params, input_file=None):
 
         new_params = atoms_read.calc.parameters
 
-        # checks that the other settings from ethylene-SP.com have been
-        # correctly read and written to the new input file:
-        matching_params = {k: new_params[k] for k in new_params
-                           if k in params and new_params[k] == params[k]}
+        # checks that the expected parameters have been
+        # written to the new input file:
+        for key, value in expected_params.items():
+            params_equal = expected_params.get(
+                key) == new_params.get(key)
+            if isinstance(params_equal, np.ndarray):
+                assert((expected_params.get(
+                    key) == new_params.get(key)).all())
+            else:
+                assert(expected_params.get(
+                    key) == new_params.get(key))
 
-        assert (len(params) == len(matching_params))
     finally:
         shutil.rmtree('test_gaussian')
 
@@ -112,19 +132,22 @@ class TestReadWriteGaussian(unittest.TestCase):
         ''' Tests reading a gaussian output file, checking
         that the positions, atomic numbers, pbc and fermi
         contact term have been correctly read'''
-        reader = ReadWriteGaussian()
-        atoms = Atoms('C2H5', positions=_positions)
-        atoms_read = reader.read(".", 'ethylene-mu')
+        if _TEST_READ:
+            reader = ReadWriteGaussian()
+            atoms = Atoms('C2H5', positions=_positions)
+            atoms_read = reader.read(".", 'ethylene-mu')
 
-        assert np.all(atoms_read.numbers == atoms.numbers)
-        assert np.allclose(atoms_read.positions, atoms.positions, atol=1e-3)
-        assert np.all(atoms_read.pbc == atoms.pbc)
-        assert np.allclose(atoms_read.cell, atoms.cell)
+            assert np.all(atoms_read.numbers == atoms.numbers)
+            assert np.allclose(atoms_read.positions,
+                               atoms.positions, atol=1e-3)
+            assert np.all(atoms_read.pbc == atoms.pbc)
+            assert np.allclose(atoms_read.cell, atoms.cell)
 
-        expected_hyperfine = '163.07409'
-        hyperfine = reader.read(".", 'ethylene-mu',
-                                read_hyperfine=True).get_array('hyperfine')[-1]
-        assert(hyperfine == expected_hyperfine)
+            expected_hyperfine = '163.07409'
+            hyperfine = reader.read(".", 'ethylene-mu',
+                                    read_hyperfine=True).get_array(
+                                        'hyperfine')[-1]
+            assert(hyperfine == expected_hyperfine)
 
     def test_write(self):
         ''' Tests writing a gaussian input file, with the same settings as
@@ -160,7 +183,32 @@ class TestReadWriteGaussian(unittest.TestCase):
                   'opt': 'tight,maxcyc=100', 'charge': 0, 'mult': 2}
         _test_write(params, input_file=None)
 
+    def test_calc(self):
+        ''' Tests writing a gaussian input file when a Gaussian calculator is
+        provided. '''
+
+        # First test the case where we give the calculator as an input to
+        # the ReadWrite class.
+        params = {'chk': 'ethylene-sp.chk', 'nprocshared': '16',
+                  'output_type': 'p', 'b3lyp': None, 'epr-iii': None,
+                  'charge': 0, 'mult': 2}
+        calc = Gaussian(**params)
+        _test_write(params, calc=calc)
+
+        # Next test the case where we attach the calculator to the atoms
+        # object.
+        calc = Gaussian(**params)
+        _test_write(params, atoms_calc=calc)
+
+        # In the case where we set both a calculator and an input file, we
+        # expect the input file to take precedence, and the parameters will
+        # be set from there instead of from the calculator.
+        params = {'chk': 'ethylene-sp.chk', 'nprocshared': '16',
+                  'output_type': 'p', 'b3lyp': None, 'epr-iii': None,
+                  'charge': 0, 'mult': 2}
+
+        _test_write(params, input_file='ethylene-SP.com', calc=calc)
+
 
 if __name__ == "__main__":
-
     unittest.main()
