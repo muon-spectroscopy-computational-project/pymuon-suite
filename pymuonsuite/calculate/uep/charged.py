@@ -4,21 +4,19 @@ ChargeDistribution class for Unperturbed Electrostatic Potential
 """
 
 # Python 2-to-3 compatibility code
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
 import os
+
 import numpy as np
 from ase import io
-from scipy import constants as cnst
 from ase.calculators.singlepoint import SinglePointCalculator
-from ase.data import atomic_numbers, covalent_radii
 from parsefmt.fmtreader import FMTReader
-
-from pymuonsuite.utils import make_process_slices
 from pymuonsuite.io.castep import parse_castep_ppots
+from pymuonsuite.utils import make_process_slices
+from scipy import constants as cnst
+from soprano.utils import silence_stdio
 
 # Coulomb constant
 _cK = 1.0/(4.0*np.pi*cnst.epsilon_0)
@@ -62,13 +60,12 @@ class ChargeDistribution(object):
             RuntimeError -- CASTEP pseudopotentials were not found
         """
 
-        this = 3
-
         # Load the electronic density
         seedpath = os.path.join(path, seedname)
 
         self._elec_den = FMTReader(seedpath + '.den_fmt')
-        self._struct = io.read(seedpath + '.castep')
+        with silence_stdio():
+            self._struct = io.read(seedpath + '.castep')
 
         ppots = parse_castep_ppots(seedpath + '.castep')
 
@@ -77,7 +74,8 @@ class ChargeDistribution(object):
 
         cppot = None
         try:
-            cppot = io.read(seedpath + '.cell').calc.cell.species_pot.value
+            with silence_stdio():
+                cppot = io.read(seedpath + '.cell').calc.cell.species_pot.value
         except IOError:
             pass  # If not available, ignore this
         if cppot is not None:

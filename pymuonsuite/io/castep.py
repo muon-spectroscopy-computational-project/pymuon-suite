@@ -1,30 +1,25 @@
 # Python 2-to-3 compatibility code
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
-import re
-import os
-import yaml
 import glob
-import numpy as np
-import scipy.constants as cnst
-import warnings
-
+import os
+import re
 from copy import deepcopy
 
-from ase import io
-from ase.io.magres import read_magres
-from ase.io.castep import write_param, read_param
-from ase.calculators.castep import Castep
+import numpy as np
+import scipy.constants as cnst
 
-from soprano.utils import seedname, customize_warnings
+from ase import io
+from ase.calculators.castep import Castep
+from ase.io.castep import read_param, write_param
+from ase.io.magres import read_magres
 
 from pymuonsuite import constants
-from pymuonsuite.utils import list_to_string
 from pymuonsuite.io.readwrite import ReadWrite
 from pymuonsuite.optional import requireEuphonicQPM
+from pymuonsuite.utils import list_to_string
+from soprano.utils import customize_warnings, seedname, silence_stdio
 
 customize_warnings()
 
@@ -43,41 +38,32 @@ class ReadWriteCastep(ReadWrite):
         |                           present, the pre-existent one will
         |                           be ignored.
         '''
-        if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
-            return
-        self.params = params
+        self.params = self._validate_params(params)
         self.script = script
         self._calc = calc
         if calc is not None and params != {}:
             self._create_calculator()
+
+    def _validate_params(self, params):
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
+        else:
+            return params
 
     def set_params(self, params):
         '''
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
         '''
-        if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
-            return
-        else:
-            self.params = params
+        self.params = self._validate_params(params)
         # if the params have been changed, the calc has to be remade
         # from scratch:
         self._calc = None
         self._create_calculator()
 
-    def set_script(self, script):
-        '''
-        |   script (str):           Path to a file containing a submission
-        |                           script to copy to the input folder. The
-        |                           script can contain the argument
-        |                           {seedname} in curly braces, and it will
-        |                           be appropriately replaced.
-        '''
-        self.script = script
+    def read(self, folder, sname=None, read_magres=False, read_phonons=False):
 
-    def read(self, folder, sname=None):
         """Reads Castep output files.
 
         | Args:
@@ -86,11 +72,18 @@ class ReadWriteCastep(ReadWrite):
         |                           given, use the name of the folder.
         """
         atoms = self._read_castep(folder, sname)
+<<<<<<< HEAD
         self._read_castep_hyperfine_magres(atoms, folder, sname)
         try:
             self._read_castep_gamma_phonons(atoms, folder, sname)
         except RuntimeError:
             pass
+=======
+        if read_magres:
+            self._read_castep_hyperfine_magres(atoms, folder, sname)
+        if read_phonons:
+            self._read_castep_gamma_phonons(atoms, folder, sname)
+>>>>>>> master
         return atoms
 
     def _read_castep(self, folder, sname=None):
@@ -100,7 +93,8 @@ class ReadWriteCastep(ReadWrite):
             else:
                 cfile = glob.glob(os.path.join(folder, '*.castep'))[0]
                 sname = seedname(cfile)
-            atoms = io.read(cfile)
+            with silence_stdio():
+                atoms = io.read(cfile)
             atoms.info['name'] = sname
             return atoms
 
@@ -111,8 +105,8 @@ class ReadWriteCastep(ReadWrite):
             raise IOError("ERROR: {}".format(e))
         except (io.formats.UnknownFileTypeError, ValueError, TypeError,
                 Exception) as e:
-            raise IOError("ERROR: Invalid file: {file}"
-                          .format(file=sname + '.castep'))
+            raise IOError("ERROR: Invalid file: {file}, due to error: {error}"
+                          .format(file=sname + '.castep', error=e))
 
     def _read_castep_hyperfine_magres(self, atoms, folder, sname=None):
         try:
@@ -123,7 +117,7 @@ class ReadWriteCastep(ReadWrite):
             m = parse_hyperfine_magres(mfile)
             atoms.arrays.update(m.arrays)
         except (IndexError, OSError):
-            warnings.warn("No .magres files found in {}."
+            raise IOError("No .magres files found in {}."
                           .format(os.path.abspath(folder)))
 
     @requireEuphonicQPM('QpointPhononModes')
@@ -157,20 +151,20 @@ class ReadWriteCastep(ReadWrite):
                     break
 
             if gamma_i is None:
-                raise MuonAverageError('Could not find gamma point phonons in'
-                                       ' CASTEP phonon file')
+                raise CastepError('Could not find gamma point phonons in'
+                                  ' CASTEP phonon file')
 
             atoms.info['ph_evals'] = evals[gamma_i]
             atoms.info['ph_evecs'] = evecs[gamma_i]
 
         except IndexError:
-            warnings.warn("No .phonon files found in {}."
+            raise IOError("No .phonon files found in {}."
                           .format(os.path.abspath(folder)))
-        except OSError as e:
-            print("ERROR: {}".format(e))
+        except (OSError, IOError) as e:
+            raise IOError("ERROR: {}".format(e))
         except Exception as e:
-            raise IOError("ERROR: Could not read {file}"
-                          .format(file=sname + '.phonon'))
+            raise IOError("ERROR: Could not read {file} due to error: {e}"
+                          .format(file=sname + '.phonon', e=e))
 
     def write(self, a, folder, sname=None, calc_type="GEOM_OPT"):
         """Writes input files for an Atoms object with a Castep
@@ -203,9 +197,9 @@ class ReadWriteCastep(ReadWrite):
             else:
                 self._update_calculator(calc_type)
             a.set_calculator(self._calc)
-
-            io.write(os.path.join(folder, sname + '.cell'),
-                     a, magnetic_moments='initial')
+            with silence_stdio():
+                io.write(os.path.join(folder, sname + '.cell'),
+                         a, magnetic_moments='initial')
             write_param(os.path.join(folder, sname + '.param'),
                         a.calc.param, force_write=True)
 
@@ -220,10 +214,11 @@ class ReadWriteCastep(ReadWrite):
                                       .format(calc_type)))
 
     def _create_calculator(self, calc_type=None):
-        if self._calc is not None and isinstance(self._calc, Castep):
-            calc = deepcopy(self._calc)
-        else:
-            calc = Castep()
+        with silence_stdio():
+            if self._calc is not None and isinstance(self._calc, Castep):
+                calc = deepcopy(self._calc)
+            else:
+                calc = Castep()
 
         mu_symbol = self.params.get('mu_symbol', 'H:mu')
 
@@ -253,7 +248,8 @@ class ReadWriteCastep(ReadWrite):
         # Read the parameters
         pfile = self.params.get('castep_param', None)
         if pfile is not None:
-            calc.param = read_param(self.params['castep_param']).param
+            with silence_stdio():
+                calc.param = read_param(self.params['castep_param']).param
 
         self._calc = calc
 
@@ -291,7 +287,9 @@ class ReadWriteCastep(ReadWrite):
 
         pfile = self.params.get('castep_param', None)
         if pfile is not None:
-            self._calc.param = read_param(self.params['castep_param']).param
+            with silence_stdio():
+                self._calc.param = read_param(
+                    self.params['castep_param']).param
 
         self._calc.param.task = 'Magres'
         self._calc.param.magres_task = 'Hyperfine'

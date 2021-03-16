@@ -12,7 +12,7 @@ import numpy as np
 
 from copy import deepcopy
 
-from soprano.utils import customize_warnings
+from soprano.utils import customize_warnings, silence_stdio
 
 from ase import io
 from ase.calculators.dftb import Dftb
@@ -62,17 +62,6 @@ class ReadWriteDFTB(ReadWrite):
         self._calc = calc
         self._calc_type = None
 
-    def set_script(self, script):
-        '''
-        |   Args:
-        |   script (str):           Path to a file containing a submission
-        |                           script to copy to the input folder. The
-        |                           script can contain the argument
-        |                           {seedname} in curly braces, and it will
-        |                           be appropriately replaced.
-        '''
-        self.script = script
-
     def set_params(self, params):
         '''
         |   Args:
@@ -91,7 +80,8 @@ class ReadWriteDFTB(ReadWrite):
         # the params are updated:
         self._calc_type = None
 
-    def read(self, folder, sname=None):
+    def read(self, folder, sname=None, read_spinpol=False, read_phonons=False,
+             **kwargs):
         ''' Read a DFTB+ output non-destructively.
         |
         |   Args:
@@ -104,7 +94,8 @@ class ReadWriteDFTB(ReadWrite):
         '''
 
         try:
-            atoms = io.read(os.path.join(folder, 'geo_end.gen'))
+            with silence_stdio():
+                atoms = io.read(os.path.join(folder, 'geo_end.gen'))
 
         except IOError:
             raise IOError("ERROR: No geo_end.gen file found in {}."
@@ -139,37 +130,39 @@ class ReadWriteDFTB(ReadWrite):
 
             atoms.calc = calc
 
-        try:
-            pops = parse_spinpol_dftb(folder)
-            hfine = []
-            for i in range(len(atoms)):
-                hf = compute_hfine_mullpop(atoms, pops, self_i=i, fermi=True,
-                                           fermi_neigh=True)
-                hfine.append(hf)
-            atoms.set_array('hyperfine', np.array(hfine))
-        except (IndexError, IOError) as e:
-            warnings.warn('Could not read hyperfine details due to error: '
-                          '{0}'.format(e))
+        if read_spinpol:
+            try:
+                pops = parse_spinpol_dftb(folder)
+                hfine = []
+                for i in range(len(atoms)):
+                    hf = compute_hfine_mullpop(atoms, pops, self_i=i,
+                                               fermi=True, fermi_neigh=True)
+                    hfine.append(hf)
+                atoms.set_array('hyperfine', np.array(hfine))
+            except (IndexError, IOError) as e:
+                raise IOError('Could not read hyperfine details due to error: '
+                              '{0}'.format(e))
 
-        try:
-            if sname is not None:
-                phonon_source_file = os.path.join(folder, sname +
-                                                  '.phonons.pkl')
-            else:
-                print("Phonons filename was not given, searching for any"
-                      " .phonons.pkl file.")
-                phonon_source_file = glob.glob(
-                    os.path.join(folder, '*.phonons.pkl'))[0]
-            self._read_dftb_phonons(atoms, phonon_source_file)
-        except IndexError:
-            warnings.warn("No .phonons.pkl files found in {}."
-                          .format(os.path.abspath(folder)))
-        except IOError:
-            warnings.warn("{} could not be found."
-                          .format(phonon_source_file))
-        except Exception as e:
-            warnings.warn('Could not read {file} due to error: {error}'
-                          .format(file=phonon_source_file, error=e))
+        if read_phonons:
+            try:
+                if sname is not None:
+                    phonon_source_file = os.path.join(folder, sname +
+                                                      '.phonons.pkl')
+                else:
+                    print("Phonons filename was not given, searching for any"
+                          " .phonons.pkl file.")
+                    phonon_source_file = glob.glob(
+                        os.path.join(folder, '*.phonons.pkl'))[0]
+                self._read_dftb_phonons(atoms, phonon_source_file)
+            except IndexError:
+                raise IOError("No .phonons.pkl files found in {}."
+                              .format(os.path.abspath(folder)))
+            except IOError:
+                raise IOError("{} could not be found."
+                              .format(phonon_source_file))
+            except Exception as e:
+                raise IOError('Could not read {file} due to error: {error}'
+                              .format(file=phonon_source_file, error=e))
 
         return atoms
 
