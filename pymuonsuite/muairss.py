@@ -22,7 +22,7 @@ from spglib import find_primitive
 
 from ase import Atoms, io
 from ase.build import make_supercell
-from soprano.utils import safe_input, customize_warnings
+from soprano.utils import safe_input, customize_warnings, silence_stdio
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 from soprano.analyse.phylogen import PhylogenCluster, Gene
@@ -152,7 +152,8 @@ def save_muairss_collection(struct, params, batch_path=''):
             csp += [params['mu_symbol']]
 
         alls.set_array('castep_custom_species', np.array(csp))
-        io.write(allf, alls)
+        with silence_stdio(True, True):
+            io.write(allf, alls)
 
 
 def load_muairss_collection(struct, params, batch_path=''):
@@ -215,8 +216,8 @@ def muairss_batch_io(args, global_params, save=False):
         parameter_file = os.path.join(structures_path, "{}.yaml".format(name))
         if not os.path.isfile(parameter_file):
             parameter_file = None
-
-        struct = io.read(path)
+        with silence_stdio():
+            struct = io.read(path)
         params = dict(global_params)    # Copy
         params['name'] = name
         if parameter_file is not None:
@@ -310,7 +311,8 @@ def main(task=None):
         if os.path.isdir(args.structures):
             muairss_batch_io(args, params, True)
         elif os.path.isfile(args.structures):
-            struct = io.read(args.structures)
+            with silence_stdio():
+                struct = io.read(args.structures)
             save_muairss_collection(struct, params)
         else:
             raise RuntimeError("{} is neither a file or a directory"
@@ -323,7 +325,8 @@ def main(task=None):
                 clusters[name] = muairss_cluster(data['struct'],
                                                  data['collection'], params)
         elif os.path.isfile(args.structures):
-            struct = io.read(args.structures)
+            with silence_stdio():
+                struct = io.read(args.structures)
             collection = load_muairss_collection(struct, params)
             clusters = {
                 params['name']: muairss_cluster(struct, collection, params)

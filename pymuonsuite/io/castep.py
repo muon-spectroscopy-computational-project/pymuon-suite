@@ -19,7 +19,7 @@ from pymuonsuite import constants
 from pymuonsuite.io.readwrite import ReadWrite
 from pymuonsuite.optional import requireEuphonicQPM
 from pymuonsuite.utils import list_to_string
-from soprano.utils import customize_warnings, seedname
+from soprano.utils import customize_warnings, seedname, silence_stdio
 
 customize_warnings()
 
@@ -38,22 +38,25 @@ class ReadWriteCastep(ReadWrite):
         |                           present, the pre-existent one will
         |                           be ignored.
         '''
-        self.set_params(params)
+        self.params = self._validate_params(params)
         self.script = script
         self._calc = calc
         if calc is not None and params != {}:
             self._create_calculator()
+
+    def _validate_params(self, params):
+        if not (isinstance(params, dict)):
+            raise ValueError('params should be a dict, not ', type(params))
+            return
+        else:
+            return params
 
     def set_params(self, params):
         '''
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
         '''
-        if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
-            return
-        else:
-            self.params = params
+        self.params = self._validate_params(params)
         # if the params have been changed, the calc has to be remade
         # from scratch:
         self._calc = None
@@ -82,7 +85,8 @@ class ReadWriteCastep(ReadWrite):
             else:
                 cfile = glob.glob(os.path.join(folder, '*.castep'))[0]
                 sname = seedname(cfile)
-            atoms = io.read(cfile)
+            with silence_stdio():
+                atoms = io.read(cfile)
             atoms.info['name'] = sname
             return atoms
 
@@ -185,9 +189,9 @@ class ReadWriteCastep(ReadWrite):
             else:
                 self._update_calculator(calc_type)
             a.set_calculator(self._calc)
-
-            io.write(os.path.join(folder, sname + '.cell'),
-                     a, magnetic_moments='initial')
+            with silence_stdio():
+                io.write(os.path.join(folder, sname + '.cell'),
+                         a, magnetic_moments='initial')
             write_param(os.path.join(folder, sname + '.param'),
                         a.calc.param, force_write=True)
 
@@ -202,10 +206,11 @@ class ReadWriteCastep(ReadWrite):
                                       .format(calc_type)))
 
     def _create_calculator(self, calc_type=None):
-        if self._calc is not None and isinstance(self._calc, Castep):
-            calc = deepcopy(self._calc)
-        else:
-            calc = Castep()
+        with silence_stdio():
+            if self._calc is not None and isinstance(self._calc, Castep):
+                calc = deepcopy(self._calc)
+            else:
+                calc = Castep()
 
         mu_symbol = self.params.get('mu_symbol', 'H:mu')
 
@@ -235,7 +240,8 @@ class ReadWriteCastep(ReadWrite):
         # Read the parameters
         pfile = self.params.get('castep_param', None)
         if pfile is not None:
-            calc.param = read_param(self.params['castep_param']).param
+            with silence_stdio():
+                calc.param = read_param(self.params['castep_param']).param
 
         self._calc = calc
 
@@ -273,7 +279,9 @@ class ReadWriteCastep(ReadWrite):
 
         pfile = self.params.get('castep_param', None)
         if pfile is not None:
-            self._calc.param = read_param(self.params['castep_param']).param
+            with silence_stdio():
+                self._calc.param = read_param(
+                    self.params['castep_param']).param
 
         self._calc.param.task = 'Magres'
         self._calc.param.magres_task = 'Hyperfine'
