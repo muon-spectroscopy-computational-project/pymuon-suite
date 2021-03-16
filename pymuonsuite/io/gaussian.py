@@ -55,16 +55,6 @@ class ReadWriteGaussian(ReadWrite):
         self._calc = None
         self._create_calculator()
 
-    def set_script(self, script):
-        '''
-        |   script (str):           Path to a file containing a submission
-        |                           script to copy to the input folder. The
-        |                           script can contain the argument
-        |                           {seedname} in curly braces, and it will
-        |                           be appropriately replaced.
-        '''
-        self.script = script
-
     def read(self, folder, sname=None, read_hyperfine=False):
         """Reads Gaussian output files.
 
