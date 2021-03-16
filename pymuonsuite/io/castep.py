@@ -6,7 +6,6 @@ from __future__ import unicode_literals
 
 import re
 import os
-import yaml
 import glob
 import numpy as np
 import scipy.constants as cnst
@@ -67,16 +66,6 @@ class ReadWriteCastep(ReadWrite):
         self._calc = None
         self._create_calculator()
 
-    def set_script(self, script):
-        '''
-        |   script (str):           Path to a file containing a submission
-        |                           script to copy to the input folder. The
-        |                           script can contain the argument
-        |                           {seedname} in curly braces, and it will
-        |                           be appropriately replaced.
-        '''
-        self.script = script
-
     def read(self, folder, sname=None):
         """Reads Castep output files.
 
@@ -107,7 +96,7 @@ class ReadWriteCastep(ReadWrite):
         except OSError as e:
             raise IOError("ERROR: {}".format(e))
         except (io.formats.UnknownFileTypeError, ValueError, TypeError,
-                Exception) as e:
+                Exception):
             raise IOError("ERROR: Invalid file: {file}"
                           .format(file=sname + '.castep'))
 

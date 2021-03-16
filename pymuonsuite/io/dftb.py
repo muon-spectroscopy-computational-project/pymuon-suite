@@ -62,17 +62,6 @@ class ReadWriteDFTB(ReadWrite):
         self._calc = calc
         self._calc_type = None
 
-    def set_script(self, script):
-        '''
-        |   Args:
-        |   script (str):           Path to a file containing a submission
-        |                           script to copy to the input folder. The
-        |                           script can contain the argument
-        |                           {seedname} in curly braces, and it will
-        |                           be appropriately replaced.
-        '''
-        self.script = script
-
     def set_params(self, params):
         '''
         |   Args:
