@@ -96,21 +96,6 @@ def generate_muairss_collection(struct, params):
     return AtomsCollection(collection)
 
 
-def safe_create_folder(folder_name):
-    while os.path.isdir(folder_name):
-        ans = safe_input(('Folder {} exists, overwrite (y/N)? '
-                          ).format(folder_name))
-        if ans == 'y':
-            shutil.rmtree(folder_name)
-        else:
-            folder_name = safe_input('Please input new folder name:\n')
-    try:
-        os.mkdir(folder_name)
-    except OSError:
-        pass  # It's fine, it already exists
-    return folder_name
-
-
 def parse_structure_name(file_name):
     name = os.path.basename(file_name)
     base = os.path.splitext(name)[0]
