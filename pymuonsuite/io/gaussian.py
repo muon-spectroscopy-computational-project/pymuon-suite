@@ -22,14 +22,17 @@ from pymuonsuite.io.readwrite import ReadWrite
 class ReadWriteGaussian(ReadWrite):
     def __init__(self, params={}, script=None, calc=None):
         '''
-        |   params (dict):          Contains gaussian input file and whether
-        |                           to make the muon charged
+        |   params (dict):          Contains name of gaussian input file to
+        |                           read parameters from,
+        |                           and whether to make the muon charged
+        |                           e.g. {'gaussian_input': 'ethylene-SP.com',
+        |                           'charged': False}
         |   script (str):           Path to a file containing a submission
         |                           script to copy to the input folder. The
         |                           script can contain the argument
         |                           {seedname} in curly braces, and it will
         |                           be appropriately replaced.
-        |   calc (ase.Calculator):  Calculator to attach to Atoms. If
+        |   calc (ase.Calculator):  Gaussian calculator to attach to Atoms. If
         |                           present, the pre-existent one will
         |                           be ignored.
         '''
@@ -46,8 +49,11 @@ class ReadWriteGaussian(ReadWrite):
 
     def set_params(self, params):
         '''
-        |   params (dict)           Contains muon symbol, parameter file,
-        |                           k_points_grid.
+        |   params (dict)           Contains name of gaussian input file to
+        |                           read parameters from,
+        |                           and whether to make the muon charged
+        |                           e.g. {'gaussian_input': 'ethylene-SP.com',
+        |                           'charged': False}
         '''
         self.params = self._validate_params(params)
         # if the params have been changed, the calc has to be remade
@@ -142,7 +148,7 @@ class ReadWriteGaussian(ReadWrite):
         if self._calc is None:
             if isinstance(a.calc, Gaussian):
                 self._calc = deepcopy(a.calc)
-        self._create_calculator()
+        self._create_calculator(sname)
 
         a.set_calculator(self._calc)
 
@@ -170,16 +176,33 @@ class ReadWriteGaussian(ReadWrite):
 
         return a
 
-    def _create_calculator(self):
+    def _create_calculator(self, sname=None):
         if self._calc is not None and isinstance(self._calc, Gaussian):
             self._calc = deepcopy(self._calc)
         else:
             self._calc = Gaussian()
 
         # read the gaussian input file:
-        in_file = self.params['gaussian_input']
+        in_file = self.params.get('gaussian_input')
         if in_file is not None:
             self._calc.parameters = io.read(
                 in_file, attach_calculator=True).calc.parameters
+            print(self._calc.parameters)
+
+        else:
+            if sname is None:
+                sname = 'gaussian'
+            parameters = {'chk': '{}.chk'.format(sname), 'method': 'uB3LYP',
+                          'basis': 'EPR-III',
+                          'opt': ['Tight', 'MaxCyc=100'], 'mult': 2}
+            self._calc.parameters = parameters
+
+        charge_param = self.params.get('charged')
+
+        if charge_param is not None:
+            self._calc.parameters['charge'] = charge_param*1.0
+        else:
+            if self._calc.parameters.get('charge') is None:
+                self._calc.parameters['charge'] = False*1.0
 
         return self._calc

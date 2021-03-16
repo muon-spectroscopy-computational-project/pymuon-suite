@@ -29,6 +29,10 @@ _positions = [[0.241132,  0.,        0.708084],
 _cell = [[10, 0, 0], [0, 10, 0], [0, 0, 10]]
 
 
+def _test_write(atoms, expected_params):
+    print("write")
+
+
 class TestReadWriteGaussian(unittest.TestCase):
 
     def test_read(self):
@@ -68,12 +72,12 @@ class TestReadWriteGaussian(unittest.TestCase):
             atoms = Atoms('C2H5', positions=_positions, cell=_cell, pbc=True)
             atoms.calc = Gaussian()
 
+            atoms_copy = atoms.copy()
+            atoms_copy.calc = copy.copy(atoms.calc)
+
             # We will read the parameters from the file: ethylene-SP.com
             gaussian_io = ReadWriteGaussian(
                 params={'gaussian_input': 'ethylene-SP.com'})
-
-            atoms_copy = atoms.copy()
-            atoms_copy.calc = copy.copy(atoms.calc)
 
             # Write a gaussian input file with the parameters from the file:
             # ethylene-SP.com:
@@ -129,6 +133,90 @@ class TestReadWriteGaussian(unittest.TestCase):
 
             assert (len(params) == len(matching_params))
 
+        finally:
+            shutil.rmtree('test_gaussian')
+
+    def test_write_default(self):
+        ''' Tests writing a gaussian input file, without providing an input
+            file from which to take the settings. Therefore, here we check
+            that the default settings we expect have been applied.
+            Then reads this back in, checking that the structure and settings
+            have been set correctly, along with the muon mass and magnetic
+            moment.
+            '''
+        try:
+            os.chdir(_TESTDATA_DIR)
+            out_folder = "test_gaussian"
+            os.mkdir(out_folder)
+            sname = out_folder
+
+            # These are the atoms we will write to our input file - ethylene
+            # plus an extra H, which will be a muon:
+            atoms = Atoms('C2H5', positions=_positions, cell=_cell, pbc=True)
+            atoms.calc = Gaussian()
+
+            atoms_copy = atoms.copy()
+            atoms_copy.calc = copy.copy(atoms.calc)
+
+            # We expect that the following parameters should be written out to
+            # the gaussian input file:
+            params = {'chk': '{}.chk'.format(sname), 'method': 'ub3lyp',
+                      'basis': 'epr-iii',
+                      'opt': 'tight,maxcyc=100', 'charge': 0, 'mult': 2}
+
+            # add muon properties to atoms to simulate what the write method
+            # should be doing:
+
+            masses = [None] * len(atoms.numbers)
+            masses[-1] = constants.m_mu_amu
+            atoms.set_masses(masses)
+
+            NMagMs = [None] * len(atoms.numbers)
+            NMagMs[-1] = constants.mu_nmagm
+            params['nmagmlist'] = NMagMs
+            atoms.calc.parameters = params
+
+            # We will not set any parameters.
+            gaussian_io = ReadWriteGaussian()
+
+            gaussian_io.write(atoms, sname)
+
+
+
+            # We will now read this file that we have written out:
+
+            # Read back in the gaussian input file that we wrote out.
+            atoms_read = io.read(os.path.join(
+                out_folder, 'test_gaussian.com'), attach_calculator=True)
+
+            # The masses that are read get saved in the 'isolist' property
+            # of the calculator. We have to retrieve them:
+            atoms_read.set_masses(atoms_read.calc.parameters.pop('isolist'))
+
+            # Checks properties of the atoms are written out correctly - if
+            # they were then the atoms we have read should be the same as the
+            #  atoms we originally created:
+            assert np.all(atoms_read.numbers == atoms.numbers)
+            assert np.allclose(atoms_read.positions,
+                               atoms.positions, atol=1e-3)
+            assert np.all(atoms_read.pbc == atoms.pbc)
+            assert np.allclose(atoms_read.cell, atoms.cell)
+
+            # checks that the muon properties have been correctly added by the
+            # ReadWrite class:
+
+            print(atoms.get_masses())
+
+            assert np.allclose(atoms_read.get_masses(), atoms.get_masses())
+
+            new_params = atoms_read.calc.parameters
+
+            # checks that the other settings from ethylene-SP.com have been
+            # correctly read and written to the new input file:
+            matching_params = {k: new_params[k] for k in new_params
+                               if k in params and new_params[k] == params[k]}
+
+            assert (len(params) == len(matching_params))
         finally:
             shutil.rmtree('test_gaussian')
 
