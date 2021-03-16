@@ -11,7 +11,6 @@ import yaml
 import pickle
 import subprocess as sp
 from ase import Atoms
-from ase import io
 from scipy.constants import physical_constants as pcnst
 from pymuonsuite.io.readwrite import ReadWrite
 
@@ -19,27 +18,6 @@ from pymuonsuite.io.readwrite import ReadWrite
 class ReadWriteUEP(ReadWrite):
     def __init__(self, params={}, script=None):
         self.script = script
-        if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
-            return
-        else:
-            self.params = params
-
-    def set_script(self, script):
-        '''
-        |   script (str):           Path to a file containing a submission
-        |                           script to copy to the input folder. The
-        |                           script can contain the argument
-        |                           {seedname} in curly braces, and it will
-        |                           be appropriately replaced.
-        '''
-        self.script = script
-
-    def set_params(self, params):
-        '''
-        |   params (dict)           Contains muon symbol, parameter file,
-        |                           k_points_grid.
-        '''
         if not (isinstance(params, dict)):
             raise ValueError('params should be a dict, not ', type(params))
             return
@@ -54,7 +32,7 @@ class ReadWriteUEP(ReadWrite):
 
         try:
             calc.read()
-        except ValueError as e:
+        except ValueError:
             raise(IOError("Error: could not read UEP file in {0}"
                           .format(folder)))
             return
@@ -76,7 +54,7 @@ class ReadWriteUEP(ReadWrite):
         try:
             calc = self._create_calculator(a, folder, sname)
             calc.write_input()
-        except (ValueError, RuntimeError) as e:
+        except (ValueError, RuntimeError):
             raise
             return
 

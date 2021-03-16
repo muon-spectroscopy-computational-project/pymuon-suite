@@ -91,6 +91,7 @@ class TestReadWriteUEP(unittest.TestCase):
             reader = ReadWriteUEP(params=params)
 
             reader.write(atoms, output_folder)
+
         except Exception as e:
             print(e)
         finally:
