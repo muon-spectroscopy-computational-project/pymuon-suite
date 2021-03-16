@@ -17,33 +17,8 @@ from pymuonsuite.io.readwrite import ReadWrite
 
 class ReadWriteUEP(ReadWrite):
     def __init__(self, params={}, script=None):
-        self.script = script
-        if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
-            return
-        else:
-            self.params = params
-
-    def set_script(self, script):
-        '''
-        |   script (str):           Path to a file containing a submission
-        |                           script to copy to the input folder. The
-        |                           script can contain the argument
-        |                           {seedname} in curly braces, and it will
-        |                           be appropriately replaced.
-        '''
-        self.script = script
-
-    def set_params(self, params):
-        '''
-        |   params (dict)           Contains muon symbol, parameter file,
-        |                           k_points_grid.
-        '''
-        if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
-            return
-        else:
-            self.params = params
+        self.set_script(script)
+        self.set_params(params)
 
     def read(self, folder, sname=None):
         if sname is None:
@@ -53,7 +28,7 @@ class ReadWriteUEP(ReadWrite):
 
         try:
             calc.read()
-        except ValueError as e:
+        except ValueError:
             raise(IOError("Error: could not read UEP file in {0}"
                           .format(folder)))
             return
@@ -75,7 +50,7 @@ class ReadWriteUEP(ReadWrite):
         try:
             calc = self._create_calculator(a, folder, sname)
             calc.write_input()
-        except (ValueError, RuntimeError) as e:
+        except (ValueError, RuntimeError):
             raise
             return
 
@@ -88,18 +63,20 @@ class ReadWriteUEP(ReadWrite):
     def _create_calculator(self, a, folder, sname):
         params = self.params
 
-        calc = UEPCalculator(atoms=a, chden=params['uep_chden'], path=folder,
+        calc = UEPCalculator(atoms=a,
+                             chden=params.get('uep_chden', ''),
+                             path=folder,
                              label=sname)
 
-        if not params['charged']:
+        if not params.get('charged', True):
             raise RuntimeError(
                 "Error: Can't use UEP method for neutral system")
 
         calc.path = folder
-        calc.gw_factor = params['uep_gw_factor']
-        calc.geom_steps = params['geom_steps']
-        calc.opt_tol = params['geom_force_tol']
-        calc.save_structs = params['uep_save_structs']
+        calc.gw_factor = params.get('uep_gw_factor') or calc.gw_factor
+        calc.geom_steps = params.get('geom_steps') or calc.geom_steps
+        calc.opt_tol = params.get('geom_force_tol') or calc.opt_tol
+        calc.save_structs = params.get('uep_save_structs', True)
 
         return calc
 

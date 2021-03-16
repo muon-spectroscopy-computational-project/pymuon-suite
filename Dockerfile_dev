@@ -1,0 +1,29 @@
+FROM python:3.8
+
+ENV PYMUONDIR /home/pymuon-suite
+ENV TEMPDIR /tmp/pymuon-suite
+
+# clone repository
+RUN git clone https://github.com/muon-spectroscopy-computational-project/pymuon-suite.git ${TEMPDIR}
+
+# create working directory
+RUN mkdir -p ${PYMUONDIR}
+WORKDIR ${PYMUONDIR}
+RUN mkdir -p \
+    docs \
+    examples \
+    pymuonsuite
+
+# install requirements
+RUN pip install --upgrade pip && \
+    pip install --upgrade setuptools && \
+    pip install -r ${TEMPDIR}/requirements.txt
+
+# set up startup script
+RUN cp ${TEMPDIR}/run_on_startup_dev.sh . && \
+    chmod +x run_on_startup_dev.sh
+
+RUN rm -rf ${TEMPDIR}
+
+ENTRYPOINT ["/bin/sh", "-c"]
+CMD ["./run_on_startup_dev.sh"]
