@@ -33,6 +33,7 @@ from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
 from pymuonsuite.io.uep import ReadWriteUEP
 from pymuonsuite.io.output import write_cluster_report
+from pymuonsuite import constants
 
 customize_warnings()
 
@@ -83,7 +84,9 @@ def generate_muairss_collection(struct, params):
         # Where's the muon?
         # We rely on the fact that it's always put at the first place
         mupos = atoms.get_positions()[0]
-        scell = scell0.copy() + Atoms('H', positions=[mupos])
+        scell = scell0.copy() + Atoms('H',
+                                      positions=[mupos],
+                                      masses=[constants.m_mu_amu])
         # Add castep custom species
         csp = scell0.get_chemical_symbols() + [params['mu_symbol']]
         scell.set_array('castep_custom_species', np.array(csp))
@@ -91,21 +94,6 @@ def generate_muairss_collection(struct, params):
         collection.append(scell)
 
     return AtomsCollection(collection)
-
-
-def safe_create_folder(folder_name):
-    while os.path.isdir(folder_name):
-        ans = safe_input(('Folder {} exists, overwrite (y/N)? '
-                          ).format(folder_name))
-        if ans == 'y':
-            shutil.rmtree(folder_name)
-        else:
-            folder_name = safe_input('Please input new folder name:\n')
-    try:
-        os.mkdir(folder_name)
-    except OSError:
-        pass  # It's fine, it already exists
-    return folder_name
 
 
 def parse_structure_name(file_name):
