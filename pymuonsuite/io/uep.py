@@ -168,9 +168,9 @@ class UEPCalculator(object):
             'save_pickle': True,  # Always save it with a "calculator"
             'save_structs': self.save_structs
         }
-
-        yaml.dump(outdata, open(os.path.join(self.path, self.label + '.yaml'),
-                                'w'))
+        with open(os.path.join(self.path, self.label + '.yaml'),
+                  'w') as yaml_file:
+            yaml.dump(outdata, yaml_file)
 
     def run(self):
 
@@ -184,9 +184,10 @@ class UEPCalculator(object):
     def read(self):
 
         try:
-            results = pickle.load(open(os.path.join(self.path,
-                                                    self.label + '.uep.pkl'),
-                                       'rb'))
+            with open(os.path.join(self.path,
+                                   self.label + '.uep.pkl'),
+                      'rb') as pickle_file:
+                results = pickle.load(pickle_file)
 
             self._Eclass = results['Eclass']
             self._Ezp = results['Ezp']

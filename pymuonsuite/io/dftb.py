@@ -80,7 +80,8 @@ class ReadWriteDFTB(ReadWrite):
         # the params are updated:
         self._calc_type = None
 
-    def read(self, folder, sname=None):
+    def read(self, folder, sname=None, read_spinpol=False, read_phonons=False,
+             **kwargs):
         ''' Read a DFTB+ output non-destructively.
         |
         |   Args:
@@ -128,37 +129,39 @@ class ReadWriteDFTB(ReadWrite):
 
             atoms.calc = calc
 
-        try:
-            pops = parse_spinpol_dftb(folder)
-            hfine = []
-            for i in range(len(atoms)):
-                hf = compute_hfine_mullpop(atoms, pops, self_i=i, fermi=True,
-                                           fermi_neigh=True)
-                hfine.append(hf)
-            atoms.set_array('hyperfine', np.array(hfine))
-        except (IndexError, IOError) as e:
-            warnings.warn('Could not read hyperfine details due to error: '
-                          '{0}'.format(e))
+        if read_spinpol:
+            try:
+                pops = parse_spinpol_dftb(folder)
+                hfine = []
+                for i in range(len(atoms)):
+                    hf = compute_hfine_mullpop(atoms, pops, self_i=i,
+                                               fermi=True, fermi_neigh=True)
+                    hfine.append(hf)
+                atoms.set_array('hyperfine', np.array(hfine))
+            except (IndexError, IOError) as e:
+                raise IOError('Could not read hyperfine details due to error: '
+                              '{0}'.format(e))
 
-        try:
-            if sname is not None:
-                phonon_source_file = os.path.join(folder, sname +
-                                                  '.phonons.pkl')
-            else:
-                print("Phonons filename was not given, searching for any"
-                      " .phonons.pkl file.")
-                phonon_source_file = glob.glob(
-                    os.path.join(folder, '*.phonons.pkl'))[0]
-            self._read_dftb_phonons(atoms, phonon_source_file)
-        except IndexError:
-            warnings.warn("No .phonons.pkl files found in {}."
-                          .format(os.path.abspath(folder)))
-        except IOError:
-            warnings.warn("{} could not be found."
-                          .format(phonon_source_file))
-        except Exception as e:
-            warnings.warn('Could not read {file} due to error: {error}'
-                          .format(file=phonon_source_file, error=e))
+        if read_phonons:
+            try:
+                if sname is not None:
+                    phonon_source_file = os.path.join(folder, sname +
+                                                      '.phonons.pkl')
+                else:
+                    print("Phonons filename was not given, searching for any"
+                          " .phonons.pkl file.")
+                    phonon_source_file = glob.glob(
+                        os.path.join(folder, '*.phonons.pkl'))[0]
+                self._read_dftb_phonons(atoms, phonon_source_file)
+            except IndexError:
+                raise IOError("No .phonons.pkl files found in {}."
+                              .format(os.path.abspath(folder)))
+            except IOError:
+                raise IOError("{} could not be found."
+                              .format(phonon_source_file))
+            except Exception as e:
+                raise IOError('Could not read {file} due to error: {error}'
+                              .format(file=phonon_source_file, error=e))
 
         return atoms
 
@@ -221,7 +224,7 @@ class ReadWriteDFTB(ReadWrite):
                     sf.write(stxt)
         else:
             raise(NotImplementedError("Calculation type {} is not implemented."
-                  " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
+                                      " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
 
     def _create_calculator(self, calc_type="GEOM_OPT"):
         from pymuonsuite.data.dftb_pars.dftb_pars import DFTBArgs
@@ -317,7 +320,7 @@ class ReadWriteDFTB(ReadWrite):
             self._calc.do_forces = True
         else:
             raise(NotImplementedError("Calculation type {} is not implemented."
-                  " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
+                                      " Please choose 'GEOM_OPT' or 'SPINPOL'".format(calc_type)))
 
         self._calc.parameters.update(args)
 

@@ -18,7 +18,6 @@ from pymuonsuite.quantum.vibrational.average import (
 from pymuonsuite.schemas import (load_input_file, MuonHarmonicSchema,
                                  AsePhononsSchema)
 from pymuonsuite.io.output import write_phonon_report
-from pymuonsuite.io.dftb import ReadWriteDFTB
 
 
 def nq_entry():

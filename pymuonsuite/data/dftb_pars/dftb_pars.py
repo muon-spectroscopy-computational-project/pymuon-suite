@@ -57,7 +57,8 @@ def parse_params(dir):
 
     # Try loading any additional arguments
     try:
-        args.update(json.load(open(os.path.join(dir, 'args.json'))))
+        with open(os.path.join(dir, 'args.json')) as args_file:
+            args.update(json.load(args_file))
     except IOError:
         pass
 
@@ -109,8 +110,8 @@ class DFTBArgs(object):
 
         for name, value in self._optdict.items():
             if value:
-                args.update(json.load(open(os.path.join(self._path,
-                                                        name))))
+                with open(os.path.join(self._path, name)) as json_file:
+                    args.update(json.load(json_file))
 
         return args
 

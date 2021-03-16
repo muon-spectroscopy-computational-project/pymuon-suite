@@ -106,7 +106,8 @@ def muon_vibrational_average_write(cell_file, method='independent',
         phfile = sname
 
     try:
-        atoms = io_formats[phonon_source_type].read(phpath, phfile)
+        atoms = io_formats[phonon_source_type].read(
+            phpath, phfile, read_phonons=True)
         ph_evals = atoms.info['ph_evals']
         ph_evecs = atoms.info['ph_evecs']
     except IOError:
@@ -193,9 +194,10 @@ def muon_vibrational_average_read(cell_file, calculator='castep',
     }
 
     try:
-        displaced_coll = AtomsCollection.load_tree(sname + '_displaced',
-                                                   io_formats[calculator].read,
-                                                   safety_check=2)
+        displaced_coll = AtomsCollection.load_tree(
+            sname + '_displaced', io_formats[calculator].read,
+            opt_args={'read_magres': True},
+            safety_check=2)
     except Exception:
         raise
         return
