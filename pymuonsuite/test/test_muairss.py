@@ -12,6 +12,7 @@ from pymuonsuite.schemas import load_input_file, MuAirssSchema, UEPOptSchema
 from ase.io.castep import read_param
 from pymuonsuite.utils import list_to_string
 from ase import io
+import numpy as np
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data/Si2")
@@ -163,7 +164,7 @@ class TestMuairss(unittest.TestCase):
             run_muairss()
             # Check all folders contain a dftb_in.hsd and geo_end.gen
             for rootDir, subDirs, files in os.walk(os.path.abspath(
-                            "muon-airss-out-dftb/dftb+")):
+                    "muon-airss-out-dftb/dftb+")):
                 expected_files = ['geo_end.gen', 'dftb_in.hsd']
 
                 for s in subDirs:
@@ -173,8 +174,8 @@ class TestMuairss(unittest.TestCase):
                         self.assertTrue(os.path.exists(f))
                         if count == 0:
                             atoms = io.read(f)
-                            equal = atoms.cell == input_atoms.cell
-                            self.assertTrue(equal.all())
+                            np.all(atoms.cell == input_atoms.cell)
+                            np.allclose(atoms.positions, atoms.positions)
                         count += 1
 
             # Run DFTB
@@ -191,8 +192,8 @@ class TestMuairss(unittest.TestCase):
             clust_folder = "Si2_clusters/dftb+"
             self.assertTrue(os.path.exists(clust_folder))
             self.assertTrue(len(glob.glob(os.path.join(clust_folder, '*.{0}'
-                            .format(input_params['clustering_save_format']))
-                            )) > 0)
+                                                       .format(input_params['clustering_save_format']))
+                                          )) > 0)
 
             self.assertTrue(os.path.exists("Si2_clusters.txt"))
             self.assertTrue(os.path.exists("Si2_Si2_dftb+_clusters.dat"))
@@ -204,7 +205,39 @@ class TestMuairss(unittest.TestCase):
             os.remove("Si2_Si2_dftb+_clusters.dat")
             os.remove("all.cell")
 
+    def test_gaussian(self):
+        '''This only tests writing out of gaussian input files
+        using muairss. It does not test reading of gaussian
+        output files with muairss.'''
+
+        try:
+            yaml_file = os.path.join(
+                _TESTDATA_DIR, 'Si2-muairss-gaussian.yaml')
+            cell_file = os.path.join(_TESTDATA_DIR, 'Si2.com')
+            input_atoms = io.read(cell_file)
+
+            # Run Muairss write:
+            sys.argv[1:] = ["-tw", cell_file, yaml_file]
+            os.chdir(_TESTDATA_DIR)
+            run_muairss()
+            # Check all folders contain a dftb_in.hsd and geo_end.gen
+            for rootDir, subDirs, files in os.walk(os.path.abspath(
+                    "muon-airss-out-gaussian/gaussian")):
+
+                for s in subDirs:
+                    count = 0
+                    f = os.path.join(
+                        "muon-airss-out-gaussian/gaussian/" + s, s + '.com')
+                    self.assertTrue(os.path.exists(f))
+                    atoms = io.read(f)
+                    assert(np.all(atoms.cell == input_atoms.cell))
+                    assert(np.allclose(atoms.positions, atoms.positions))
+                    count += 1
+
+        finally:
+            #  Remove all created files and folders
+            shutil.rmtree("muon-airss-out-gaussian")
+
 
 if __name__ == "__main__":
-
     unittest.main()

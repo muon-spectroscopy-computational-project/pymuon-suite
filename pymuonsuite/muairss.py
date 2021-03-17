@@ -33,6 +33,7 @@ from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
 from pymuonsuite.io.uep import ReadWriteUEP
+from pymuonsuite.io.gaussian import ReadWriteGaussian
 from pymuonsuite.io.output import write_cluster_report
 from pymuonsuite import constants
 
@@ -71,6 +72,7 @@ def generate_muairss_collection(struct, params):
     else:
         scell0 = make_supercell(struct, sm)
 
+    # TODO: Make error message if pbcs have not been set.
     reduced_struct = find_primitive_structure(struct)
 
     print('Generating defect configurations...')
@@ -120,7 +122,8 @@ def save_muairss_collection(struct, params, batch_path=''):
     io_formats = {
         'castep': ReadWriteCastep,
         'dftb+': ReadWriteDFTB,
-        'uep': ReadWriteUEP
+        'uep': ReadWriteUEP,
+        'gaussian': ReadWriteGaussian
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
@@ -164,7 +167,8 @@ def load_muairss_collection(struct, params, batch_path=''):
     io_formats = {
         'castep': ReadWriteCastep,
         'dftb+': ReadWriteDFTB,
-        'uep': ReadWriteUEP
+        'uep': ReadWriteUEP,
+        'gaussian': ReadWriteGaussian
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
@@ -312,6 +316,7 @@ def main(task=None):
             muairss_batch_io(args, params, True)
         elif os.path.isfile(args.structures):
             struct = io.read(args.structures)
+            print("Struct: ", struct)
             save_muairss_collection(struct, params)
         else:
             raise RuntimeError("{} is neither a file or a directory"

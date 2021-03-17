@@ -129,7 +129,8 @@ MuAirssSchema = Schema({
     # UEP. Can also pass all as an option to generate files for all
     # calculators.
     Optional('calculator', default='dftb+'):
-    validate_all_of('castep', 'dftb+', 'uep', 'all', case_sensitive=False),
+    validate_all_of('castep', 'dftb+', 'uep', 'gaussian',
+                    'all', case_sensitive=False),
     # Command to use to run CASTEP.
     Optional('castep_command', default='castep.serial'):
     validate_str,
