@@ -1,4 +1,4 @@
-%chk=ethylene-SP.chk
+%chk=ethylene.chk
 %nprocshared=16
 #P B3LYP/EPR-III
 

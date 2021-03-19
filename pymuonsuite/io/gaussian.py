@@ -1,22 +1,17 @@
 # Python 2-to-3 compatibility code
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+from __future__ import (absolute_import, division, print_function,
+                        unicode_literals)
 
-import os
 import glob
-
-import numpy as np
+import os
 from copy import deepcopy
 
+import numpy as np
 from ase import io
 from ase.calculators.gaussian import Gaussian
-
-from soprano.utils import seedname
-
 from pymuonsuite import constants
 from pymuonsuite.io.readwrite import ReadWrite
+from soprano.utils import seedname
 
 
 class ReadWriteGaussian(ReadWrite):

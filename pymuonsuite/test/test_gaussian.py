@@ -66,7 +66,7 @@ def _test_write(expected_params, input_file=None, calc=None, atoms_calc=None):
         atoms_copy = atoms.copy()
         atoms_copy.calc = copy.copy(atoms.calc)
 
-        # We will read the parameters from the file: ethylene-SP.com
+        # We will read the parameters from the file: ethylene.com
         gaussian_io = ReadWriteGaussian(
             params={'gaussian_input': input_file}, calc=calc)
 
@@ -110,8 +110,6 @@ def _test_write(expected_params, input_file=None, calc=None, atoms_calc=None):
 
         new_params = atoms_read.calc.parameters
 
-        # checks that the expected parameters have been
-        # written to the new input file:
         for key, value in expected_params.items():
             params_equal = expected_params.get(
                 key) == new_params.get(key)
@@ -151,20 +149,20 @@ class TestReadWriteGaussian(unittest.TestCase):
 
     def test_write(self):
         ''' Tests writing a gaussian input file, with the same settings as
-        an existing file: ethylene-SP.com.
+        an existing file: ethylene.com.
         Then reads this back in, checking that the structure and settings
         have been set correctly, along with the muon mass and magnetic
         moment.
         '''
 
-        # These are the params that are in our file: ethylene-SP.com
+        # These are the params that are in our file: ethylene.com
         # We expect, and will be checking that, these have been written to
         # the gaussian input file we create.
-        params = {'chk': 'ethylene-sp.chk', 'nprocshared': '16',
+        params = {'chk': 'ethylene.chk', 'nprocshared': '16',
                   'output_type': 'p', 'b3lyp': None, 'epr-iii': None,
                   'charge': 0, 'mult': 2}
 
-        _test_write(params, input_file='ethylene-SP.com')
+        _test_write(params, input_file='ethylene.com')
 
     def test_write_default(self):
         ''' Tests writing a gaussian input file, without providing an input
@@ -189,7 +187,7 @@ class TestReadWriteGaussian(unittest.TestCase):
 
         # First test the case where we give the calculator as an input to
         # the ReadWrite class.
-        params = {'chk': 'ethylene-sp.chk', 'nprocshared': '16',
+        params = {'chk': 'ethylene.chk', 'nprocshared': '16',
                   'output_type': 'p', 'b3lyp': None, 'epr-iii': None,
                   'charge': 0, 'mult': 2}
         calc = Gaussian(**params)
@@ -203,11 +201,11 @@ class TestReadWriteGaussian(unittest.TestCase):
         # In the case where we set both a calculator and an input file, we
         # expect the input file to take precedence, and the parameters will
         # be set from there instead of from the calculator.
-        params = {'chk': 'ethylene-sp.chk', 'nprocshared': '16',
+        params = {'chk': 'ethylene.chk', 'nprocshared': '16',
                   'output_type': 'p', 'b3lyp': None, 'epr-iii': None,
                   'charge': 0, 'mult': 2}
 
-        _test_write(params, input_file='ethylene-SP.com', calc=calc)
+        _test_write(params, input_file='ethylene.com', calc=calc)
 
 
 if __name__ == "__main__":

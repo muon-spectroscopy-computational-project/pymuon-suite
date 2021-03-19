@@ -23,6 +23,8 @@ _RUN_DFTB = False
 #  and will test running dftb using the files output by muairss
 #  otherwise, the test will use previously generated dftb results
 
+_READ_GAUSSIAN_OUT = False
+
 
 class TestMuairss(unittest.TestCase):
 
@@ -216,37 +218,88 @@ class TestMuairss(unittest.TestCase):
             os.remove("all.cell")
 
     def test_gaussian(self):
-        '''This only tests writing out of gaussian input files
-        using muairss. It does not test reading of gaussian
-        output files with muairss.'''
+        '''Test gaussian with muairss, in the case that we
+        have a structure with pbcs. By default, this only
+        tests writing out of gaussian input files
+        using muairss. By setting _READ_GAUSSIAN_OUT to True,
+        can test muairss read mode with gaussian, if you have
+        the appropriate files to do so.'''
+
+        # We test gaussian with ethylene instead of Si2 because
+        # ethylene can be run with B3LYP/EPR-III
 
         try:
+            test_dir = os.path.join(_TEST_DIR, 'test_data/ethyleneMu/')
             yaml_file = os.path.join(
-                _TESTDATA_DIR, 'Si2-muairss-gaussian.yaml')
-            cell_file = os.path.join(_TESTDATA_DIR, 'Si2.com')
+                test_dir, 'ethylene-muairss-gaussian.yaml')
+            cell_file = os.path.join(test_dir, 'ethylene.com')
             input_atoms = io.read(cell_file)
+            input_params = load_input_file(yaml_file, MuAirssSchema)
+            # These are the settings given in the gaussian input file that was
+            # specified in the input yaml file - we expect these to be applied
+            # in the gaussian input files written out by pm-muairss -tw
+            input_gaussian_params = io.read(
+                os.path.join(test_dir,
+                             input_params['gaussian_input']),
+                attach_calculator=True).calc.parameters
 
             # Run Muairss write:
             sys.argv[1:] = ["-tw", cell_file, yaml_file]
-            os.chdir(_TESTDATA_DIR)
+            os.chdir(test_dir)
             run_muairss()
-            # Check all folders contain a dftb_in.hsd and geo_end.gen
+            # Check all folders contain a gaussian.com file with the
+            # expected atoms.
             for rootDir, subDirs, files in os.walk(os.path.abspath(
                     "muon-airss-out-gaussian/gaussian")):
 
                 for s in subDirs:
-                    count = 0
                     f = os.path.join(
                         "muon-airss-out-gaussian/gaussian/" + s, s + '.com')
                     self.assertTrue(os.path.exists(f))
-                    atoms = io.read(f)
+                    atoms = io.read(f, attach_calculator=True)
+                    # We check that the cell is the same for the atoms written
+                    # out as it was for the structure provided
                     assert(np.all(atoms.cell == input_atoms.cell))
-                    assert(np.allclose(atoms.positions, atoms.positions))
-                    count += 1
+                    # Check that the positions of the atoms are the same as
+                    # those provided, except for the muon, because that was
+                    # added later:
+                    assert(np.allclose(
+                        atoms.positions[:-1], input_atoms.positions))
+                    new_params = atoms.calc.parameters
+                    # Check all of the other settings in the input file have
+                    # been applied as expected from the gaussian input file
+                    # that was provided in the input yaml
+                    for key, value in input_gaussian_params.items():
+                        # All parameters should be the same except for the
+                        # isolist and nmagmlist because here we will have
+                        # added in the muon mass and magnetic moment.
+                        if key not in ['nmagmlist', 'isolist']:
+                            params_equal = input_gaussian_params.get(
+                                key) == new_params.get(key)
+                            if isinstance(params_equal, np.ndarray):
+                                assert((input_gaussian_params.get(
+                                    key) == new_params.get(key)).all())
+                            else:
+                                assert(input_gaussian_params.get(
+                                    key) == new_params.get(key))
+
+            if _READ_GAUSSIAN_OUT:
+                # Run Muairss read:
+                yaml_file = os.path.join(
+                    test_dir, 'ethylene-muairss-gaussian-read.yaml')
+                sys.argv[1:] = [cell_file, yaml_file]
+                run_muairss()
+                self.assertTrue(os.path.exists("ethylene_clusters.txt"))
+                self.assertTrue(os.path.exists(
+                    "ethylene_ethylene_gaussian_clusters.dat"))
 
         finally:
             #  Remove all created files and folders
             shutil.rmtree("muon-airss-out-gaussian")
+            if _READ_GAUSSIAN_OUT:
+                os.remove("ethylene_clusters.txt")
+                os.remove("ethylene_ethylene_gaussian_clusters.dat")
+                shutil.rmtree("ethylene_clusters")
 
 
 if __name__ == "__main__":
