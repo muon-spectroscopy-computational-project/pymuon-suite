@@ -133,7 +133,8 @@ class TestReadWriteGaussian(unittest.TestCase):
         if _TEST_READ:
             reader = ReadWriteGaussian()
             atoms = Atoms('C2H5', positions=_positions)
-            atoms_read = reader.read(".", 'ethylene-mu')
+            out_file_path = 'gaussian-muairss-out/gaussian/ethylene_1/ethylene_1'
+            atoms_read = reader.read(".", out_file_path)
 
             assert np.all(atoms_read.numbers == atoms.numbers)
             assert np.allclose(atoms_read.positions,
@@ -142,7 +143,7 @@ class TestReadWriteGaussian(unittest.TestCase):
             assert np.allclose(atoms_read.cell, atoms.cell)
 
             expected_hyperfine = '163.07409'
-            hyperfine = reader.read(".", 'ethylene-mu',
+            hyperfine = reader.read(".", out_file_path,
                                     read_hyperfine=True).get_array(
                                         'hyperfine')[-1]
             assert(hyperfine == expected_hyperfine)
