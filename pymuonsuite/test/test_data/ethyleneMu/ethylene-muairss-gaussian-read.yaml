@@ -1,0 +1,7 @@
+name: ethylene
+charged: false
+calculator: gaussian
+clustering_method: hier
+clustering_hier_t: 0.2
+out_folder: gaussian-muairss-out
+gaussian_input: ethylene.com

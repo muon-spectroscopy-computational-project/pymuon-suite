@@ -131,7 +131,8 @@ MuAirssSchema = Schema({
     # UEP. Can also pass all as an option to generate files for all
     # calculators.
     Optional('calculator', default='dftb+'):
-    validate_all_of('castep', 'dftb+', 'uep', 'all', case_sensitive=False),
+    validate_all_of('castep', 'dftb+', 'uep', 'gaussian',
+                    'all', case_sensitive=False),
     # Command to use to run CASTEP.
     Optional('castep_command', default='castep.serial'):
     validate_str,
@@ -143,6 +144,9 @@ MuAirssSchema = Schema({
     validate_str,
     # File path to the CASTEP parameter file.
     Optional('castep_param', default=None):
+    validate_str,
+    # File path to the Gaussian input file.
+    Optional('gaussian_input', default=None):
     validate_str,
     # The parameter set to use for DFTB+
     Optional('dftb_set', default='3ob-3-1'):

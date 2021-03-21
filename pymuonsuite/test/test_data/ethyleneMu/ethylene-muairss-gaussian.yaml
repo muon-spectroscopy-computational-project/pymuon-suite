@@ -1,0 +1,8 @@
+poisson_r: 4.0
+name: ethylene
+charged: false
+calculator: gaussian
+clustering_method: hier
+clustering_hier_t: 0.2
+out_folder: muon-airss-out-gaussian
+gaussian_input: ethylene.com

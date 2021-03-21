@@ -13,7 +13,6 @@ from __future__ import unicode_literals
 
 import os
 import glob
-import shutil
 import warnings
 
 import numpy as np
@@ -22,7 +21,7 @@ from spglib import find_primitive
 
 from ase import Atoms, io
 from ase.build import make_supercell
-from soprano.utils import safe_input, customize_warnings, silence_stdio
+from soprano.utils import customize_warnings, silence_stdio
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 from soprano.analyse.phylogen import PhylogenCluster, Gene
@@ -32,6 +31,7 @@ from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
 from pymuonsuite.io.uep import ReadWriteUEP
+from pymuonsuite.io.gaussian import ReadWriteGaussian
 from pymuonsuite.io.output import write_cluster_report
 from pymuonsuite import constants
 
@@ -70,6 +70,7 @@ def generate_muairss_collection(struct, params):
     else:
         scell0 = make_supercell(struct, sm)
 
+    # TODO: Make error message if pbcs have not been set.
     reduced_struct = find_primitive_structure(struct)
 
     print('Generating defect configurations...')
@@ -119,7 +120,8 @@ def save_muairss_collection(struct, params, batch_path=''):
     io_formats = {
         'castep': ReadWriteCastep,
         'dftb+': ReadWriteDFTB,
-        'uep': ReadWriteUEP
+        'uep': ReadWriteUEP,
+        'gaussian': ReadWriteGaussian
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
@@ -164,7 +166,8 @@ def load_muairss_collection(struct, params, batch_path=''):
     io_formats = {
         'castep': ReadWriteCastep,
         'dftb+': ReadWriteDFTB,
-        'uep': ReadWriteUEP
+        'uep': ReadWriteUEP,
+        'gaussian': ReadWriteGaussian
     }
 
     calcs = [s.strip().lower() for s in params['calculator'].split(',')]
