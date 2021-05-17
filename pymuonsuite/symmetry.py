@@ -16,13 +16,15 @@ def print_symmetry_report():
     parser = ap.ArgumentParser()
     parser.add_argument('structure', type=str, default=None,
                         help="A structure file in an ASE readable format")
+    parser.add_argument('-sp', '--symprec', type=float, default=1e-3,
+                        help="Symmetry precision to use in spglib")
     args = parser.parse_args()
 
     with silence_stdio():
         a = io.read(args.structure)
 
-    symdata = SymmetryDataset.get(a)
-    wpoints = WyckoffPoints.get(a)
+    symdata = SymmetryDataset.get(a, symprec=args.symprec)
+    wpoints = WyckoffPoints.get(a, symprec=args.symprec)
     fpos = a.get_scaled_positions()
 
     print("Wyckoff points symmetry report for {0}".format(args.structure))
@@ -33,7 +35,11 @@ def print_symmetry_report():
     print("Absolute\t\t\tFractional\t\tHessian constraints")
 
     # List any Wyckoff point that does not already have an atom in it
+    vformat = '[{0:.3f} {1:.3f} {2:.3f}]'
     for wp in wpoints:
-        if np.any(np.isclose(np.linalg.norm(fpos-wp.fpos, axis=1), 0)):
+        if np.any(np.isclose(np.linalg.norm(fpos-wp.fpos, axis=1), 0,
+                             atol=args.symprec)):
             continue
-        print("{0}\t{1}\t{2}".format(wp.pos, wp.fpos, wp.hessian))
+        ps = vformat.format(*wp.pos)
+        fps = vformat.format(*wp.fpos)
+        print("{0}\t{1}\t{2}".format(ps, fps, wp.hessian))
