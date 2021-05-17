@@ -32,14 +32,13 @@ def print_symmetry_report():
           "{0}".format(symdata['international']))
     print("Space Group Hall Number: "
           "{0}".format(symdata['hall_number']))
-    print("Absolute\t\t\tFractional\t\tHessian constraints")
+    print("Absolute\t\tFractional\t\tHessian constraints\tOccupied")
 
     # List any Wyckoff point that does not already have an atom in it
     vformat = '[{0:.3f} {1:.3f} {2:.3f}]'
     for wp in wpoints:
-        if np.any(np.isclose(np.linalg.norm(fpos-wp.fpos, axis=1), 0,
-                             atol=args.symprec)):
-            continue
+        occ = np.any(np.isclose(np.linalg.norm(fpos-wp.fpos, axis=1), 0,
+                                atol=args.symprec))
         ps = vformat.format(*wp.pos)
         fps = vformat.format(*wp.fpos)
-        print("{0}\t{1}\t{2}".format(ps, fps, wp.hessian))
+        print("{0}\t{1}\t{2}\t\t\t{3}".format(ps, fps, wp.hessian, 'X' if occ else ''))
