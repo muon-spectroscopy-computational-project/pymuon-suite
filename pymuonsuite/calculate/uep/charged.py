@@ -92,23 +92,23 @@ class ChargeDistribution(object):
                           '{0} not found'.format(f))
 
         # FFT grid
-        lattice = np.array(self._elec_den.real_lattice)
+        lattice = np.array(self._elec_den.real_lattice)                 # Ang
         grid = np.array(self._elec_den.grid)
 
         dx = [np.linalg.norm(lattice[i])/grid[i] for i in range(3)]
-        inv_latt = np.linalg.inv(lattice.T)*2*np.pi
+        inv_latt = np.linalg.inv(lattice.T)*2*np.pi                     # Ang^-1
 
         fft_grid = np.array(np.meshgrid(*[np.fft.fftfreq(grid[i])*grid[i]
                                           for i in range(3)], indexing='ij'))
         # Uses the g-vector convention in formulas used
-        self._g_grid = np.tensordot(inv_latt, fft_grid, axes=(0, 0))
+        self._g_grid = np.tensordot(inv_latt, fft_grid, axes=(0, 0))    # Ang^-1
 
         # Information for the elements, and guarantee zero net charge
         elems = self._struct.get_chemical_symbols()
         pos = self._struct.get_positions()
         try:
-            self._q = np.array([ppots[el][0] for el in elems])
-            self._gw = np.array([ppots[el][1]/gw_fac for el in elems])
+            self._q = np.array([ppots[el][0] for el in elems])          # e
+            self._gw = np.array([ppots[el][1]/gw_fac for el in elems])  # Ang
         except KeyError:
             raise RuntimeError("""Some or all CASTEP pseudopotentials were not
 found. UEP calculation can not go on. Please notice that at the moment only
@@ -118,20 +118,20 @@ the .cell file.""")
 
         # Here we find the Fourier components of the potential due to
         # the valence electrons
-        self._rho = self._elec_den.data[:, :, :, 0]
+        self._rho = self._elec_den.data[:, :, :, 0]                     
         if not np.isclose(np.average(self._rho), sum(self._q), 1e-4):
             raise RuntimeError('Cell is not neutral')
         # Put the minus sign for electrons
-        self._rho *= -sum(self._q)/np.sum(self._rho)  # Normalise charge
+        self._rho *= -sum(self._q)/np.sum(self._rho)  # Normalise charge. Now it's e/grid points
         self._rhoe_G = np.fft.fftn(self._rho)
         Gnorm = np.linalg.norm(self._g_grid, axis=0)
         Gnorm_fixed = np.where(Gnorm > 0, Gnorm, np.inf)
 
         cell = np.array(self._elec_den.real_lattice)
-        vol = abs(np.dot(np.cross(cell[:, 0], cell[:, 1]), cell[:, 2]))
+        vol = abs(np.dot(np.cross(cell[:, 0], cell[:, 1]), cell[:, 2])) # Ang^3
         self._vol = vol
 
-        self._Ve_G = 4*np.pi/Gnorm_fixed**2*(self._rhoe_G / vol)
+        self._Ve_G = 4*np.pi/Gnorm_fixed**2*(self._rhoe_G / vol)        # e/Ang
 
         # Now on to doing the same for ionic components
         self._rhoi_G = self._g_grid[0]*0.j
