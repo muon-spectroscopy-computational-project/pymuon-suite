@@ -18,6 +18,7 @@ from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
 
 from soprano.collection import AtomsCollection
+from soprano.utils import silence_stdio
 
 
 def write_tensors(tensors, filename, symbols):
@@ -155,8 +156,9 @@ Parameter file: {param}
                                      '{2}.{3}'.format(
                                          params['name'], calc, i+1,
                                          params['clustering_save_format']))
-                            io.write(os.path.join(calc_path, fname),
-                                     coll[np.argmin(E)].structures[0])
+                            with silence_stdio():
+                                io.write(os.path.join(calc_path, fname),
+                                         coll[np.argmin(E)].structures[0])
                         except (io.formats.UnknownFileTypeError) as e:
                             print("ERROR: File format '{0}' is not "
                                   "recognised. Modify 'clustering_save_format'"
@@ -184,12 +186,12 @@ Parameter file: {param}
                     sname = "{0}_min_cluster".format(params['name'])
 
                     io_formats = {
-                        'castep': ReadWriteCastep(params),
-                        'dftb+': ReadWriteDFTB(params),
+                        'castep': ReadWriteCastep,
+                        'dftb+': ReadWriteDFTB,
                     }
                     try:
                         write_method = io_formats[
-                            params['clustering_save_format']].write
+                            params['clustering_save_format']](params).write
                     except KeyError as e:
                         print("ERROR: Calculator type {0} is not "
                               "recognised. Modify 'clustering_save_format'"

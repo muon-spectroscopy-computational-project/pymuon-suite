@@ -1,0 +1,11 @@
+version: '3.7'
+
+services:
+  pymuon-suite:
+    image: pymuon-suite/user
+    volumes:
+      # change the following line to mount your own data folder
+      # path/to/local/folder:path/to/container/folder
+      - ../data:/home/pymuon-suite/data
+    working_dir: /home/pymuon-suite/data
+    tty: true

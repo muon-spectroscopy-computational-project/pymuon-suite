@@ -1,0 +1,13 @@
+version: '3.7'
+
+services:
+  pymuon-suite:
+    image: pymuon-suite/dev
+    volumes:
+      - ./docs:/home/pymuon-suite/docs
+      - ./examples:/home/pymuon-suite/examples
+      - ./pymuonsuite:/home/pymuon-suite/pymuonsuite
+      - ./setup.py:/home/pymuon-suite/setup.py
+      - ./Makefile:/home/pymuon-suite/Makefile
+      - ./README.md:/home/pymuon-suite/README.md
+      - ./requirements.txt:/home/pymuon-suite/requirements.txt

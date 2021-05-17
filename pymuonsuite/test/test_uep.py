@@ -1,16 +1,15 @@
 """Tests for ReadWriteUEP methods"""
 
-import unittest
-
 import os
 import shutil
+import unittest
+
 import numpy as np
-
 from ase import io
-
 from pymuonsuite.io.uep import ReadWriteUEP
-from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
+from pymuonsuite.schemas import load_input_file, MuAirssSchema
+from soprano.utils import silence_stdio
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
@@ -52,17 +51,42 @@ class TestReadWriteUEP(unittest.TestCase):
     def test_create_calc(self):
         folder = os.path.join(_TESTDATA_DIR, "Si2")
 
-        param_file = os.path.join(folder, "Si2-muairss-uep.yaml")
-        params = load_input_file(param_file, MuAirssSchema)
+        def check_geom_opt_params(calc, params):
+            self.assertEqual(calc.label, params['name'])
+            self.assertEqual(calc.geom_steps, params['geom_steps'])
+            self.assertEqual(calc.gw_factor, params['uep_gw_factor'])
+            self.assertEqual(calc.opt_tol, params['geom_force_tol'])
+            self.assertEqual(calc.save_structs, params['uep_save_structs'])
+
+        # In the case that a params dict is provided, the values for the
+        # parameters should be taken from here:
+        params = {'name': 'Si2',
+                  'charged': True,
+                  'geom_steps': 300,
+                  'uep_gw_factor': 4.0,
+                  'geom_force_tol': 0.05,
+                  'uep_save_structs': False,
+                  'uep_chden': 'Si2.den_fmt'}
 
         reader = ReadWriteUEP(params=params)
-        a = io.read(os.path.join(folder, "Si2.cell"))
+        with silence_stdio():
+            a = io.read(os.path.join(folder, "Si2.cell"))
 
-        self.assertTrue(reader._create_calculator(a, folder, "Si2"))
         calc = reader._create_calculator(a, folder, "Si2")
+        check_geom_opt_params(calc, params)
 
-        self.assertEqual(calc.gw_factor, params['uep_gw_factor'])
-        self.assertEqual(calc.geom_steps, params['geom_steps'])
+        # In the case that we do not supply a params dict or a calculator,
+        # the new calculator should get the default settings:
+        reader = ReadWriteUEP()
+
+        params = {'name': 'Si2',
+                  'geom_steps': 30,
+                  'uep_gw_factor': 5.0,
+                  'geom_force_tol': 1e-5,
+                  'uep_save_structs': True}
+
+        calc = reader._create_calculator(a, folder, 'Si2')
+        check_geom_opt_params(calc, params)
 
     def test_write(self):
         # read in cell file to get atom
@@ -73,7 +97,8 @@ class TestReadWriteUEP(unittest.TestCase):
             output_folder = "test_save"
             os.mkdir(output_folder)
 
-            atoms = io.read("Si2.cell")
+            with silence_stdio():
+                atoms = io.read("Si2.cell")
 
             # test writing geom_opt output
             param_file = "Si2-muairss-uep.yaml"
@@ -91,6 +116,7 @@ class TestReadWriteUEP(unittest.TestCase):
             reader = ReadWriteUEP(params=params)
 
             reader.write(atoms, output_folder)
+
         except Exception as e:
             print(e)
         finally:
