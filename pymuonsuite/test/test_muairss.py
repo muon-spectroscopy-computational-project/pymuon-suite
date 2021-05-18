@@ -17,15 +17,48 @@ from ase import io
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data/Si2")
 
-_RUN_DFTB = False
 #  Setting _RUN_DFTB to True requires dftb+ to be installed locally
 #  and will test running dftb using the files output by muairss
 #  otherwise, the test will use previously generated dftb results
+_RUN_DFTB = False
 
+def _clean_testdata_dir():
+
+    os.chdir(_TESTDATA_DIR)
+
+    folders = [
+        'Si2_clusters',
+        'muon-airss-out-uep',
+        'muon-airss-out-castep',
+        'muon-airss-out-dftb'
+    ]
+
+    files = [
+        'Si2_clusters.txt',
+        'Si2_Si2_uep_clusters.dat',
+        'Si2_Si2_castep_clusters.dat',
+        'Si2_Si2_dftb+_clusters.dat',
+        'all.cell'
+    ]
+
+    for f in files:
+        try:
+            os.remove(f)
+        except FileNotFoundError:
+            pass
+
+    for f in folders:
+        try:
+            shutil.rmtree(f)
+        except FileNotFoundError:
+            pass
 
 class TestMuairss(unittest.TestCase):
 
-    def test_uep(self):
+    def setUp(self):
+        _clean_testdata_dir()
+
+    def testUEP(self):
         try:
             yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-uep.yaml')
             cell_file = os.path.join(_TESTDATA_DIR, 'Si2.cell')
@@ -68,12 +101,9 @@ class TestMuairss(unittest.TestCase):
             self.assertTrue(os.path.exists("Si2_Si2_uep_clusters.dat"))
         finally:
             #  Remove all created files and folders
-            shutil.rmtree("muon-airss-out-uep")
-            os.remove("Si2_clusters.txt")
-            os.remove("Si2_Si2_uep_clusters.dat")
-            os.remove("all.cell")
+            _clean_testdata_dir()
 
-    def test_castep(self):
+    def testCASTEP(self):
         try:
             yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-castep.yaml')
             cell_file = os.path.join(_TESTDATA_DIR, 'Si2.cell')
@@ -152,13 +182,9 @@ class TestMuairss(unittest.TestCase):
                                      castep_param.elec_energy_tol)
         finally:
             # Remove all created files and folders
-            shutil.rmtree("muon-airss-out-castep")
-            shutil.rmtree("Si2_clusters")
-            os.remove("Si2_clusters.txt")
-            os.remove("Si2_Si2_castep_clusters.dat")
-            os.remove("all.cell")
+            _clean_testdata_dir()
 
-    def test_dftb(self):
+    def testDFTB(self):
         try:
             yaml_file = os.path.join(_TESTDATA_DIR, 'Si2-muairss-dftb.yaml')
             cell_file = os.path.join(_TESTDATA_DIR, 'Si2.cell')
@@ -208,11 +234,10 @@ class TestMuairss(unittest.TestCase):
             self.assertTrue(os.path.exists("Si2_Si2_dftb+_clusters.dat"))
         finally:
             #  Remove all created files and folders
-            shutil.rmtree("muon-airss-out-dftb")
-            shutil.rmtree("Si2_clusters")
-            os.remove("Si2_clusters.txt")
-            os.remove("Si2_Si2_dftb+_clusters.dat")
-            os.remove("all.cell")
+            _clean_testdata_dir()
+
+    def tearDown(self):
+        _clean_testdata_dir()
 
 
 if __name__ == "__main__":

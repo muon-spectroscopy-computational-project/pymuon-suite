@@ -56,7 +56,7 @@ def ase_phonon_calc(struct, calc=None, kpoints=[1, 1, 1],
         calc = struct.calc
     struct = struct.copy()
     calc.atoms = struct
-    struct.set_calculator(calc)
+    struct.calc = calc
     dyn = BFGS(struct, trajectory='geom_opt.traj')
     dyn.run(fmax=ftol)
 

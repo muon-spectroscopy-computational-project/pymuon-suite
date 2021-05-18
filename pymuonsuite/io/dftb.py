@@ -213,7 +213,7 @@ class ReadWriteDFTB(ReadWrite):
             if calc_type != self._calc_type:
                 self._create_calculator(calc_type=calc_type)
 
-            a.set_calculator(self._calc)
+            a.calc = self._calc
             a.calc.label = sname
             a.calc.directory = folder
             a.calc.write_input(a)

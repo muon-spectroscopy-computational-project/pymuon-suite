@@ -188,7 +188,7 @@ class ReadWriteCastep(ReadWrite):
                 self._create_calculator(calc_type=calc_type)
             else:
                 self._update_calculator(calc_type)
-            a.set_calculator(self._calc)
+            a.calc = self._calc
             with silence_stdio():
                 io.write(os.path.join(folder, sname + '.cell'),
                          a, magnetic_moments='initial')

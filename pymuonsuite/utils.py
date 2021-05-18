@@ -9,6 +9,7 @@ import os
 import numpy as np
 from soprano.utils import minimum_periodic, safe_input
 
+
 def list_to_string(arr):
     """Create a str from a list an array of list of numbers
 

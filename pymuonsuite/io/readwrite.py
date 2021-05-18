@@ -1,3 +1,8 @@
+"""Base class for reading and writing input files for other software
+
+Author: Laura Murgatroyd
+"""
+
 
 class ReadWrite(object):
     def __init__(self, params={}, script=None, calc=None):

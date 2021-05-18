@@ -38,7 +38,7 @@ class ReadWriteUEP(ReadWrite):
         a.info['name'] = sname
 
         calc.atoms = a
-        a.set_calculator(calc)
+        a.calc = calc
 
         return a
 

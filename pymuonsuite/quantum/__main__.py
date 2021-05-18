@@ -94,7 +94,7 @@ def asephonons_entry():
         calc = Dftb(atoms=a, label='asephonons',
                     **dargs.args)
         ph_kpts = None
-    a.set_calculator(calc)
+    a.calc = calc
     try:
         phdata = ase_phonon_calc(a, kpoints=ph_kpts,
                                  ftol=params['force_tol'],

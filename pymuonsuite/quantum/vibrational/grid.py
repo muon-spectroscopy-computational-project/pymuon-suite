@@ -66,7 +66,7 @@ def create_displaced_cell(cell, displacements):
     disp_cell = cell.copy()
     disp_pos += displacements
     disp_cell.set_positions(disp_pos)
-    disp_cell.set_calculator(cell.calc)
+    disp_cell.calc = cell.calc
 
     return disp_cell
 
