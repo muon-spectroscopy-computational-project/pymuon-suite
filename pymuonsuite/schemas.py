@@ -288,7 +288,10 @@ MuonHarmonicSchema = Schema({
     Optional('dftb_set', default='3ob-3-1'):
     validate_all_of('3ob-3-1', 'pbc-0-3'),
     # Output files
-    Optional('average_file', default='averages.dat'): validate_str
+    Optional('average_file', default='averages.dat'): validate_str,
+    # Random seed for generation
+    Optional('random_seed', default=None):
+    int
 })
 
 AsePhononsSchema = Schema({

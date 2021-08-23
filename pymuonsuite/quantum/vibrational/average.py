@@ -137,6 +137,8 @@ def muon_vibrational_average_write(cell_file, method='independent',
         displsch = IndependentDisplacements(ph_evals, ph_evecs, masses,
                                             mu_index, sigma_n)
     elif method == 'montecarlo':
+        # Set seed
+        np.random.seed(kwargs['random_seed'])
         displsch = MonteCarloDisplacements(ph_evals, ph_evecs, masses)
 
     displsch.recalc_displacements(n=grid_n, T=displace_T)
