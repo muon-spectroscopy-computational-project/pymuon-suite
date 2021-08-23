@@ -229,6 +229,9 @@ MuAirssSchema = Schema({
     # Save a file with all muon positions in one
     Optional('allpos_filename', default=None):
     validate_str,
+    # Random seed for generation
+    Optional('random_seed', default=None):
+    int
 })
 
 # Parameter file schema and defaults

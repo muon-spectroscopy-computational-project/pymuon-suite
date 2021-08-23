@@ -26,6 +26,7 @@ from soprano.utils import safe_input, customize_warnings, silence_stdio
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 from soprano.analyse.phylogen import PhylogenCluster, Gene
+from soprano.rnd import Random
 
 from pymuonsuite.utils import make_3x3, safe_create_folder
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
@@ -73,6 +74,8 @@ def generate_muairss_collection(struct, params):
     reduced_struct = find_primitive_structure(struct)
 
     print('Generating defect configurations...')
+    # Seed the random generator
+    Random.reseed(params['random_seed'])
     # Now generate the defect configurations
     defect_gen = defectGen(reduced_struct, 'H', poisson_r=params['poisson_r'],
                            vdw_scale=params['vdw_scale'])
