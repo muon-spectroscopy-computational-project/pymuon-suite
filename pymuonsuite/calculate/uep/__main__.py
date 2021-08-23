@@ -267,6 +267,9 @@ def geomopt_entry():
 
     params = load_input_file(args.input, UEPOptSchema)
 
+    # Some output to give feedback to the user
+    print('Performing UEP optimisation for {0}'.format(args.input))
+
     seedpath = os.path.splitext(args.input)[0]
     seedname = os.path.split(seedpath)[1]
 
@@ -279,6 +282,8 @@ def geomopt_entry():
         except Exception as e:
             print("Error: ", e)
             return
+
+    print('Optimisation complete')
 
     # Now dump results
     if params['save_pickle']:
