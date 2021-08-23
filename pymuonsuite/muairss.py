@@ -183,13 +183,15 @@ def load_muairss_collection(struct, params, batch_path=''):
         dc = AtomsCollection.load_tree(calc_path, rw.read,
                                        safety_check=2, tolerant=True)
 
-        print("If more than 10% of structures could not be loaded, \
-we advise adjusting the parameters and re-running the {0} \
-optimisation for the structures that failed.".format(cname))
+        alln = len(glob.glob(calc_path+'/*'))
 
         total_structures = len(dc.structures)
         if total_structures == 0:
             return
+        elif total_structures/alln < 0.9:
+            print("""If more than 10% of structures could not be loaded,
+we advise adjusting the parameters and re-running the {0}
+optimisation for the structures that failed.""".format(cname))
 
         loaded[cname] = dc
 

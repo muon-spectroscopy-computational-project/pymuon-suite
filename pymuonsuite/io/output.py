@@ -79,8 +79,8 @@ Parameter file: {param}
 
             f.write('Clusters for {0}:\n'.format(name))
 
-            if params['clustering_save_min'] is not None or \
-                    params['clustering_save_type'] is not None:
+            if params['clustering_save_min'] or \
+                    params['clustering_save_type']:
 
                 if params['clustering_save_folder'] is not None:
                     clustering_save_path = safe_create_folder(
