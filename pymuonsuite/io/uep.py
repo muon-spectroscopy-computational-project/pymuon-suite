@@ -29,13 +29,12 @@ class ReadWriteUEP(ReadWrite):
         try:
             calc.read()
         except ValueError:
-            raise(IOError("Error: could not read UEP file in {0}"
-                          .format(folder)))
+            raise (IOError("Error: could not read UEP file in {0}".format(folder)))
             return
 
-        a = calc.atoms + Atoms('H', positions=[calc._x_opt])
+        a = calc.atoms + Atoms("H", positions=[calc._x_opt])
 
-        a.info['name'] = sname
+        a.info["name"] = sname
 
         calc.atoms = a
         a.calc = calc
@@ -57,26 +56,27 @@ class ReadWriteUEP(ReadWrite):
         if self.script is not None:
             stxt = open(self.script).read()
             stxt = stxt.format(seedname=sname)
-            with open(os.path.join(folder, 'script.sh'), 'w') as sf:
+            with open(os.path.join(folder, "script.sh"), "w") as sf:
                 sf.write(stxt)
 
     def _create_calculator(self, a, folder, sname):
         params = self.params
 
-        calc = UEPCalculator(atoms=a,
-                             chden=params.get('uep_chden', ''),
-                             path=folder,
-                             label=sname)
+        calc = UEPCalculator(
+            atoms=a,
+            chden=params.get("uep_chden", ""),
+            path=folder,
+            label=sname,
+        )
 
-        if not params.get('charged', True):
-            raise RuntimeError(
-                "Error: Can't use UEP method for neutral system")
+        if not params.get("charged", True):
+            raise RuntimeError("Error: Can't use UEP method for neutral system")
 
         calc.path = folder
-        calc.gw_factor = params.get('uep_gw_factor') or calc.gw_factor
-        calc.geom_steps = params.get('geom_steps') or calc.geom_steps
-        calc.opt_tol = params.get('geom_force_tol') or calc.opt_tol
-        calc.save_structs = params.get('uep_save_structs', True)
+        calc.gw_factor = params.get("uep_gw_factor") or calc.gw_factor
+        calc.geom_steps = params.get("geom_steps") or calc.geom_steps
+        calc.opt_tol = params.get("geom_force_tol") or calc.opt_tol
+        calc.save_structs = params.get("uep_save_structs", True)
 
         return calc
 
@@ -84,8 +84,7 @@ class ReadWriteUEP(ReadWrite):
 class UEPCalculator(object):
     """Mock 'calculator' used to store info to set up a UEP calculation"""
 
-    def __init__(self, label='struct', atoms=None, index=-1, path='',
-                 chden=''):
+    def __init__(self, label="struct", atoms=None, index=-1, path="", chden=""):
 
         self.label = label
         self.atoms = atoms
@@ -103,7 +102,7 @@ class UEPCalculator(object):
         self.geom_steps = 30
         self.opt_tol = 1e-5
         self.gw_factor = 5.0
-        self.opt_method = 'trust-exact'
+        self.opt_method = "trust-exact"
         self.save_structs = True
 
         # Results
@@ -147,54 +146,54 @@ class UEPCalculator(object):
             a = self.atoms
 
         if a is None:
-            raise ValueError('Must pass one structure to write input')
+            raise ValueError("Must pass one structure to write input")
         try:
             pos = a.get_positions()[self.index]
             mass = a.get_masses()[self.index]
-        except IndexError as err:
-            raise ValueError('Structure does not contain index of '
-                             'UEPCalculator')
+        except IndexError:
+            raise ValueError("Structure does not contain index of UEPCalculator")
 
         outdata = {
-            'mu_pos': list(map(float, pos)),
-            'particle_mass': float(mass *
-                                   pcnst['atomic mass constant'][0]),
-            'chden_path': self.chden_path,
-            'chden_seed': self.chden_seed,
-            'geom_steps': self.geom_steps,
-            'opt_tol': self.opt_tol,
-            'opt_method': self.opt_method,
-            'gw_factor': self.gw_factor,
-            'save_pickle': True,  # Always save it with a "calculator"
-            'save_structs': self.save_structs
+            "mu_pos": list(map(float, pos)),
+            "particle_mass": float(mass * pcnst["atomic mass constant"][0]),
+            "chden_path": self.chden_path,
+            "chden_seed": self.chden_seed,
+            "geom_steps": self.geom_steps,
+            "opt_tol": self.opt_tol,
+            "opt_method": self.opt_method,
+            "gw_factor": self.gw_factor,
+            "save_pickle": True,  # Always save it with a "calculator"
+            "save_structs": self.save_structs,
         }
-        with open(os.path.join(self.path, self.label + '.yaml'),
-                  'w') as yaml_file:
+        with open(os.path.join(self.path, self.label + ".yaml"), "w") as yaml_file:
             yaml.dump(outdata, yaml_file)
 
     def run(self):
 
         self.write_input()
 
-        proc = sp.Popen(['pm-uep-opt', '{0}.yaml'.format(self.label)],
-                        cwd=os.path.abspath(self.path),
-                        stdout=sp.PIPE, stderr=sp.PIPE)
+        proc = sp.Popen(
+            ["pm-uep-opt", "{0}.yaml".format(self.label)],
+            cwd=os.path.abspath(self.path),
+            stdout=sp.PIPE,
+            stderr=sp.PIPE,
+        )
         stdout, stderr = proc.communicate()
 
     def read(self):
 
         try:
-            with open(os.path.join(self.path,
-                                   self.label + '.uep.pkl'),
-                      'rb') as pickle_file:
+            with open(
+                os.path.join(self.path, self.label + ".uep.pkl"), "rb"
+            ) as pickle_file:
                 results = pickle.load(pickle_file)
 
-            self._Eclass = results['Eclass']
-            self._Ezp = results['Ezp']
-            self._Etot = results['Etot']
-            self._x_opt = results['x']
-            self._fx_opt = results['fx']
-            self.atoms = results['struct']
+            self._Eclass = results["Eclass"]
+            self._Ezp = results["Ezp"]
+            self._Etot = results["Etot"]
+            self._x_opt = results["x"]
+            self._fx_opt = results["fx"]
+            self.atoms = results["struct"]
         except FileNotFoundError:
             self.run()
             self.read()

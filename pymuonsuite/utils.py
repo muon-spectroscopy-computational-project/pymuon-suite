@@ -7,7 +7,7 @@ from __future__ import unicode_literals
 import shutil
 import os
 import numpy as np
-from soprano.utils import minimum_periodic, safe_input
+from soprano.utils import safe_input
 
 
 def list_to_string(arr):
@@ -20,7 +20,7 @@ def list_to_string(arr):
     | Returns:
     |    string (str): a space seperated string of numbers
     """
-    return ' '.join(map(str, arr))
+    return " ".join(map(str, arr))
 
 
 def make_3x3(a):
@@ -48,7 +48,7 @@ def make_3x3(a):
         return a.reshape((3, 3))
     else:
         # All failed
-        raise ValueError('Invalid argument passed do make_3x3')
+        raise ValueError("Invalid argument passed do make_3x3")
 
 
 def safe_create_folder(folder_name):
@@ -62,12 +62,11 @@ def safe_create_folder(folder_name):
 
     """
     while os.path.isdir(folder_name):
-        ans = safe_input(('Folder {} exists, overwrite (y/N)? '
-                          ).format(folder_name))
-        if ans == 'y':
+        ans = safe_input(("Folder {} exists, overwrite (y/N)? ").format(folder_name))
+        if ans == "y":
             shutil.rmtree(folder_name)
         else:
-            folder_name = safe_input('Please input new folder name:\n')
+            folder_name = safe_input("Please input new folder name:\n")
     try:
         os.mkdir(folder_name)
     except OSError:
@@ -96,11 +95,11 @@ def create_plane_grid(hkl, cell, f0, f1, N=20):
 
     # First: verify that the given points (given in fractional coordinates)
     # DO belong to the same plane
-    f01 = f1-f0
+    f01 = f1 - f0
     if np.isclose(np.linalg.norm(f01), 0):
-        raise ValueError('Points f0 and f1 are too close')
+        raise ValueError("Points f0 and f1 are too close")
     if not np.isclose(np.dot(hkl, f01), 0):
-        raise ValueError('Points f0 and f1 do not belong to the same plane')
+        raise ValueError("Points f0 and f1 do not belong to the same plane")
 
     # Now move to direct space
     n = np.dot(hkl, np.linalg.inv(cell))
@@ -110,25 +109,25 @@ def create_plane_grid(hkl, cell, f0, f1, N=20):
     n /= np.linalg.norm(n)
 
     # Find the scanning directions
-    p01 = p1-p0
+    p01 = p1 - p0
 
     plx = np.zeros(3)
     plx[np.where(p01 != 0)[0][0]] = 1
-    ply = p01 - np.dot(p01, plx)*plx
+    ply = p01 - np.dot(p01, plx) * plx
     ply /= np.linalg.norm(ply)
     ply *= np.sign(ply[np.where(ply != 0)[0][0]])
 
     # Now to actually create the scanning grid
-    plgrid = np.array(np.meshgrid(*[np.linspace(0, 1, N)]*2, indexing='ij'))
+    plgrid = np.array(np.meshgrid(*[np.linspace(0, 1, N)] * 2, indexing="ij"))
 
-    xyzgrid = plgrid[0, None]*plx[:, None, None]*np.dot(p01, plx)
-    xyzgrid += plgrid[1, None]*ply[:, None, None]*np.dot(p01, ply)
+    xyzgrid = plgrid[0, None] * plx[:, None, None] * np.dot(p01, plx)
+    xyzgrid += plgrid[1, None] * ply[:, None, None] * np.dot(p01, ply)
     xyzgrid += p0[:, None, None]
 
     return xyzgrid
 
 
-class BackupFile():
+class BackupFile:
     """Backup a file before performing an operation
 
     A class to make a copy of a file before performing some

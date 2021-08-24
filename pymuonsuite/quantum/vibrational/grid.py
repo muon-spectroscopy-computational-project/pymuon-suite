@@ -24,27 +24,26 @@ def calc_wavefunction(sigmas, grid_n, sigmaN=3):
     |   sigmas(Numpy float array, shape:(axes)): Displacement amplitude along
     |                                            each axis
     |   grid_n(int): Number of grid points along each axis
-    |   sigmaN(int): Number of standard deviations to cover in range 
+    |   sigmaN(int): Number of standard deviations to cover in range
     |                (default is 3)
     | Returns:
     |   prob_dens (Numpy float array, shape:(grid_n*3)): Probability density of
     |       harmonic oscillator at each displacement
     """
-    R_axes = np.array([np.linspace(-sigmas*Ri, sigmas*Ri, grid_n)
-                       for Ri in R])
+    R_axes = np.array([np.linspace(-sigmas * Ri, sigmas * Ri, grid_n) for Ri in R])
 
     # Wavefunction
-    psi_norm = (1.0/(np.prod(R)**2*np.pi**3))**0.25
+    psi_norm = (1.0 / (np.prod(R) ** 2 * np.pi ** 3)) ** 0.25
     # And along the three axes
-    psi = psi_norm*np.exp(-(R_axes/R[:, None])**2/2.0)
+    psi = psi_norm * np.exp(-((R_axes / R[:, None]) ** 2) / 2.0)
     # And average
-    r2psi2 = R_axes**2*np.abs(psi)**2
+    r2psi2 = R_axes ** 2 * np.abs(psi) ** 2
 
     # Convert to portable output format
-    prob_dens = np.zeros((grid_n*3))
+    prob_dens = np.zeros((grid_n * 3))
     for i, mode in enumerate(r2psi2):
         for j, point in enumerate(mode):
-            prob_dens[j + i*grid_n] = point
+            prob_dens[j + i * grid_n] = point
 
     return prob_dens
 
@@ -93,8 +92,7 @@ def displaced_cell_range(cell, a_i, grid_n, disp):
     pos_R = pos.copy()
     pos_R[a_i] += disp
     cell_R.set_positions(pos_R)
-    lg = linspaceGen(
-        cell_L, cell_R, steps=grid_n, periodic=True)
+    lg = linspaceGen(cell_L, cell_R, steps=grid_n, periodic=True)
     return lg
 
 
@@ -120,12 +118,13 @@ def tl_disp_generator(norm_coords, evecs, num_atoms):
     coefficients = np.zeros(np.size(norm_coords, 1))
     for i in range(np.size(coefficients)):
         coefficients[i] = random.choice([-1, 1])
-    norm_coords = norm_coords*coefficients
+    norm_coords = norm_coords * coefficients
 
     for atom in range(num_atoms):
         for mode in range(np.size(norm_coords, 1)):
-            displacements[atom] += norm_coords[atom][mode] * \
-                evecs[mode][atom].real*1e10
+            displacements[atom] += (
+                norm_coords[atom][mode] * evecs[mode][atom].real * 1e10
+            )
 
     return displacements
 
@@ -152,9 +151,9 @@ def weighted_tens_avg(tensors, weight):
     x = np.size(tensors, 2)
     y = np.size(tensors, 3)
     tens_avg = np.zeros((num_atoms, x, y))
-    tensors = tensors*weight[:, None, None, None]
+    tensors = tensors * weight[:, None, None, None]
     for i in range(num_atoms):
-        tens_avg[i] = np.sum(tensors[:, i], axis=0)/np.sum(weight)
+        tens_avg[i] = np.sum(tensors[:, i], axis=0) / np.sum(weight)
     return tens_avg
 
 
@@ -176,10 +175,10 @@ def wf_disp_generator(disp_factor, maj_evecs, grid_n):
     |       <grid_n> elements are for the first mode, the second <grid_n> for
     |       the second mode, etc.
     """
-    displacements = np.zeros((grid_n*3, 3))
-    max_disp = 3*maj_evecs*disp_factor[:, None]
+    displacements = np.zeros((grid_n * 3, 3))
+    max_disp = 3 * maj_evecs * disp_factor[:, None]
     for mode in range(3):
         for n, t in enumerate(np.linspace(-1, 1, grid_n)):
-            displacements[n + mode*grid_n] = t*max_disp[mode]
+            displacements[n + mode * grid_n] = t * max_disp[mode]
 
     return displacements

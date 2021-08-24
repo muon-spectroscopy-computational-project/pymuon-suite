@@ -28,22 +28,22 @@ in its interface.
 """
 
 
-def requireEuphonicQPM(import_name='euphonic_qpm'):
-
+def requireEuphonicQPM(import_name="euphonic_qpm"):
     def decorator(func):
-
         @wraps(func)
         def wrapper(*args, **kwargs):
 
             if _euphonic_qpm is None:
-                raise RuntimeError("""
+                raise RuntimeError(
+                    """
                 Can't use castep phonon interface due to Euphonic not being
                 installed. Please download and install Euphonic from Github:
 
                 HTTPS:  https://github.com/pace-neutrons/Euphonic.git
                 SSH:    git@github.com:pace-neutrons/Euphonic.git
 
-                and try again.""")
+                and try again."""
+                )
             else:
                 kwargs[import_name] = _euphonic_qpm
                 return func(*args, **kwargs)

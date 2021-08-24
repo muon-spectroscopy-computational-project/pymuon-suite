@@ -20,12 +20,16 @@ _RUN_DFTB = False
 
 
 class TestQuantum(unittest.TestCase):
-
     def remove_phonons_data(self, dir_files):
         for f in dir_files:
-            if not (f.endswith(".yaml") or f.endswith("Mu.xyz")
-                    or f.endswith(".sh") or f.endswith(".castep")
-                    or f.endswith(".magres") or f.endswith(".phonon")):
+            if not (
+                f.endswith(".yaml")
+                or f.endswith("Mu.xyz")
+                or f.endswith(".sh")
+                or f.endswith(".castep")
+                or f.endswith(".magres")
+                or f.endswith(".phonon")
+            ):
                 if os.path.isfile(f):
                     os.remove(f)
 
