@@ -216,8 +216,6 @@ MuAirssSchema = Schema(
 # Parameter file schema and defaults
 MuonHarmonicSchema = Schema(
     {
-        # File containing structural info about molecule/crystal
-        "cell_file": validate_str,
         # Method used to calculate thermal average
         Optional("method", default="independent"): validate_all_of(
             "independent", "montecarlo"

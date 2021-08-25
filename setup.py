@@ -26,7 +26,7 @@ if __name__ == "__main__":
 
     setup(
         name="PyMuonSuite",
-        version="0.0.1",
+        version="0.1.0",
         description=("A suite of utilities for muon spectroscopy"),
         author="Simone Sturniolo",
         author_email="simone.sturniolo@stfc.ac.uk",
@@ -46,6 +46,7 @@ if __name__ == "__main__":
             "dev": [
                 "pytest",
                 "flake8",
+                "black"
             ]
         },
         package_data={"pymuonsuite": sk_pkgdata},

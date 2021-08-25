@@ -29,15 +29,25 @@ from soprano.utils import silence_stdio
 def nq_entry():
     parser = ap.ArgumentParser()
     parser.add_argument(
+        "structure",
+        type=str,
+        default=None,
+        help="A structure file in an ASE readable format",
+    )
+    parser.add_argument(
         "parameter_file",
         type=str,
         help="YAML file containing relevant input parameters",
     )
     parser.add_argument(
-        "-w",
-        action="store_true",
-        default=False,
-        help="Create and write input files instead of parsing" " the results",
+        "-t",
+        type=str,
+        default="r",
+        choices=["r", "w"],
+        dest="task",
+        help="""Task to be run by pm-nq. Can be either 'w'
+                        (=generate and WRITE structures) or 'r' (=READ and
+                        analyse results). Default is READ.""",
     )
 
     args = parser.parse_args()
@@ -49,20 +59,20 @@ def nq_entry():
     if params["average_T"] is None:
         params["average_T"] = params["displace_T"]
 
-    if args.w:
+    if args.task == 'w':
         try:
-            muon_vibrational_average_write(**params)
+            muon_vibrational_average_write(args.structure, **params)
         except IOError as e:
             print(e)
     else:
         try:
-            muon_vibrational_average_read(**params)
+            muon_vibrational_average_read(args.structure, **params)
         except IOError as e:
             print("Read/write error: {0}".format(e))
             print(
                 "\nThis could mean it was impossible to find the displaced "
                 "structure folder: maybe you wanted to run with the "
-                "-w option to write it?\n"
+                "-t w option to write it?\n"
             )
 
 

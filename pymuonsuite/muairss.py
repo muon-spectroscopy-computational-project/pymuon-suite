@@ -315,7 +315,7 @@ def main(task=None):
         "structures",
         type=str,
         default=None,
-        help="A structure file or a folder of files in an ASE " "readable format",
+        help="A structure file or a folder of files in an ASE readable format",
     )
     parser.add_argument(
         "parameter_file",
@@ -332,7 +332,7 @@ def main(task=None):
         default="r",
         choices=["r", "w"],
         dest="task",
-        help="""Task to be run by muairss. Can be either 'w'
+        help="""Task to be run by pm-muairss. Can be either 'w'
                         (=generate and WRITE structures) or 'r' (=READ and
                         cluster results). Default is READ.""",
     )

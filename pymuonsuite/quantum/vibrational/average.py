@@ -33,7 +33,7 @@ class MuonAverageError(Exception):
 
 
 def muon_vibrational_average_write(
-    cell_file,
+    structure,
     method="independent",
     mu_index=-1,
     mu_symbol="H:mu",
@@ -51,7 +51,7 @@ def muon_vibrational_average_write(
     in a given system.
 
     | Pars:
-    |   cell_file (str):    Filename for input structure file
+    |   structure (str):    Filename for input structure file
     |   method (str):       Method to use for the average. Options are
     |                       'independent', 'montecarlo'.
     |                       Default is 'independent'.
@@ -77,9 +77,9 @@ def muon_vibrational_average_write(
 
     # Open the structure file
     with silence_stdio():
-        cell = io.read(cell_file)
-    path = os.path.split(cell_file)[0]
-    sname = seedname(cell_file)
+        cell = io.read(structure)
+    path = os.path.split(structure)[0]
+    sname = seedname(structure)
 
     cell.info["name"] = sname
 
@@ -197,7 +197,7 @@ def muon_vibrational_average_write(
 
 
 def muon_vibrational_average_read(
-    cell_file,
+    structure,
     calculator="castep",
     avgprop="hyperfine",
     average_T=0,
@@ -205,7 +205,7 @@ def muon_vibrational_average_read(
     **kwargs
 ):
     # Open the structure file
-    sname = seedname(cell_file)
+    sname = seedname(structure)
 
     io_formats = {"castep": ReadWriteCastep, "dftb+": ReadWriteDFTB}
 
@@ -263,7 +263,7 @@ All values, by configuration:
 
         """.format(
                 property=avgname,
-                cell=cell_file,
+                cell=structure,
                 scheme=displsch,
                 avg=avg,
                 vals="\n".join(
