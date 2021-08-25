@@ -59,7 +59,7 @@ def nq_entry():
     if params["average_T"] is None:
         params["average_T"] = params["displace_T"]
 
-    if args.task == 'w':
+    if args.task == "w":
         try:
             muon_vibrational_average_write(args.structure, **params)
         except IOError as e:

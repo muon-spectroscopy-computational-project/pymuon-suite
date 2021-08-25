@@ -65,8 +65,8 @@ Clustering method: k-Means
             """
 ****************************
 |                          |
-|         MUAIRSS          |
-|    Clustering report     |
+|       PYMUON-SUITE       |
+|  MuAirss Clusters report |
 |                          |
 ****************************
 
@@ -289,7 +289,7 @@ def write_phonon_report(args, params, phdata):
             """
     ****************************
     |                          |
-    |         MUAIRSS          |
+    |       PYMUON-SUITE       |
     |    ASE Phonons report    |
     |                          |
     ****************************
@@ -330,3 +330,21 @@ def write_phonon_report(args, params, phdata):
                 for k, d in enumerate(m):
                     d = np.real(d)
                     f.write("\t\t{0}\t{1: .6f}\t{2: .6f}\t{3: .6f}\n".format(k + 1, *d))
+
+
+def write_symmetry_report(args, symdata, wpoints, fpos):
+
+    print("Wyckoff points symmetry report for {0}".format(args.structure))
+    print("Space Group International Symbol: " "{0}".format(symdata["international"]))
+    print("Space Group Hall Number: " "{0}".format(symdata["hall_number"]))
+    print("Absolute\t\tFractional\t\tHessian constraints\tOccupied")
+
+    # List any Wyckoff point that does not already have an atom in it
+    vformat = "[{0:.3f} {1:.3f} {2:.3f}]"
+    for wp in wpoints:
+        occ = np.any(
+            np.isclose(np.linalg.norm(fpos - wp.fpos, axis=1), 0, atol=args.symprec)
+        )
+        ps = vformat.format(*wp.pos)
+        fps = vformat.format(*wp.fpos)
+        print("{0}\t{1}\t{2}\t\t\t{3}".format(ps, fps, wp.hessian, "X" if occ else ""))

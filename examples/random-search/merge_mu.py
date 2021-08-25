@@ -1,6 +1,5 @@
 import sys
 import glob
-import numpy as np
 from ase import io, Atoms
 from ase.build import make_supercell
 

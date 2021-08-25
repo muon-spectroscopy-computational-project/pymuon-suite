@@ -11,41 +11,39 @@ from __future__ import unicode_literals
 import random
 
 import numpy as np
-import scipy.constants as cnst
-from ase import Atoms
 from soprano.collection.generate import linspaceGen
 
 
-def calc_wavefunction(sigmas, grid_n, sigmaN=3):
-    """
-    Calculate harmonic oscillator wavefunction
+# def calc_wavefunction(sigmas, grid_n, sigmaN=3):
+#     """
+#     Calculate harmonic oscillator wavefunction
 
-    | Args:
-    |   sigmas(Numpy float array, shape:(axes)): Displacement amplitude along
-    |                                            each axis
-    |   grid_n(int): Number of grid points along each axis
-    |   sigmaN(int): Number of standard deviations to cover in range
-    |                (default is 3)
-    | Returns:
-    |   prob_dens (Numpy float array, shape:(grid_n*3)): Probability density of
-    |       harmonic oscillator at each displacement
-    """
-    R_axes = np.array([np.linspace(-sigmas * Ri, sigmas * Ri, grid_n) for Ri in R])
+#     | Args:
+#     |   sigmas(Numpy float array, shape:(axes)): Displacement amplitude along
+#     |                                            each axis
+#     |   grid_n(int): Number of grid points along each axis
+#     |   sigmaN(int): Number of standard deviations to cover in range
+#     |                (default is 3)
+#     | Returns:
+#     |   prob_dens (Numpy float array, shape:(grid_n*3)): Probability density of
+#     |       harmonic oscillator at each displacement
+#     """
+#     R_axes = np.array([np.linspace(-sigmas * Ri, sigmas * Ri, grid_n) for Ri in R])
 
-    # Wavefunction
-    psi_norm = (1.0 / (np.prod(R) ** 2 * np.pi ** 3)) ** 0.25
-    # And along the three axes
-    psi = psi_norm * np.exp(-((R_axes / R[:, None]) ** 2) / 2.0)
-    # And average
-    r2psi2 = R_axes ** 2 * np.abs(psi) ** 2
+#     # Wavefunction
+#     psi_norm = (1.0 / (np.prod(R) ** 2 * np.pi ** 3)) ** 0.25
+#     # And along the three axes
+#     psi = psi_norm * np.exp(-((R_axes / R[:, None]) ** 2) / 2.0)
+#     # And average
+#     r2psi2 = R_axes ** 2 * np.abs(psi) ** 2
 
-    # Convert to portable output format
-    prob_dens = np.zeros((grid_n * 3))
-    for i, mode in enumerate(r2psi2):
-        for j, point in enumerate(mode):
-            prob_dens[j + i * grid_n] = point
+#     # Convert to portable output format
+#     prob_dens = np.zeros((grid_n * 3))
+#     for i, mode in enumerate(r2psi2):
+#         for j, point in enumerate(mode):
+#             prob_dens[j + i * grid_n] = point
 
-    return prob_dens
+#     return prob_dens
 
 
 def create_displaced_cell(cell, displacements):

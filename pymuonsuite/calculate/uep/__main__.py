@@ -172,7 +172,7 @@ def _interpret_line(ldef, cell, pos):
     # [[starting point], [end point], number of points]
 
     # Get a signature
-    sig = "".join(["l" if type(l) is list else "n" for l in ldef])
+    sig = "".join(["l" if type(ld) is list else "n" for ld in ldef])
     if sig == "lln":
         p0 = np.array(ldef[0])
         p1 = np.array(ldef[1])
@@ -200,7 +200,7 @@ def _interpret_plane(pdef, cell, pos):
     #  points along width, points along height]
 
     # Get a signature
-    sig = "".join(["l" if type(l) is list else "n" for l in pdef])
+    sig = "".join(["l" if type(pd) is list else "n" for pd in pdef])
 
     if sig == "lllnn":
         p0 = np.array(pdef[0])

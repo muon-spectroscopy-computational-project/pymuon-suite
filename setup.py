@@ -42,13 +42,7 @@ if __name__ == "__main__":
             "soprano>=0.8.11",
             "parse-fmt>=0.5",
         ],
-        extras_require={
-            "dev": [
-                "pytest",
-                "flake8",
-                "black"
-            ]
-        },
+        extras_require={"dev": ["pytest", "flake8", "black"]},
         package_data={"pymuonsuite": sk_pkgdata},
         entry_points={
             "console_scripts": [
@@ -58,7 +52,7 @@ if __name__ == "__main__":
                 ("pm-uep-plot = " "pymuonsuite.calculate.uep.__main__:plot_entry"),
                 ("pm-nq = " "pymuonsuite.quantum.__main__:nq_entry"),
                 ("pm-asephonons = " "pymuonsuite.quantum.__main__:asephonons_entry"),
-                ("pm-symmetry = " "pymuonsuite.symmetry:print_symmetry_report"),
+                ("pm-symmetry = " "pymuonsuite.symmetry:main"),
             ]
         },
         python_requires=">=3.1",
