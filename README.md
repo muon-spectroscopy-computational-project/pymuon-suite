@@ -1,5 +1,5 @@
 # pymuon-suite
-Collection of scripts and utilities for muon spectroscopy
+Collection of scripts and utilities for muon spectroscopy.
 
 ## Command line scripts
 
@@ -15,6 +15,8 @@ optimisation using Poisson spheres distribution and different calculators, as we
 * `pm-asephonons`: compute phonons for the given structure using ASE and DFTB+;
 * `pm-nq`: generates input files for quantum effects using a phonon
 approximation or analyses the results (work in progress)
+
+For more in-depth information about each tool and their usage, [check the Wiki](https://github.com/muon-spectroscopy-computational-project/pymuon-suite/wiki).
 
 ## Docker Environments
 
