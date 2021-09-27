@@ -14,7 +14,7 @@ import numpy as np
 import scipy.constants as cnst
 from soprano.utils import minimum_supcell, supcell_gridgen
 from soprano.calculate.powder import ZCW
-from soprano.properties.nmr.utils import _get_isotope_data, _dip_constant
+from soprano.nmr.utils import _get_isotope_data, _dip_constant
 from pymuonsuite.constants import m_gamma
 
 
