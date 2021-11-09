@@ -5,6 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import os
+import sys
 import pickle
 import numpy as np
 import argparse as ap
@@ -310,7 +311,7 @@ def geomopt_entry():
             results = geomopt(params, outf)
         except Exception as e:
             print("Error: ", e)
-            return
+            sys.exit(1)
 
     print("Optimisation complete")
 
@@ -335,7 +336,11 @@ def plot_entry():
     if params["chden_seed"] is None:
         params["chden_seed"] = seedname  # Default is the same
 
-    plot(params, seedname)
+    try:
+        plot(params, seedname)
+    except Exception as e:
+        print("Error: ", e)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
