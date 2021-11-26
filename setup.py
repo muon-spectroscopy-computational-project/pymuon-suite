@@ -2,8 +2,15 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from os import read
 
+import pathlib
 from setuptools import setup, find_packages
+
+from pymuonsuite import __version__
+
+this_dir = pathlib.Path(__file__).parent
+readme_text = (this_dir / "README.md").read_text()
 
 if __name__ == "__main__":
 
@@ -26,10 +33,31 @@ if __name__ == "__main__":
 
     setup(
         name="PyMuonSuite",
-        version="0.1.0",
+        version=__version__,
         description=("A suite of utilities for muon spectroscopy"),
+        long_description=readme_text,
+        long_description_content_type="text/markdown",
         author="Simone Sturniolo",
         author_email="simone.sturniolo@stfc.ac.uk",
+        license="GPLv3",
+        classifiers=[
+            # How mature is this project? Common values are
+            #   3 - Alpha
+            #   4 - Beta
+            #   5 - Production/Stable
+            "Development Status :: 4 - Beta",
+            # Indicate who your project is intended for
+            "Intended Audience :: Science/Research",
+            "Topic :: Scientific/Engineering :: Chemistry",
+            "Topic :: Scientific/Engineering :: Physics",
+            "Topic :: Scientific/Engineering :: Information Analysis",
+            # Pick your license as you wish (should match "license" above)
+            "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+            # Specify the Python versions you support here. In particular,
+            # ensure that you indicate whether you support Python 2, Python 3
+            # or both.
+            "Programming Language :: Python :: 3",
+        ],
         packages=find_packages(),
         # Requirements
         install_requires=[
