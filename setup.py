@@ -2,7 +2,6 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
-from os import read
 
 import pathlib
 from setuptools import setup, find_packages
