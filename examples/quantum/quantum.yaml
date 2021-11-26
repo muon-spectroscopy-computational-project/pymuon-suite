@@ -6,4 +6,3 @@ write_allconf:      true
 dftb_pbc:           false
 grid_n:             10
 mu_index:           -1
-
