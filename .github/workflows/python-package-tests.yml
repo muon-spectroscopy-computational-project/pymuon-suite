@@ -12,8 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # todo: extend to 3.10 once wheels are available for all dependencies
-        python-version: ["3.6", "3.7", "3.8", "3.9"]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
         # todo: extend to windows-latest
         os: [ubuntu-latest, macOS-latest]
 
