@@ -48,7 +48,8 @@ class TestQuantum(unittest.TestCase):
         folder = _TESTDATA_DIR + "/dftb-phonons/"
         os.chdir(folder)
         yaml_file = "quantum.yaml"
-        sys.argv[1:] = ["-w", yaml_file]
+        structure_file = "ethyleneMu_opt.xyz"
+        sys.argv[1:] = ["-tw", structure_file, yaml_file]
         nq_entry()
 
         if _RUN_DFTB:
@@ -56,7 +57,7 @@ class TestQuantum(unittest.TestCase):
         else:
             os.chdir(_TESTDATA_DIR + "/dftb-nq-results")
 
-        sys.argv[1:] = [yaml_file]
+        sys.argv[1:] = [structure_file, yaml_file]
         nq_entry()
         self.assertTrue(os.path.exists("averages.dat"))
 
