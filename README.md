@@ -18,6 +18,33 @@ approximation or analyses the results (work in progress)
 
 For more in-depth information about each tool and their usage, [check the Wiki](https://github.com/muon-spectroscopy-computational-project/pymuon-suite/wiki).
 
+## Pre-commit Hook
+
+There is a pre-commit hook available which will automatically format your code to follow those style guidelines
+which are enforced by the GitHub Actions workflow. It is not mandatory to use the hook, but it will save you time
+fixing code style!
+
+To use it, download the `pre-commit` package:
+
+For pip:
+```
+pip install pre-commit
+pre-commit install
+```
+
+For conda:
+```
+conda install -c conda-forge pre-commit
+pre-commit install
+```
+
+The hook is configured in `.pre-commit-config.yaml`. `pre-commit install` automatically finds
+this file and converts it to a script which is placed in `.git/hooks/pre-commit`.
+
+Now when you run `git commit` you should see the hook run and any failures will be flagged.
+
+More information at https://pre-commit.com/
+
 ## Docker Environments
 
 To use the Docker environments, you must have [Docker Desktop](https://www.docker.com/products/docker-desktop)
