@@ -5,11 +5,6 @@ Functions and classes to provide various possible displacement schemes for
 different averaging methods meant to approximate nuclear quantum effects.
 """
 
-# Python 2-to-3 compatibility code
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
 
 import pickle
 import numpy as np
