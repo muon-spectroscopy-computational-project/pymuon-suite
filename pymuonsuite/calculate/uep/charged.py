@@ -80,6 +80,8 @@ class ChargeDistribution(object):
         # Override by also grabbing any pseudopotentials found in the .cell
         # file
 
+
+        ###### CASTEP SPECIFIC LINES (reading files) ###############
         cppot = None
         try:
             with silence_stdio():
@@ -95,6 +97,8 @@ class ChargeDistribution(object):
                 except IOError:
                     # File not found
                     print("WARNING: pseudopotential file " "{0} not found".format(f))
+
+        ###### END OF CASTEP SPECIFIC LINES ###############
 
         # FFT grid
         lattice = np.array(self._elec_den.real_lattice)  # Ang
@@ -115,8 +119,10 @@ class ChargeDistribution(object):
         elems = self._struct.get_chemical_symbols()
         pos = self._struct.get_positions()
         try:
+            ######################## THIS WAY OF GETTING CHARGES AND GW OUT OF PSUEDOPOTENTIALS MAY BE CASTEP SPECIFIC ############
             self._q = np.array([ppots[el][0] for el in elems])  # e
             self._gw = np.array([ppots[el][1] / gw_fac for el in elems])  # Ang
+            #################### END OF CASTEP SPECIFIC CODE ################
         except KeyError:
             raise RuntimeError(
                 """Some or all CASTEP pseudopotentials were not
@@ -132,9 +138,13 @@ the .cell file."""
         if not np.isclose(np.average(self._rho), sum(self._q), 1e-4):
             raise RuntimeError("Cell is not neutral")
         # Put the minus sign for electrons
+        
+        ############### NEXT LINE IS A CASTEP SPECIFIC UNIT CONVERSION, THIS MUST BE STANDARDISED ###########
         self._rho *= -sum(self._q) / np.sum(
             self._rho
         )  # Normalise charge. Now it's e/grid points
+        #################### END OF CASTEP SPECIFIC CODE ################
+
         self._rhoe_G = np.fft.fftn(self._rho)
         Gnorm = np.linalg.norm(self._g_grid, axis=0)
         Gnorm_fixed = np.where(Gnorm > 0, Gnorm, np.inf)
@@ -143,6 +153,7 @@ the .cell file."""
         vol = abs(np.dot(np.cross(cell[:, 0], cell[:, 1]), cell[:, 2]))  # Ang^3
         self._vol = vol
 
+        # Core formula: reciprocal space potential contribution FROM ELECTRONS
         self._Ve_G = 4 * np.pi / Gnorm_fixed ** 2 * (self._rhoe_G / vol)  # e/Ang
 
         # Now on to doing the same for ionic components
@@ -154,8 +165,8 @@ the .cell file."""
                 - 0.5 * (self._gw[i] * Gnorm) ** 2
             )
 
-        pregrid = 4 * np.pi / Gnorm_fixed ** 2 * 1.0 / vol
-        self._Vi_G = pregrid * self._rhoi_G
+        # Reciprocal space potential contributions FROM IONS (approximated as Gaussian charges)
+        self._Vi_G = 4 * np.pi / Gnorm_fixed ** 2 * (self._rhoi_G / vol)  
 
         # Is there any data on spin polarization?
         self._spinpol = False
