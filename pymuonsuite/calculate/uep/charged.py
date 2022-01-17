@@ -57,9 +57,9 @@ class ChargeDistribution(object):
                               (.den_fmt and .castep) used to load the data.
 
         Keyword Arguments:
-            gw_fac {number} -- Factor used to divide the Gaussian width used
-                               for the ions. The final width will be the
-                               radius of the pseudopotential divided by this.
+            gw_fac {number} -- Gaussian width factor. The Gaussian width used
+                               for each ion will be the radius of its
+                               pseudopotential divided by this factor.
                                (default: {3})
             path {str} -- Path in which the CASTEP output files can be found.
                           (default: {''})
@@ -67,6 +67,8 @@ class ChargeDistribution(object):
         Raises:
             RuntimeError -- CASTEP pseudopotentials were not found
         """
+
+        # CASTEP SPECIFIC CODE - reading files
 
         # Load the electronic density
         seedpath = os.path.join(path, seedname)
@@ -80,8 +82,6 @@ class ChargeDistribution(object):
         # Override by also grabbing any pseudopotentials found in the .cell
         # file
 
-
-        ###### CASTEP SPECIFIC LINES (reading files) ###############
         cppot = None
         try:
             with silence_stdio():
@@ -98,9 +98,9 @@ class ChargeDistribution(object):
                     # File not found
                     print("WARNING: pseudopotential file " "{0} not found".format(f))
 
-        ###### END OF CASTEP SPECIFIC LINES ###############
+        # END OF CASTEP SPECIFIC CODE
 
-        # FFT grid
+        # unit cell and FFT grid
         lattice = np.array(self._elec_den.real_lattice)  # Ang
         grid = np.array(self._elec_den.grid)
 
@@ -113,16 +113,18 @@ class ChargeDistribution(object):
             )
         )
         # Uses the g-vector convention in formulas used
+        # this should match CASTEP's grid in reciprocal space
         self._g_grid = np.tensordot(inv_latt, fft_grid, axes=(0, 0))  # Ang^-1
 
         # Information for the elements, and guarantee zero net charge
         elems = self._struct.get_chemical_symbols()
         pos = self._struct.get_positions()
         try:
-            ######################## THIS WAY OF GETTING CHARGES AND GW OUT OF PSUEDOPOTENTIALS MAY BE CASTEP SPECIFIC ############
+            # CASTEP SPECIFIC CODE (maybe) - this way of getting charges &
+            # gaussian widths from pseudopotentials
             self._q = np.array([ppots[el][0] for el in elems])  # e
             self._gw = np.array([ppots[el][1] / gw_fac for el in elems])  # Ang
-            #################### END OF CASTEP SPECIFIC CODE ################
+            # END OF CASTEP SPECIFIC CODE
         except KeyError:
             raise RuntimeError(
                 """Some or all CASTEP pseudopotentials were not
@@ -138,15 +140,17 @@ the .cell file."""
         if not np.isclose(np.average(self._rho), sum(self._q), 1e-4):
             raise RuntimeError("Cell is not neutral")
         # Put the minus sign for electrons
-        
-        ############### NEXT LINE IS A CASTEP SPECIFIC UNIT CONVERSION, THIS MUST BE STANDARDISED ###########
+
+        # CASTEP SPECIFIC CODE - unit conversion. Needs standardising.
         self._rho *= -sum(self._q) / np.sum(
             self._rho
         )  # Normalise charge. Now it's e/grid points
-        #################### END OF CASTEP SPECIFIC CODE ################
+        # END OF CASTEP SPECIFIC CODE
 
         self._rhoe_G = np.fft.fftn(self._rho)
         Gnorm = np.linalg.norm(self._g_grid, axis=0)
+        # remove 0-values as we will use 1/G_norm in calculations
+        # (0-values are special cases and we set the results manually elsewhere)
         Gnorm_fixed = np.where(Gnorm > 0, Gnorm, np.inf)
 
         cell = np.array(self._elec_den.real_lattice)
@@ -160,13 +164,14 @@ the .cell file."""
         self._rhoi_G = self._g_grid[0] * 0.0j
         for i, p in enumerate(pos):
             self._rhoi_G += self._q[i] * np.exp(
-                -1.0j
+                -1.0j  # phase term corresponding to translation in direct space
                 * np.sum(self._g_grid[:, :, :, :] * p[:, None, None, None], axis=0)
                 - 0.5 * (self._gw[i] * Gnorm) ** 2
             )
 
-        # Reciprocal space potential contributions FROM IONS (approximated as Gaussian charges)
-        self._Vi_G = 4 * np.pi / Gnorm_fixed ** 2 * (self._rhoi_G / vol)  
+        # Reciprocal space potential contributions FROM IONS
+        # (approximated as Gaussian charges)
+        self._Vi_G = 4 * np.pi / Gnorm_fixed ** 2 * (self._rhoi_G / vol)
 
         # Is there any data on spin polarization?
         self._spinpol = False
@@ -386,8 +391,8 @@ the .cell file."""
     def d2V(self, p, max_process_p=20):
         """Potential Hessian
 
-        Compute electrostatic potential Hessian at a point or list of
-        points, total and split by electronic and ionic contributions.
+        Compute electrostatic potential Hessian at a point or list of points,
+        total and split by electronic and ionic contributions.
 
         Arguments:
             p {np.ndarray} -- List of points to compute potential Hessian at.
@@ -403,7 +408,7 @@ the .cell file."""
             np.ndarray -- Ionic potential Hessian
         """
 
-        # Return potential Hessian at a point or a list of points
+        # Return potential Hessian  at a point or a list of points
 
         p = np.array(p)
         if len(p.shape) == 1:
