@@ -77,5 +77,5 @@ if __name__ == "__main__":
                 ("pm-symmetry = " "pymuonsuite.symmetry:main"),
             ]
         },
-        python_requires=">=3.7, <=3.10",
+        python_requires=">=3.7, <=3.11",
     )
