@@ -4,6 +4,7 @@ Author: Adam Laverack
 
 
 import os
+import sys
 import pickle
 import argparse as ap
 
@@ -131,7 +132,7 @@ def asephonons_entry():
     except Exception as e:
         print(e)
         print("Error: Could not write phonons file, see asephonons.out for" " details.")
-        return
+        sys.exit(1)
 
     # Save optimised structure
     with silence_stdio():
