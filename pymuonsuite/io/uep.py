@@ -85,9 +85,13 @@ class UEPCalculator(object):
         self.index = index
         self.path = path
 
-        chden = os.path.abspath(chden)
-        chpath, chname = os.path.split(chden)
-        chseed = os.path.splitext(chname)[0]
+        if chden != "":
+            chden = os.path.abspath(chden)
+            chpath, chname = os.path.split(chden)
+            chseed = os.path.splitext(chname)[0]
+        else:
+            chpath = os.path.abspath("")
+            chseed = ""
 
         self.chden_path = chpath
         self.chden_seed = chseed
