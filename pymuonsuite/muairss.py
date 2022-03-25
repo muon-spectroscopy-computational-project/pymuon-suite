@@ -83,14 +83,13 @@ def generate_muairss_collection(struct, params):
     defect_collection = AtomsCollection(defect_gen)
     print("{0} configurations generated".format(len(defect_collection)))
 
+    particle_mass = params.get("particle_mass_amu", constants.m_mu_amu)
     collection = []
     for atoms in defect_collection:
         # Where's the muon?
         # We rely on the fact that it's always put at the first place
         mupos = atoms.get_positions()[0]
-        scell = scell0.copy() + Atoms(
-            "H", positions=[mupos], masses=[constants.m_mu_amu]
-        )
+        scell = scell0.copy() + Atoms("H", positions=[mupos], masses=[particle_mass])
         # Add castep custom species
         csp = scell0.get_chemical_symbols() + [params["mu_symbol"]]
         scell.set_array("castep_custom_species", np.array(csp))

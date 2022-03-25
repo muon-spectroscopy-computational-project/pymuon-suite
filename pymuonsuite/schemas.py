@@ -148,6 +148,8 @@ MuAirssSchema = Schema(
         Optional("uep_chden", default=""): validate_str,
         # Gaussian Width factor for UEP
         Optional("uep_gw_factor", default=5.0): float,
+        # Particle mass (in amu) for UEP
+        Optional("particle_mass_amu", default=pcnst["muon mass in u"][0]): float,
         # Radius to use when generating muon sites with the possion disk algorithm.
         Optional("poisson_r", default=0.8): float,
         # Van der Waals radius to use when generating muon sites. Default is 0.5.
