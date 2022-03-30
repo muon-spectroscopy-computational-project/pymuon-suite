@@ -5,10 +5,11 @@ import shutil
 import unittest
 
 import numpy as np
-from ase import io
+from ase import Atoms, io
+from scipy.constants import physical_constants as pcnst
 from pymuonsuite.io.uep import ReadWriteUEP
 
-from pymuonsuite.schemas import load_input_file, MuAirssSchema
+from pymuonsuite.schemas import load_input_file, MuAirssSchema, UEPOptSchema
 from soprano.utils import silence_stdio
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,16 +17,21 @@ _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
 
 
 class TestReadWriteUEP(unittest.TestCase):
-    def test_read(self):
+    def test_read_fails_when_folder_empty(self):
         sname = "Si2_1"
         folder = _TESTDATA_DIR  # does not contain any uep files
         reader = ReadWriteUEP()
         # test that we do not get any result for trying to read
         # an empty folder:
-        try:
+        with self.assertRaises(OSError) as context:
             reader.read(folder, sname)
-        except Exception as e:
-            print(e)
+
+        self.assertIn("could not read UEP file", str(context.exception))
+
+    def test_read(self):
+        sname = "Si2_1"
+        reader = ReadWriteUEP()
+
         folder = os.path.join(_TESTDATA_DIR, "Si2/uep-result")
         # tests uep file being read, and compares structure to
         # that in the xyz file - these should be equal
@@ -90,7 +96,33 @@ class TestReadWriteUEP(unittest.TestCase):
         calc = reader._create_calculator(a, folder, "Si2")
         check_geom_opt_params(calc, params)
 
-    def test_write(self):
+    def test_write_succeeds_when_charged_true(self):
+        # read in cell file to get atom
+        try:
+            input_folder = _TESTDATA_DIR + "/Si2"
+            os.chdir(input_folder)
+
+            output_folder = "test_save"
+            os.mkdir(output_folder)
+
+            with silence_stdio():
+                atoms = io.read("Si2.cell")
+
+            # test writing geom_opt output
+            param_file = "Si2-muairss-uep.yaml"
+            params = load_input_file(param_file, MuAirssSchema)
+
+            reader = ReadWriteUEP(params=params)
+
+            reader.write(atoms, output_folder)
+
+            self.assertTrue(
+                os.path.exists(os.path.join(output_folder, "test_save.yaml"))
+            )
+        finally:
+            shutil.rmtree("test_save")
+
+    def test_write_fails_when_charged_false(self):
         # read in cell file to get atom
         try:
             input_folder = _TESTDATA_DIR + "/Si2"
@@ -118,10 +150,49 @@ class TestReadWriteUEP(unittest.TestCase):
 
             reader = ReadWriteUEP(params=params)
 
+            with self.assertRaises(RuntimeError) as context:
+                reader.write(atoms, output_folder)
+
+            self.assertIn(
+                "Can't use UEP method for neutral system", str(context.exception)
+            )
+
+        finally:
+            shutil.rmtree("test_save")
+
+    def test_write_uses_correct_particle_mass(self):
+
+        # read in cell file to get atom
+        try:
+            input_folder = _TESTDATA_DIR + "/Si2"
+            os.chdir(input_folder)
+
+            output_folder = "test_save"
+            os.mkdir(output_folder)
+
+            with silence_stdio():
+                atoms = io.read("Si2.cell")
+
+            # test writing geom_opt output
+            param_file = "Si2-muairss-uep-Li8.yaml"
+            params = load_input_file(param_file, MuAirssSchema)
+
+            atoms += Atoms(
+                "H", positions=[(0, 0, 0)], masses=[params["particle_mass_amu"]]
+            )
+            reader = ReadWriteUEP(params=params)
+
             reader.write(atoms, output_folder)
 
-        except Exception as e:
-            print(e)
+            expected_file = os.path.join(output_folder, "test_save.yaml")
+            self.assertTrue(os.path.exists(expected_file))
+            uep_params = load_input_file(expected_file, UEPOptSchema)
+
+            self.assertEqual(
+                uep_params["particle_mass"],
+                params["particle_mass_amu"] * pcnst["atomic mass constant"][0],
+            )
+
         finally:
             shutil.rmtree("test_save")
 

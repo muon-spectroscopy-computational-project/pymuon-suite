@@ -7,7 +7,6 @@ import sys
 import shutil
 import subprocess
 import glob
-from scipy.constants import physical_constants as pcnst
 from pymuonsuite.muairss import main as run_muairss
 from pymuonsuite.schemas import load_input_file, MuAirssSchema, UEPOptSchema
 from ase.io.castep import read_param
@@ -59,34 +58,6 @@ def _clean_testdata_dir():
 class TestMuairss(unittest.TestCase):
     def setUp(self):
         _clean_testdata_dir()
-
-    def test_particle_mass(self):
-        try:
-            yaml_file = os.path.join(_TESTDATA_DIR, "Si2-muairss-uep-Li8.yaml")
-            cell_file = os.path.join(_TESTDATA_DIR, "Si2.cell")
-            input_params = load_input_file(yaml_file, MuAirssSchema)
-
-            # Run Muairss write:
-            sys.argv[1:] = ["-tw", cell_file, yaml_file]
-            os.chdir(_TESTDATA_DIR)
-            run_muairss()
-            # Check all folders contain a yaml file & particle mass is correctly set
-            for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/uep/"):
-                for s in subDirs:
-                    expected_file = os.path.join(
-                        "muon-airss-out-uep/uep/" + s, s + ".yaml"
-                    )
-                    self.assertTrue(os.path.exists(expected_file))
-                    params = load_input_file(expected_file, UEPOptSchema)
-                    self.assertEqual(
-                        params["particle_mass"],
-                        input_params["particle_mass_amu"]
-                        * pcnst["atomic mass constant"][0],
-                    )
-
-        finally:
-            #  Remove all created files and folders
-            _clean_testdata_dir()
 
     def testUEP(self):
         try:
