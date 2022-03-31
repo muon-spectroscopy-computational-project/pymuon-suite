@@ -64,7 +64,7 @@ if __name__ == "__main__":
             "soprano>=0.8.11",
             "parse-fmt>=0.5",
         ],
-        extras_require={"dev": ["pytest", "flake8", "black", "pre-commit"]},
+        extras_require={"dev": ["pytest", "flake8", "black>=22.3.0", "pre-commit"]},
         package_data={"pymuonsuite": sk_pkgdata},
         entry_points={
             "console_scripts": [
