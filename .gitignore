@@ -132,3 +132,6 @@ docs/*
 
 # Pycharm
 .idea/*
+
+# virtualenvs
+.venv*
