@@ -6,8 +6,8 @@ The script `pm-muairss-gen` is aimed at generating a number of random starting s
 
 Here `<structure>` may be a single structure file in a format readable by the Atomic Simulation Environment (ASE), or a folder containing multiple ones, in which case separate folders will be generated for the output structures. `<parameter file>` is meant to be a file in YAML format containing the parameters defining the way the structures are generated. For example, a typical YAML file may look like:
 
-    name: structure 
-    poisson_r: 0.8 
+    name: structure
+    poisson_r: 0.8
     supercell: [2, 2, 2]
 
 with variables written like Python values (strings, floats, or lists). The important thing is to make sure that the separators after the colon are spaces and not tabs, since the latter are not compatible with the format. Here we present a list of acceptable keywords to use in this file.
@@ -25,6 +25,8 @@ with variables written like Python values (strings, floats, or lists). The impor
 * **dftb\_pbc** _(bool)_: whether to turn on periodic boundary conditions in DFTB+.
 * **uep\_chden** _(string)_: path to the `.den_fmt` file containing the electronic density for an Unperturbed Electrostatic Potential optimisation. The corresponding `.castep` file must be in the same folder and with the same seedname.
 * **uep\_gw\_factor** _(float)_: Gaussian width factor for UEP calculation. Higher values will make the potential of atomic nuclei closer to the point-like approximation but may introduce artifacts.
+* **particle\_mass\_amu** _(float)_: Mass of the added particle in amu. Defaults to the muon mass.
+_Warning:_ this parameter _only_ modifies the mass. If you wish to model a non-muon particle, other physical parameters may also be different (e.g. spin), and not all of these are customisable at present. This may generate inaccurate results, so use this parameter at your own risk. Please [raise an issue](https://github.com/muon-spectroscopy-computational-project/pymuon-suite/issues) on the pymuon-suite repository to request support for additional parameters.
 * **poisson\_r** _(float)_: Poisson sphere radius to use for random generation. No two starting muon positions will be closer than this distance. Smaller values make for bigger structure sets.
 * **vdw\_scale** _(float)_: Van der Waals scaling factor to use when generating muon sites to avoid existing atoms. Smaller values will allow muons to get closer to the other ions.
 * **charged** _(bool)_: if True, the muon will be considered charged instead of a muonium with an accompanying electron. Must be True for UEP calculations.
