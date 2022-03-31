@@ -239,7 +239,7 @@ class IndependentDisplacements(DisplacementScheme):
         dz = np.linspace(-self.sigma_n, self.sigma_n, self.n)
         w0 = -2.0  # Weight of the central configuration
 
-        rho = np.exp(-(dz ** 2))
+        rho = np.exp(-(dz**2))
         rhoall = rho[None, :] ** tfac[:, None]
         rhoall /= np.sum(rhoall, axis=1)[:, None]
 
@@ -339,9 +339,9 @@ class MonteCarloDisplacements(DisplacementScheme):
 
         tfac = _wnumSigmaEnhance(self._evals, T)
 
-        dz = np.random.normal(size=(n, len(self._modes)), scale=0.5 ** 0.5)
+        dz = np.random.normal(size=(n, len(self._modes)), scale=0.5**0.5)
         self._dq = np.zeros((n, self._M))
-        self._dq[:, self._modes] = dz * (self._sigmas / tfac ** 0.5)[None, self._modes]
+        self._dq[:, self._modes] = dz * (self._sigmas / tfac**0.5)[None, self._modes]
 
         # Turn these into position displacements
         dx = self._dq[:, self._modes, None, None] * self._evecs[None, self._modes]
@@ -369,7 +369,7 @@ class MonteCarloDisplacements(DisplacementScheme):
         sd_sw = (tfacw / tfacd) ** 0.5
         dz = self._dq / self._sigmas[None, self._modes]
         qw = sd_sw[None, self._modes] * np.exp(
-            dz ** 2 * (tfacd - tfacw)[None, self._modes]
+            dz**2 * (tfacd - tfacw)[None, self._modes]
         )
 
         self._w = np.prod(qw, axis=1) / self._n

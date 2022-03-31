@@ -27,7 +27,7 @@ def harm_potential_report(R, grid_n, mass, freqs, E_table, filename):
     """
     R_axes = np.array([np.linspace(-3 * Ri, 3 * Ri, grid_n) for Ri in R])
     # Now the potential, measured vs. theoretical
-    harm_K = mass * freqs ** 2
+    harm_K = mass * freqs**2
     harm_V = (0.5 * harm_K[:, None] * (R_axes * 1e-10) ** 2) / cnst.electron_volt
     # Normalise E_table
     if E_table.shape[1] % 2 == 1:

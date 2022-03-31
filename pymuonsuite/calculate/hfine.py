@@ -100,7 +100,7 @@ def compute_hfine_tensor(
 
     # Add Lorentz term
     if cell is not None and lorentz:
-        avgM = np.sum(magmoms) * 3.0 / (4.0 * np.pi * cut_r ** 3)
+        avgM = np.sum(magmoms) * 3.0 / (4.0 * np.pi * cut_r**3)
         HT += np.eye(3) * avgM * cnst.mu_0 / 3.0 * 1e30
     # Add contact term
     if fermi_mm:

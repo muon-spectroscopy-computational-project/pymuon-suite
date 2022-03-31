@@ -158,7 +158,7 @@ the .cell file."""
         self._vol = vol
 
         # Core formula: reciprocal space potential contribution FROM ELECTRONS
-        self._Ve_G = 4 * np.pi / Gnorm_fixed ** 2 * (self._rhoe_G / vol)  # e/Ang
+        self._Ve_G = 4 * np.pi / Gnorm_fixed**2 * (self._rhoe_G / vol)  # e/Ang
 
         # Now on to doing the same for ionic components
         self._rhoi_G = self._g_grid[0] * 0.0j
@@ -171,7 +171,7 @@ the .cell file."""
 
         # Reciprocal space potential contributions FROM IONS
         # (approximated as Gaussian charges)
-        self._Vi_G = 4 * np.pi / Gnorm_fixed ** 2 * (self._rhoi_G / vol)
+        self._Vi_G = 4 * np.pi / Gnorm_fixed**2 * (self._rhoi_G / vol)
 
         # Is there any data on spin polarization?
         self._spinpol = False
@@ -182,7 +182,7 @@ the .cell file."""
 
             # Dipolar tensor FFT
             dyad_G = self._g_grid[:, None] * self._g_grid[None, :]
-            dyad_G /= Gnorm_fixed ** 2
+            dyad_G /= Gnorm_fixed**2
             self._dip_G = (
                 4.0
                 / 3.0
@@ -198,9 +198,9 @@ the .cell file."""
         tfint = np.sum(abs(self._rho / self._vol) ** (5 / 3) * self._vol)
         C = (
             0.3
-            * cnst.hbar ** 2
+            * cnst.hbar**2
             / cnst.m_e
-            * (3 * np.pi ** 2) ** (2 / 3)
+            * (3 * np.pi**2) ** (2 / 3)
             / cnst.e
             * 1e20
         )

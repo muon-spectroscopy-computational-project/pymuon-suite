@@ -44,7 +44,7 @@ class TestDisplacements(unittest.TestCase):
         Gvol = np.exp(
             -np.sum(
                 (grid / sigmas[None, :]) ** 2
-                * ((1.0 - xi ** 2) / (1 + xi ** 2))[None, :],
+                * ((1.0 - xi**2) / (1 + xi**2))[None, :],
                 axis=1,
             )
         )
@@ -88,10 +88,10 @@ class TestDisplacements(unittest.TestCase):
         scheme = IndependentDisplacements(
             self.evals, self.evecs, self.masses, 0, sigma_n=5
         )
-        self.assertTrue(np.isclose(scheme._sigmas, cnst.u ** 0.5).all())
+        self.assertTrue(np.isclose(scheme._sigmas, cnst.u**0.5).all())
 
         # Volumetric averaging
-        avgvol = self._A_expect(5, 51, scheme._sigmas * 1e10 / cnst.u ** 0.5)
+        avgvol = self._A_expect(5, 51, scheme._sigmas * 1e10 / cnst.u**0.5)
 
         # Test even number of points
         scheme.recalc_displacements(n=20)
@@ -117,7 +117,7 @@ class TestDisplacements(unittest.TestCase):
         T = 50
         E = cnst.hbar * self.evals * 1e2 * cnst.c * 2 * np.pi
         xi = np.exp(-0.5 * E / (cnst.k * T))
-        avgvolT = self._A_expect(5, 51, scheme._sigmas * 1e10 / cnst.u ** 0.5, xi)
+        avgvolT = self._A_expect(5, 51, scheme._sigmas * 1e10 / cnst.u**0.5, xi)
 
         weights = scheme.recalc_weights(T=T)
         avgdisplT = np.sum(Adspl * weights)
@@ -128,7 +128,7 @@ class TestDisplacements(unittest.TestCase):
 
         scheme = MonteCarloDisplacements(self.evals, self.evecs, self.masses)
 
-        avgvol = self._A_expect(5, 51, scheme._sigmas * 1e10 / cnst.u ** 0.5)
+        avgvol = self._A_expect(5, 51, scheme._sigmas * 1e10 / cnst.u**0.5)
 
         displ = scheme.recalc_displacements(n=100000)
         weights = scheme.recalc_weights()
@@ -142,7 +142,7 @@ class TestDisplacements(unittest.TestCase):
         T = 50
         E = cnst.hbar * self.evals * 1e2 * cnst.c * 2 * np.pi
         xi = np.exp(-0.5 * E / (cnst.k * T))
-        avgvolT = self._A_expect(5, 51, scheme._sigmas * 1e10 / cnst.u ** 0.5, xi)
+        avgvolT = self._A_expect(5, 51, scheme._sigmas * 1e10 / cnst.u**0.5, xi)
 
         displ = scheme.recalc_displacements(n=100000, T=T)
         weights = scheme.recalc_weights(T=T)

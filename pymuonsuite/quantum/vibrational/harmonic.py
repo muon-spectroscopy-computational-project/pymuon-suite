@@ -15,9 +15,9 @@ def harmonic_psi(x, m, om, n=0):
 
     return (
         1.0
-        / (2 ** n * factorial(n)) ** 0.5
-        * (np.pi ** -0.25)
-        * (s ** -0.5)
+        / (2**n * factorial(n)) ** 0.5
+        * (np.pi**-0.25)
+        * (s**-0.5)
         * np.exp(-0.5 * (x / s) ** 2)
         * Hn(x / s)
     )
@@ -42,7 +42,7 @@ def harmonic_rho_sum(x, m, om, T=0, nmax=20):
     Z = harmonic_partfunc(om, T, nmax)
     psis = np.array([harmonic_psi(x, m, om, n) for n in range(nmax)])
 
-    rho = np.sum(Z[:, None] * psis ** 2, axis=0)
+    rho = np.sum(Z[:, None] * psis**2, axis=0)
 
     return rho
 
@@ -55,8 +55,8 @@ def harmonic_rho(x, m, om, T=0):
     if T > 0:
         s = (cnst.hbar / (m * om)) ** 0.5
         xi = np.exp(-0.5 * cnst.hbar * om / (cnst.k * T))
-        tf = (1.0 - xi ** 2) / (1.0 + xi ** 2)
-        rho = tf ** 0.5 * rho0 ** tf * (np.pi ** 0.5 * s) ** (tf - 1)
+        tf = (1.0 - xi**2) / (1.0 + xi**2)
+        rho = tf**0.5 * rho0**tf * (np.pi**0.5 * s) ** (tf - 1)
     else:
         rho = rho0
 

@@ -22,9 +22,9 @@ def _distr_D(x, D):
 
 
 def _distr_eta(x, x0, D, eta):
-    den = eta ** 2 * (2 - 2 * x0 / D) ** 2 - 9 * (x - x0) ** 2
+    den = eta**2 * (2 - 2 * x0 / D) ** 2 - 9 * (x - x0) ** 2
     den = np.where(den > 0, den, np.inf)
-    y = 1.0 / den ** 0.5 * 3 / np.pi
+    y = 1.0 / den**0.5 * 3 / np.pi
     return y
 
 
@@ -34,7 +34,7 @@ def _distr_spec(x, D, eta, nsteps=3000):
     x0max = np.expand_dims((x + 2 / 3.0 * eta) / (1 + 2 / 3.0 * eta / D), 0)
     xd = np.expand_dims(x, 0)
     f0 = np.expand_dims(np.linspace(0, 1, nsteps), 1)
-    phi0 = (x0max - x0min) * (10 * f0 ** 3 - 15 * f0 ** 4 + 6 * f0 ** 5) + x0min
+    phi0 = (x0max - x0min) * (10 * f0**3 - 15 * f0**4 + 6 * f0**5) + x0min
     """
     Note on this integral:
 
@@ -60,7 +60,7 @@ def _distr_spec(x, D, eta, nsteps=3000):
     ker = (
         _distr_D(phi0 / D, 1.0)
         * _distr_eta(xd / D, phi0 / D, 1.0, eta / D)
-        * (30 * f0 ** 2 * (1 - 2 * f0 + f0 ** 2))
+        * (30 * f0**2 * (1 - 2 * f0 + f0**2))
     )
 
     dx0 = 1.0 / (nsteps - 1) * (x0max[0] - x0min[0])

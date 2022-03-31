@@ -101,8 +101,8 @@ def get_apr(evecs, masses):
     evecs = np.array(evecs)
     masses = np.array(masses)
     Nk = evecs.shape[0]
-    ek2 = np.sum(evecs ** 2, axis=2) / masses[None, :]
-    return (ek2) / (Nk * np.sum(ek2 ** 2, axis=1))[:, None] ** 0.5
+    ek2 = np.sum(evecs**2, axis=2) / masses[None, :]
+    return (ek2) / (Nk * np.sum(ek2**2, axis=1))[:, None] ** 0.5
 
 
 def get_major_emodes(evecs, masses, i, n=3, ortho=False):
