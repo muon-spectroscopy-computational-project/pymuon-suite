@@ -5,7 +5,7 @@ import unittest
 import os
 import shutil
 
-from ase import io
+from ase import Atoms, io
 from ase.calculators.dftb import Dftb
 
 from pymuonsuite.data.dftb_pars import DFTBArgs
@@ -171,6 +171,56 @@ class TestReadWriteDFTB(unittest.TestCase):
             )
             atoms_read = reader.read(output_folder)
             self.assertEqual(atoms, atoms_read)
+        finally:
+            shutil.rmtree(output_folder)
+
+    def test_write_uses_correct_particle_mass(self):
+
+        # Tests writing DFTB+ input files, and checks that the
+        # atoms read from those input files is the same as the
+        # atoms used to generate them.
+        try:
+            params = {
+                "geom_force_tol": 0.01,
+                "dftb_set": "3ob-3-1",
+                "geom_steps": 10,
+                "max_scc_steps": 200,
+                "dftb_pbc": True,
+                "kpoints_grid": [2, 2, 2],
+                "particle_mass_amu": 8.02246,
+            }
+
+            output_folder = os.path.join(_TESTDATA_DIR, "test_save")
+            os.mkdir(output_folder)
+
+            # read in cell file to get atom:
+            atoms = io.read(os.path.join(_TESTDATA_DIR, "ethyleneMu/ethyleneMu.xyz"))
+
+            atoms += Atoms(
+                "H", positions=[(0, 0, 0)], masses=[params["particle_mass_amu"]]
+            )
+
+            # test writing input files
+            reader = ReadWriteDFTB(params=params)
+            reader.write(
+                atoms,
+                output_folder,
+                sname="ethylene_geom_opt",
+                calc_type="GEOM_OPT",
+            )
+            atoms_read = reader.read(output_folder)
+            with self.assertRaises(AssertionError):
+                self.assertEqual(
+                    params["particle_mass_amu"], atoms_read.get_masses()[-1]
+                )  # doesn't work as mass is defined in dftb_in.hsd, which isn't read in
+
+            # in the meantime, manually check that file was written correctly
+            # remove this when the above checks are fixed
+            expected_line = "MassPerAtom [amu] = 8.02246"
+            with open(os.path.join(output_folder, "dftb_in.hsd"), "r") as f:
+                contents = f.read()
+                self.assertIn(expected_line, contents)
+
         finally:
             shutil.rmtree(output_folder)
 
