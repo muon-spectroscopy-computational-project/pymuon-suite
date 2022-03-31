@@ -4,8 +4,9 @@ import unittest
 
 import os
 import shutil
+import numpy as np
 
-from ase import io
+from ase import Atoms, io
 from ase.io.castep import read_param
 
 from pymuonsuite.utils import list_to_string
@@ -141,6 +142,74 @@ class TestReadWriteCastep(unittest.TestCase):
             self.assertEqual(
                 magres_params.elec_energy_tol, castep_param.elec_energy_tol
             )
+
+        finally:
+            shutil.rmtree(output_folder)
+
+    def test_write_uses_correct_particle_mass(self):
+        # read in cell file to get atom
+        try:
+            input_folder = _TESTDATA_DIR + "/Si2"
+            output_folder = os.path.join(_TESTDATA_DIR, "test_save")
+            os.mkdir(output_folder)
+
+            os.chdir(input_folder)
+
+            yaml_file = os.path.join(input_folder, "Si2-muairss-castep-Li8.yaml")
+            cell_file = os.path.join(input_folder, "Si2.cell")
+            input_params = load_input_file(yaml_file, MuAirssSchema)
+
+            with silence_stdio():
+                atoms = io.read(cell_file)
+
+            custom_species = atoms.get_chemical_symbols() + [input_params["mu_symbol"]]
+
+            atoms += Atoms(
+                "H", positions=[(0, 0, 0)], masses=[input_params["particle_mass_amu"]]
+            )
+            atoms.set_array("castep_custom_species", np.array(custom_species))
+
+            # test writing geom_opt output
+            reader = ReadWriteCastep(params=input_params)
+            reader.write(
+                atoms,
+                output_folder,
+                sname="Si2_geom_opt",
+                calc_type="GEOM_OPT",
+            )
+
+            reader.write(atoms, output_folder, sname="Si2_magres", calc_type="MAGRES")
+
+            # read back in and check that particle mass is preserved
+            with silence_stdio():
+                geom_opt_atoms = io.read(
+                    os.path.join(output_folder, "Si2_geom_opt.cell")
+                )
+                magres_atoms = io.read(os.path.join(output_folder, "Si2_magres.cell"))
+
+            with self.assertRaises(AssertionError):
+                # currently these checks fail,
+                # because custom species masses aren't loaded correctly in ASE
+                # when that is resolved, remove the assertRaises and these should pass
+                self.assertEqual(
+                    input_params["particle_mass_amu"], geom_opt_atoms.get_masses()[-1]
+                )
+                self.assertEqual(
+                    input_params["particle_mass_amu"], magres_atoms.get_masses()[-1]
+                )
+
+            # in the meantime, manually check that file was written correctly
+            # remove this when the above checks are fixed
+            expected_block = """%BLOCK SPECIES_MASS
+AMU
+Li:8 8.02246
+%ENDBLOCK SPECIES_MASS"""
+            with open(os.path.join(output_folder, "Si2_geom_opt.cell"), "r") as f:
+                contents = f.read()
+                self.assertIn(expected_block, contents)
+            with open(os.path.join(output_folder, "Si2_magres.cell"), "r") as f:
+                contents = f.read()
+                self.assertIn(expected_block, contents)
 
         finally:
             shutil.rmtree(output_folder)

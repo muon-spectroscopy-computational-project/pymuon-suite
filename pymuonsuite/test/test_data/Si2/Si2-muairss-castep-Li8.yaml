@@ -1,0 +1,17 @@
+poisson_r: 1.0
+name: Si2
+charged: true
+vdw_scale: 0.25
+calculator: castep
+uep_gw_factor: 4.0
+uep_chden: Si2.den_fmt
+geom_force_tol: 0.05
+clustering_method: hier
+clustering_hier_t: 0.2
+dftb_set: pbc-0-3
+out_folder: muon-airss-out-castep
+castep_param: Si2.param
+allpos_filename: all.cell
+script_file: submit.sh
+particle_mass_amu: 8.02246
+mu_symbol: Li:8
