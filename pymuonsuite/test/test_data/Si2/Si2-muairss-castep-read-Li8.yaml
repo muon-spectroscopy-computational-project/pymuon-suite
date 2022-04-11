@@ -1,18 +1,17 @@
-poisson_r: 1.16
+poisson_r: 1.1
 name: Si2
 charged: true
-geom_steps: 300
 vdw_scale: 0.25
-calculator: uep
+calculator: castep
 uep_gw_factor: 4.0
 uep_chden: Si2.den_fmt
 geom_force_tol: 0.05
 clustering_method: hier
 clustering_hier_t: 0.2
 dftb_set: pbc-0-3
-out_folder: muon-airss-out-uep
-clustering_save_type : structures
-clustering_save_format : cell
+out_folder: castep-results
 allpos_filename: all.cell
+clustering_save_type: input
+clustering_save_format: castep
 particle_mass_amu: 8.02246
 mu_symbol: Li:8
