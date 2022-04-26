@@ -83,7 +83,7 @@ celerybeat-schedule
 
 # Environments
 .env
-.venv
+.venv*
 env/
 venv/
 ENV/
@@ -132,6 +132,3 @@ docs/*
 
 # Pycharm
 .idea/*
-
-# virtualenvs
-.venv*
