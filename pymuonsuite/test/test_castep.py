@@ -9,7 +9,7 @@ import numpy as np
 from ase import Atoms, io
 from ase.io.castep import read_param
 
-from pymuonsuite.utils import list_to_string
+from pymuonsuite.utils import list_to_string, get_element_from_custom_symbol
 from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
@@ -146,7 +146,7 @@ class TestReadWriteCastep(unittest.TestCase):
         finally:
             shutil.rmtree(output_folder)
 
-    def test_write_uses_correct_particle_mass(self):
+    def test_write_uses_correct_particle_mass_and_element(self):
         # read in cell file to get atom
         try:
             input_folder = _TESTDATA_DIR + "/Si2"
@@ -162,10 +162,14 @@ class TestReadWriteCastep(unittest.TestCase):
             with silence_stdio():
                 atoms = io.read(cell_file)
 
-            custom_species = atoms.get_chemical_symbols() + [input_params["mu_symbol"]]
+            mu_symbol = input_params["mu_symbol"]
+            mu_symbol_element = get_element_from_custom_symbol(mu_symbol)
+            custom_species = atoms.get_chemical_symbols() + [mu_symbol]
 
             atoms += Atoms(
-                "H", positions=[(0, 0, 0)], masses=[input_params["particle_mass_amu"]]
+                mu_symbol_element,
+                positions=[(0, 0, 0)],
+                masses=[input_params["particle_mass_amu"]],
             )
             atoms.set_array("castep_custom_species", np.array(custom_species))
 
@@ -186,6 +190,11 @@ class TestReadWriteCastep(unittest.TestCase):
                     os.path.join(output_folder, "Si2_geom_opt.cell")
                 )
                 magres_atoms = io.read(os.path.join(output_folder, "Si2_magres.cell"))
+
+            self.assertEqual(
+                mu_symbol_element, geom_opt_atoms.get_chemical_symbols()[-1]
+            )
+            self.assertEqual(mu_symbol_element, magres_atoms.get_chemical_symbols()[-1])
 
             with self.assertRaises(AssertionError):
                 # currently these checks fail,

@@ -10,6 +10,7 @@ from ase.calculators.dftb import Dftb
 
 from pymuonsuite.data.dftb_pars import DFTBArgs
 from pymuonsuite.io.dftb import ReadWriteDFTB
+from pymuonsuite.utils import get_element_from_custom_symbol
 
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -174,7 +175,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         finally:
             shutil.rmtree(output_folder)
 
-    def test_write_uses_correct_particle_mass(self):
+    def test_write_uses_correct_particle_mass_and_element(self):
 
         # Tests writing DFTB+ input files, and checks that the
         # atoms read from those input files is the same as the
@@ -188,6 +189,7 @@ class TestReadWriteDFTB(unittest.TestCase):
                 "dftb_pbc": True,
                 "kpoints_grid": [2, 2, 2],
                 "particle_mass_amu": 8.02246,
+                "mu_symbol": "Li:8",
             }
 
             output_folder = os.path.join(_TESTDATA_DIR, "test_save")
@@ -196,8 +198,12 @@ class TestReadWriteDFTB(unittest.TestCase):
             # read in cell file to get atom:
             atoms = io.read(os.path.join(_TESTDATA_DIR, "ethyleneMu/ethyleneMu.xyz"))
 
+            mu_symbol_element = get_element_from_custom_symbol(params["mu_symbol"])
+
             atoms += Atoms(
-                "H", positions=[(0, 0, 0)], masses=[params["particle_mass_amu"]]
+                mu_symbol_element,
+                positions=[(0, 0, 0)],
+                masses=[params["particle_mass_amu"]],
             )
 
             # test writing input files
@@ -209,6 +215,7 @@ class TestReadWriteDFTB(unittest.TestCase):
                 calc_type="GEOM_OPT",
             )
             atoms_read = reader.read(output_folder)
+            self.assertEqual(mu_symbol_element, atoms_read.get_chemical_symbols()[-1])
             with self.assertRaises(AssertionError):
                 self.assertEqual(
                     params["particle_mass_amu"], atoms_read.get_masses()[-1]

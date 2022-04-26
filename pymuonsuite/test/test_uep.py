@@ -10,6 +10,7 @@ from scipy.constants import physical_constants as pcnst
 from pymuonsuite.io.uep import ReadWriteUEP
 
 from pymuonsuite.schemas import load_input_file, MuAirssSchema, UEPOptSchema
+from pymuonsuite.utils import get_element_from_custom_symbol
 from soprano.utils import silence_stdio
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -177,8 +178,12 @@ class TestReadWriteUEP(unittest.TestCase):
             param_file = "Si2-muairss-uep-Li8.yaml"
             params = load_input_file(param_file, MuAirssSchema)
 
+            mu_symbol_element = get_element_from_custom_symbol(params["mu_symbol"])
+
             atoms += Atoms(
-                "H", positions=[(0, 0, 0)], masses=[params["particle_mass_amu"]]
+                mu_symbol_element,
+                positions=[(0, 0, 0)],
+                masses=[params["particle_mass_amu"]],
             )
             reader = ReadWriteUEP(params=params)
 

@@ -22,7 +22,11 @@ from soprano.collection.generate import defectGen
 from soprano.analyse.phylogen import PhylogenCluster, Gene
 from soprano.rnd import Random
 
-from pymuonsuite.utils import make_3x3, safe_create_folder
+from pymuonsuite.utils import (
+    make_3x3,
+    safe_create_folder,
+    get_element_from_custom_symbol,
+)
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
@@ -73,25 +77,32 @@ def generate_muairss_collection(struct, params):
     print("Generating defect configurations...")
     # Seed the random generator
     Random.reseed(params["random_seed"])
+    # Get the defect
+    mu_symbol = params.get("mu_symbol", "H:mu")
+    mu_symbol_element = get_element_from_custom_symbol(mu_symbol)
     # Now generate the defect configurations
     defect_gen = defectGen(
         reduced_struct,
-        "H",
+        mu_symbol_element,
         poisson_r=params["poisson_r"],
         vdw_scale=params["vdw_scale"],
     )
     defect_collection = AtomsCollection(defect_gen)
     print("{0} configurations generated".format(len(defect_collection)))
 
+    # Defects were generated using the reduced/primitive structure
+    # Now move them to the supercell
     particle_mass = params.get("particle_mass_amu", constants.m_mu_amu)
     collection = []
     for atoms in defect_collection:
         # Where's the muon?
         # We rely on the fact that it's always put at the first place
         mupos = atoms.get_positions()[0]
-        scell = scell0.copy() + Atoms("H", positions=[mupos], masses=[particle_mass])
+        scell = scell0.copy() + Atoms(
+            mu_symbol_element, positions=[mupos], masses=[particle_mass]
+        )
         # Add castep custom species
-        csp = scell0.get_chemical_symbols() + [params["mu_symbol"]]
+        csp = scell0.get_chemical_symbols() + [mu_symbol]
         scell.set_array("castep_custom_species", np.array(csp))
         scell.set_pbc(params["dftb_pbc"])
         collection.append(scell)

@@ -10,6 +10,7 @@ import glob
 from scipy.constants import physical_constants as pcnst
 from pymuonsuite.muairss import main as run_muairss
 from pymuonsuite.schemas import load_input_file, MuAirssSchema, UEPOptSchema
+from pymuonsuite.utils import get_element_from_custom_symbol
 from ase.io.castep import read_param
 from pymuonsuite.utils import list_to_string
 from soprano.utils import silence_stdio
@@ -298,6 +299,10 @@ class TestMuairss(unittest.TestCase):
                     self.assertTrue(os.path.exists(expected_file))
                     with silence_stdio():
                         atoms = io.read(expected_file)
+                    self.assertEqual(
+                        atoms.get_chemical_symbols()[-1],
+                        get_element_from_custom_symbol(input_params["mu_symbol"]),
+                    )
                     self.assertEqual(
                         atoms.get_array("castep_custom_species")[-1],
                         input_params["mu_symbol"],
