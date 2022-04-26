@@ -33,7 +33,7 @@ _Warning:_ this parameter _only_ modifies the mass. If you wish to model a non-m
 * **supercell** _(int or list of ints)_: supercell size and shape to use. This can either be a single int, a list of three integers or a 3x3 matrix of integers. For a single number a diagonal matrix will be generated with the integer repeated on the diagonals. For a list of three numbers a diagonal matrix will be generated where the digonal elements are set to the list. A matrix will be used directly as is. Default is a 3x3 indentity matrix.
 * **k\_points\_grid** _(list of ints)_: list of three integer k-points. Default is [1,1,1].
 * **out\_folder** _(string)_: name to call the output folder used to store the input files that the script generates.
-* **mu\_symbol** _(string)_: the symbol to use for the muon when writing out the castep custom species.
+* **mu\_symbol** _(string)_: the symbol to use for the muon when writing out the castep custom species. Must use the format "X:custom" where "X" is an element symbol and "custom" can be any string.
 * **geom\_steps** _(int)_: maximum number of geometry optimisation steps.
 * **geom\_force_tol** _(float)_: tolerance on geometry optimisation in units of eV/AA.
 * **max\_scc\_steps** _(int)_: if applicable, max number of SCC steps to perform before giving up. Default is 200 which is also the default for DFTB+.

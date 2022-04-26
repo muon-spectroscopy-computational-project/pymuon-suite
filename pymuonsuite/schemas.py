@@ -8,6 +8,7 @@ Python schemas for YAML input files for various scripts
 import yaml
 import numpy as np
 import warnings
+from ase.data import chemical_symbols
 from schema import Optional, Schema, SchemaError
 from scipy.constants import physical_constants as pcnst
 from soprano.utils import customize_warnings
@@ -86,6 +87,14 @@ def validate_save_min(value):
         "name of a program (castep, dftb+, etc.)"
     )
     return isinstance(value, bool)
+
+
+def validate_mu_symbol(value: str):
+    is_string = validate_str(value)
+    if not is_string:
+        return False
+    elem = value.split(":", 1)[0]
+    return elem.lower().capitalize() in chemical_symbols
 
 
 def load_input_file(fname, param_schema, merge=None):
@@ -173,7 +182,9 @@ MuAirssSchema = Schema(
         Optional("uep_save_structs", default=True): bool,
         # The symbol to use for the muon when writing out the castep custom
         # species.
-        Optional("mu_symbol", default="H:mu"): validate_str,
+        # Must use the format "X:custom" where "X" is an element symbol and
+        # "custom" can be any string.
+        Optional("mu_symbol", default="H:mu"): validate_mu_symbol,
         # Maximum number of geometry optimisation steps
         Optional("geom_steps", default=None): int,
         # Tolerance on geometry optimisation in units of eV/AA.
