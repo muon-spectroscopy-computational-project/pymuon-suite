@@ -1,0 +1,113 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: pymuon-suite
+type: software
+message: >-
+  If you use this software, please cite both the software
+  itself and the relevant papers from 'references'
+  depending on which tools you used.
+authors:
+  - given-names: Simone
+    family-names: Sturniolo
+    affiliation: >-
+      Science and Technology Facilities Council,
+      CoMind
+    orcid: 'https://orcid.org/0000-0003-4851-1144'
+  - given-names: Leandro
+    family-names: Liborio
+    affiliation: Science and Technology Facilities Council
+    orcid: 'https://orcid.org/0000-0003-2777-5167'
+  - given-names: Eli
+    family-names: Chadwick
+    affiliation: Science and Technology Facilities Council
+    orcid: 'https://orcid.org/0000-0002-0035-6475'
+  - given-names: Laura
+    family-names: Murgatroyd
+    affiliation: Science and Technology Facilities Council
+    orcid: 'https://orcid.org/0000-0002-3271-3625'
+  - given-names: Adam
+    family-names: Laverack
+    affiliation: Science and Technology Facilities Council
+    orcid: 'https://orcid.org/0000-0003-0005-6779'
+  - name: "Muon Spectroscopy Computational Project"
+repository-code: >-
+  https://github.com/muon-spectroscopy-computational-project/pymuon-suite
+abstract: >-
+  pymuon-suite is a suite of command line tools
+  designed to help with doing computational science
+  for muon spectroscopy, specifically when involving
+  positively charged muons. In particular,
+  pymuon-suite is designed to help answer questions
+  such as: What are the optimal stopping sites for a
+  muon in a certain crystalline solid? What are the
+  effects of quantum delocalisation on the hyperfine
+  coupling of the muon? To this end, pymuon-suite has
+  a number of scripts that will help you automate
+  tasks that would otherwise be very long, difficult
+  and/or error prone to carry out by hand.
+keywords:
+  - "muon spectroscopy"
+  - "stopping site: muon, muonium"
+  - "muon hyperfine coupling constant"
+  - "local magnetic field at the muon site"
+  - "muon quantum effects"
+license: GPL-3.0
+version: v0.2.1
+date-released: '2022-02-08'
+# permanent identifiers - to come
+# identifiers:
+#  - type: doi
+#    value:
+#    description:
+
+references:
+  - scope: "Cite this for pm-muairss and pm-muairss-gen"
+    authors:
+    - given-names: Simone
+      family-names: Sturniolo
+      affiliation: >-
+        Science and Technology Facilities Council,
+        CoMind
+      orcid: 'https://orcid.org/0000-0003-4851-1144'
+    - given-names: Leandro
+      family-names: Liborio
+      affiliation: Science and Technology Facilities Council
+      orcid: 'https://orcid.org/0000-0003-2777-5167'
+    - given-names: Samuel
+      family-names: Jackson
+      affiliation: Science and Technology Facilities Council
+    title: "Comparison between density functional theory and density functional tight binding approaches for finding the muon stopping site in organic molecular crystals"
+    type: article
+    date-released: "2019-04-15"
+    journal: "The Journal of Chemical Physics"
+    volume: 150
+    number: 15
+    pages: 154301
+    year: 2019
+    doi: 10.1063/1.5085197
+    url: https://doi.org/10.1063/1.5085197
+
+  - scope: "Cite this for pm-uep-opt, pm-uep-plot and pm-symmetry"
+    authors:
+    - given-names: Simone
+      family-names: Sturniolo
+      affiliation: >-
+        Science and Technology Facilities Council,
+        CoMind
+      orcid: 'https://orcid.org/0000-0003-4851-1144'
+    - given-names: Leandro
+      family-names: Liborio
+      affiliation: Science and Technology Facilities Council
+      orcid: 'https://orcid.org/0000-0003-2777-5167'
+    title: "Computational prediction of muon stopping sites: A novel take on the unperturbed electrostatic potential method"
+    type: article
+    date-released: "2020-07-24"
+    journal: "The Journal of Chemical Physics"
+    volume: 153
+    number: 4
+    pages: 044111
+    year: 2020
+    doi: 10.1063/5.0012381
+    url: https://doi.org/10.1063/5.0012381
