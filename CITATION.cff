@@ -48,8 +48,11 @@ abstract: >-
   tasks that would otherwise be very long, difficult
   and/or error prone to carry out by hand.
 keywords:
-  - muon spectroscopy
-  - muon experiments
+  - "muon spectroscopy"
+  - "stopping site: muon, muonium"
+  - "muon hyperfine coupling constant"
+  - "local magnetic field at the muon site"
+  - "muon quantum effects"
 license: GPL-3.0
 version: v0.2.1
 date-released: '2022-02-08'
