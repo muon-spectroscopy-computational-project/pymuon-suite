@@ -9,7 +9,7 @@ message: >-
   itself and the relevant papers from 'references'
   depending on which tools you used.
 authors:
- - given-names: Simone
+  - given-names: Simone
     family-names: Sturniolo
     affiliation: >-
       Science and Technology Facilities Council,
@@ -26,12 +26,11 @@ authors:
   - given-names: Laura
     family-names: Murgatroyd
     affiliation: Science and Technology Facilities Council
+    orcid: 'https://orcid.org/0000-0002-3271-3625'
   - given-names: Adam
     family-names: Laverack
     affiliation: Science and Technology Facilities Council
-  - given-names: ? # who is higgs-bosoff?
-    family-names: ?
-    affiliation: Science and Technology Facilities Council
+    orcid: 'https://orcid.org/0000-0003-0005-6779'
   - name: "Muon Spectroscopy Computational Project"
 repository-code: >-
   https://github.com/muon-spectroscopy-computational-project/pymuon-suite
