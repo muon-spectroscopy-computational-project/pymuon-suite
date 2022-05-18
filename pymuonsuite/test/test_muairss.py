@@ -3,6 +3,7 @@
 import unittest
 
 import os
+import platform
 import sys
 import shutil
 import subprocess
@@ -82,7 +83,11 @@ class TestMuairss(unittest.TestCase):
                     self.assertEqual(params["gw_factor"], input_params["uep_gw_factor"])
 
             # Run UEP
-            subprocess.call(os.path.join(_TESTDATA_DIR, "script-uep"))
+            if platform.system() == "Windows":
+                script_path = os.path.join(_TESTDATA_DIR, "script-uep-windows.ps1")
+                subprocess.call(["powershell", "-File", os.path.normpath(script_path)])
+            else:
+                subprocess.call(os.path.join(_TESTDATA_DIR, "script-uep"))
 
             # Check all folders contain UEP file
             for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/uep/"):
