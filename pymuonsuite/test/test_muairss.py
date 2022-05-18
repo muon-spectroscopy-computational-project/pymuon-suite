@@ -84,12 +84,8 @@ class TestMuairss(unittest.TestCase):
 
             # Run UEP
             if platform.system() == "Windows":
-                subprocess.call(
-                    [
-                        "powershell",
-                        os.path.join(_TESTDATA_DIR, "script-uep-windows.ps1"),
-                    ]
-                )
+                script_path = os.path.join(_TESTDATA_DIR, "script-uep-windows.ps1")
+                subprocess.call(["powershell", "-File", os.path.normpath(script_path)])
             else:
                 subprocess.call(os.path.join(_TESTDATA_DIR, "script-uep"))
 
