@@ -1,6 +1,5 @@
 # Python 2-to-3 compatibility code
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
+from __future__ import absolute_import, division, print_function, unicode_literals
 
 import glob
 import os
@@ -16,7 +15,7 @@ from soprano.utils import seedname
 
 class ReadWriteGaussian(ReadWrite):
     def __init__(self, params={}, script=None, calc=None):
-        '''
+        """
         |   params (dict):          Contains name of gaussian input file (str)
         |                           to read parameters from,
         |                           and whether to make the muon charged (bool)
@@ -31,26 +30,26 @@ class ReadWriteGaussian(ReadWrite):
         |                           present, the pre-existent one will
         |                           be ignored.
 
-        '''
+        """
         self.params = self._validate_params(params)
         self.script = script
         self._calc = calc
 
     def _validate_params(self, params):
         if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
+            raise ValueError("params should be a dict, not ", type(params))
             return
         else:
             return params
 
     def set_params(self, params):
-        '''
+        """
         |   params (dict)           Contains name of gaussian input file to
         |                           read parameters from,
         |                           and whether to make the muon charged
         |                           e.g. {'gaussian_input': 'ethylene-SP.com',
         |                           'charged': False}
-        '''
+        """
         self.params = self._validate_params(params)
         # if the params have been changed, the calc has to be remade
         # from scratch:
@@ -76,44 +75,42 @@ class ReadWriteGaussian(ReadWrite):
     def _read_gaussian(self, folder, sname=None, read_hyperfine=False):
         try:
             if sname is not None:
-                gfile = os.path.join(folder, sname + '.out')
+                gfile = os.path.join(folder, sname + ".out")
             else:
-                gfile = glob.glob(os.path.join(folder, '*.out'))[0]
+                gfile = glob.glob(os.path.join(folder, "*.out"))[0]
                 sname = seedname(gfile)
             atoms = io.read(gfile)
-            atoms.info['name'] = sname
+            atoms.info["name"] = sname
             if read_hyperfine:
                 self._read_gaussian_hyperfine(gfile, atoms)
             return atoms
 
         except IndexError:
-            raise IOError("ERROR: No .out files found in {}."
-                          .format(os.path.abspath(folder)))
+            raise IOError(
+                "ERROR: No .out files found in {}.".format(os.path.abspath(folder))
+            )
         except OSError as e:
             raise IOError("ERROR: {}".format(e))
-        except (io.formats.UnknownFileTypeError, ValueError, TypeError,
-                Exception):
-            raise IOError("ERROR: Invalid file: {file}"
-                          .format(file=sname + '.out'))
+        except (io.formats.UnknownFileTypeError, ValueError, TypeError, Exception):
+            raise IOError("ERROR: Invalid file: {file}".format(file=sname + ".out"))
 
     def _read_gaussian_hyperfine(self, filename, a):
-        '''Reads fermi contact terms (MHz) from filename and attaches these to
-        the atoms (a) as a custom array called hyperfine'''
+        """Reads fermi contact terms (MHz) from filename and attaches these to
+        the atoms (a) as a custom array called hyperfine"""
         first_line = -1
         target_line = -1
         fermi_contact_terms = None
         with open(filename) as fd:
             for i, line in enumerate(fd):
-                if 'Isotropic Fermi Contact Couplings' in line:
+                if "Isotropic Fermi Contact Couplings" in line:
                     fermi_contact_terms = []
-                    first_line = i+2
-                    target_line = i+len(a.symbols)+1
+                    first_line = i + 2
+                    target_line = i + len(a.symbols) + 1
                 if first_line <= i <= target_line:
                     fermi_contact_terms.append(line.split()[3])
 
         if fermi_contact_terms:
-            a.set_array('hyperfine', np.array(
-                fermi_contact_terms))
+            a.set_array("hyperfine", np.array(fermi_contact_terms))
 
         return a
 
@@ -158,13 +155,12 @@ class ReadWriteGaussian(ReadWrite):
 
         a = self._add_muon_properties(a)
 
-        io.write(os.path.join(folder, sname + '.com'),
-                 a, **self._calc.parameters)
+        io.write(os.path.join(folder, sname + ".com"), a, **self._calc.parameters)
 
         if self.script is not None:
             stxt = open(self.script).read()
             stxt = stxt.format(seedname=sname)
-            with open(os.path.join(folder, 'script.sh'), 'w') as sf:
+            with open(os.path.join(folder, "script.sh"), "w") as sf:
                 sf.write(stxt)
 
     def _add_muon_properties(self, a):
@@ -172,17 +168,17 @@ class ReadWriteGaussian(ReadWrite):
         masses = a.get_masses()
         masses[-1] = str(constants.m_mu_amu)
         a.set_masses(masses)
-        NMagMs = a.calc.parameters.get('nmagmlist', None)
+        NMagMs = a.calc.parameters.get("nmagmlist", None)
         if NMagMs is None:
-            NMagMs = [None]*len(masses)
+            NMagMs = [None] * len(masses)
         NMagMs[-1] = str(constants.mu_nmagm)
-        a.calc.parameters['nmagmlist'] = NMagMs
+        a.calc.parameters["nmagmlist"] = NMagMs
 
         return a
 
     def _create_calculator(self, sname=None):
-        ''' Create a calculator with the parameters we want to write to
-        the gaussian input file '''
+        """Create a calculator with the parameters we want to write to
+        the gaussian input file"""
         if self._calc is not None and isinstance(self._calc, Gaussian):
             self._calc = deepcopy(self._calc)
             calc_given = True
@@ -191,28 +187,33 @@ class ReadWriteGaussian(ReadWrite):
             calc_given = False
 
         # read the gaussian input file:
-        in_file = self.params.get('gaussian_input')
+        in_file = self.params.get("gaussian_input")
         if in_file is not None:
             self._calc.parameters = io.read(
-                in_file, attach_calculator=True).calc.parameters
+                in_file, attach_calculator=True
+            ).calc.parameters
 
         else:
             # Only fall back to setting default values if the user has
             # not provided a gaussian input file or a gaussian calculator.
             if not calc_given:
                 if sname is None:
-                    sname = 'gaussian'
-                parameters = {'chk': '{}.chk'.format(sname),
-                              'method': 'uB3LYP', 'basis': 'EPR-III',
-                              'opt': ['Tight', 'MaxCyc=100'], 'mult': 2}
+                    sname = "gaussian"
+                parameters = {
+                    "chk": "{}.chk".format(sname),
+                    "method": "uB3LYP",
+                    "basis": "EPR-III",
+                    "opt": ["Tight", "MaxCyc=100"],
+                    "mult": 2,
+                }
                 self._calc.parameters = parameters
 
-        charge_param = self.params.get('charged')
+        charge_param = self.params.get("charged")
 
         if charge_param is not None:
-            self._calc.parameters['charge'] = charge_param*1.0
+            self._calc.parameters["charge"] = charge_param * 1.0
         else:
-            if self._calc.parameters.get('charge') is None:
-                self._calc.parameters['charge'] = False*1.0
+            if self._calc.parameters.get("charge") is None:
+                self._calc.parameters["charge"] = False * 1.0
 
         return self._calc
