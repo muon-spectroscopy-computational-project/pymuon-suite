@@ -16,9 +16,8 @@ _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
 
 
 class TestReadWriteUEP(unittest.TestCase):
-
     def test_read(self):
-        sname = 'Si2_1'
+        sname = "Si2_1"
         folder = _TESTDATA_DIR  # does not contain any uep files
         reader = ReadWriteUEP()
         # test that we do not get any result for trying to read
@@ -31,11 +30,10 @@ class TestReadWriteUEP(unittest.TestCase):
         # tests uep file being read, and compares structure to
         # that in the xyz file - these should be equal
         read_uep = reader.read(folder, sname)
-        read_xyz = io.read(os.path.join(folder, sname + '.xyz'))
+        read_xyz = io.read(os.path.join(folder, sname + ".xyz"))
 
         self.assertTrue(np.all(read_uep.numbers == read_xyz.numbers))
-        self.assertTrue(np.allclose(read_uep.positions,
-                                    read_xyz.positions, atol=1e-3))
+        self.assertTrue(np.allclose(read_uep.positions, read_xyz.positions, atol=1e-3))
         self.assertTrue(np.all(read_uep.pbc == read_xyz.pbc))
         self.assertTrue(np.allclose(read_uep.cell, read_xyz.cell))
 
@@ -52,21 +50,23 @@ class TestReadWriteUEP(unittest.TestCase):
         folder = os.path.join(_TESTDATA_DIR, "Si2")
 
         def check_geom_opt_params(calc, params):
-            self.assertEqual(calc.label, params['name'])
-            self.assertEqual(calc.geom_steps, params['geom_steps'])
-            self.assertEqual(calc.gw_factor, params['uep_gw_factor'])
-            self.assertEqual(calc.opt_tol, params['geom_force_tol'])
-            self.assertEqual(calc.save_structs, params['uep_save_structs'])
+            self.assertEqual(calc.label, params["name"])
+            self.assertEqual(calc.geom_steps, params["geom_steps"])
+            self.assertEqual(calc.gw_factor, params["uep_gw_factor"])
+            self.assertEqual(calc.opt_tol, params["geom_force_tol"])
+            self.assertEqual(calc.save_structs, params["uep_save_structs"])
 
         # In the case that a params dict is provided, the values for the
         # parameters should be taken from here:
-        params = {'name': 'Si2',
-                  'charged': True,
-                  'geom_steps': 300,
-                  'uep_gw_factor': 4.0,
-                  'geom_force_tol': 0.05,
-                  'uep_save_structs': False,
-                  'uep_chden': 'Si2.den_fmt'}
+        params = {
+            "name": "Si2",
+            "charged": True,
+            "geom_steps": 300,
+            "uep_gw_factor": 4.0,
+            "geom_force_tol": 0.05,
+            "uep_save_structs": False,
+            "uep_chden": "Si2.den_fmt",
+        }
 
         reader = ReadWriteUEP(params=params)
         with silence_stdio():
@@ -79,13 +79,15 @@ class TestReadWriteUEP(unittest.TestCase):
         # the new calculator should get the default settings:
         reader = ReadWriteUEP()
 
-        params = {'name': 'Si2',
-                  'geom_steps': 30,
-                  'uep_gw_factor': 5.0,
-                  'geom_force_tol': 1e-5,
-                  'uep_save_structs': True}
+        params = {
+            "name": "Si2",
+            "geom_steps": 30,
+            "uep_gw_factor": 5.0,
+            "geom_force_tol": 1e-5,
+            "uep_save_structs": True,
+        }
 
-        calc = reader._create_calculator(a, folder, 'Si2')
+        calc = reader._create_calculator(a, folder, "Si2")
         check_geom_opt_params(calc, params)
 
     def test_write(self):
@@ -108,10 +110,11 @@ class TestReadWriteUEP(unittest.TestCase):
 
             reader.write(atoms, output_folder)
 
-            self.assertTrue(os.path.exists(os.path.join(output_folder,
-                                                        "test_save.yaml")))
+            self.assertTrue(
+                os.path.exists(os.path.join(output_folder, "test_save.yaml"))
+            )
 
-            params['charged'] = False
+            params["charged"] = False
 
             reader = ReadWriteUEP(params=params)
 

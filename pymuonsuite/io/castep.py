@@ -1,7 +1,3 @@
-# Python 2-to-3 compatibility code
-from __future__ import (absolute_import, division, print_function,
-                        unicode_literals)
-
 import glob
 import os
 import re
@@ -26,7 +22,7 @@ customize_warnings()
 
 class ReadWriteCastep(ReadWrite):
     def __init__(self, params={}, script=None, calc=None):
-        '''
+        """
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
         |   script (str):           Path to a file containing a submission
@@ -37,7 +33,7 @@ class ReadWriteCastep(ReadWrite):
         |   calc (ase.Calculator):  Calculator to attach to Atoms. If
         |                           present, the pre-existent one will
         |                           be ignored.
-        '''
+        """
         self.params = self._validate_params(params)
         self.script = script
         self._calc = calc
@@ -46,16 +42,16 @@ class ReadWriteCastep(ReadWrite):
 
     def _validate_params(self, params):
         if not (isinstance(params, dict)):
-            raise ValueError('params should be a dict, not ', type(params))
+            raise ValueError("params should be a dict, not ", type(params))
             return
         else:
             return params
 
     def set_params(self, params):
-        '''
+        """
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
-        '''
+        """
         self.params = self._validate_params(params)
         # if the params have been changed, the calc has to be remade
         # from scratch:
@@ -81,40 +77,50 @@ class ReadWriteCastep(ReadWrite):
     def _read_castep(self, folder, sname=None):
         try:
             if sname is not None:
-                cfile = os.path.join(folder, sname + '.castep')
+                cfile = os.path.join(folder, sname + ".castep")
             else:
-                cfile = glob.glob(os.path.join(folder, '*.castep'))[0]
+                cfile = glob.glob(os.path.join(folder, "*.castep"))[0]
                 sname = seedname(cfile)
             with silence_stdio():
                 atoms = io.read(cfile)
-            atoms.info['name'] = sname
+            atoms.info["name"] = sname
             return atoms
 
         except IndexError:
-            raise IOError("ERROR: No .castep files found in {}."
-                          .format(os.path.abspath(folder)))
+            raise IOError(
+                "ERROR: No .castep files found in {}.".format(os.path.abspath(folder))
+            )
         except OSError as e:
             raise IOError("ERROR: {}".format(e))
-        except (io.formats.UnknownFileTypeError, ValueError, TypeError,
-                Exception) as e:
-            raise IOError("ERROR: Invalid file: {file}, due to error: {error}"
-                          .format(file=sname + '.castep', error=e))
+        except (
+            io.formats.UnknownFileTypeError,
+            ValueError,
+            TypeError,
+            Exception,
+        ) as e:
+            raise IOError(
+                "ERROR: Invalid file: {file}, due to error: {error}".format(
+                    file=sname + ".castep", error=e
+                )
+            )
 
     def _read_castep_hyperfine_magres(self, atoms, folder, sname=None):
         try:
             if sname is not None:
-                mfile = os.path.join(folder, sname + '.magres')
+                mfile = os.path.join(folder, sname + ".magres")
             else:
-                mfile = glob.glob(os.path.join(folder, '*.magres'))[0]
+                mfile = glob.glob(os.path.join(folder, "*.magres"))[0]
             m = parse_hyperfine_magres(mfile)
             atoms.arrays.update(m.arrays)
         except (IndexError, OSError):
-            raise IOError("No .magres files found in {}."
-                          .format(os.path.abspath(folder)))
+            raise IOError(
+                "No .magres files found in {}.".format(os.path.abspath(folder))
+            )
 
-    @requireEuphonicQPM('QpointPhononModes')
-    def _read_castep_gamma_phonons(self, atoms, folder, sname=None,
-                                   QpointPhononModes=None):
+    @requireEuphonicQPM("QpointPhononModes")
+    def _read_castep_gamma_phonons(
+        self, atoms, folder, sname=None, QpointPhononModes=None
+    ):
         """Parse CASTEP phonon data into a casteppy object,
         and return eigenvalues and eigenvectors at the gamma point.
         """
@@ -122,15 +128,16 @@ class ReadWriteCastep(ReadWrite):
         # Parse CASTEP phonon data into casteppy object
         try:
             if sname is not None:
-                pd = QpointPhononModes.from_castep(os.path.join(
-                    folder, sname + '.phonon'))
+                pd = QpointPhononModes.from_castep(
+                    os.path.join(folder, sname + ".phonon")
+                )
             else:
-                pd = QpointPhononModes.from_castep(glob.glob(
-                    os.path.join(folder, '*.phonon'))[0])
-                sname = seedname(glob.glob(
-                    os.path.join(folder, '*.phonon'))[0])
+                pd = QpointPhononModes.from_castep(
+                    glob.glob(os.path.join(folder, "*.phonon"))[0]
+                )
+                sname = seedname(glob.glob(os.path.join(folder, "*.phonon"))[0])
             # Convert frequencies back to cm-1
-            pd.frequencies_unit = '1/cm'
+            pd.frequencies_unit = "1/cm"
             # Get phonon frequencies+modes
             evals = np.array(pd.frequencies.magnitude)
             evecs = np.array(pd.eigenvectors)
@@ -143,20 +150,25 @@ class ReadWriteCastep(ReadWrite):
                     break
 
             if gamma_i is None:
-                raise CastepError('Could not find gamma point phonons in'
-                                  ' CASTEP phonon file')
+                raise CastepError(
+                    "Could not find gamma point phonons in" " CASTEP phonon file"
+                )
 
-            atoms.info['ph_evals'] = evals[gamma_i]
-            atoms.info['ph_evecs'] = evecs[gamma_i]
+            atoms.info["ph_evals"] = evals[gamma_i]
+            atoms.info["ph_evecs"] = evecs[gamma_i]
 
         except IndexError:
-            raise IOError("No .phonon files found in {}."
-                          .format(os.path.abspath(folder)))
+            raise IOError(
+                "No .phonon files found in {}.".format(os.path.abspath(folder))
+            )
         except (OSError, IOError) as e:
             raise IOError("ERROR: {}".format(e))
         except Exception as e:
-            raise IOError("ERROR: Could not read {file} due to error: {e}"
-                          .format(file=sname + '.phonon', e=e))
+            raise IOError(
+                "ERROR: Could not read {file} due to error: {e}".format(
+                    file=sname + ".phonon", e=e
+                )
+            )
 
     def write(self, a, folder, sname=None, calc_type="GEOM_OPT"):
         """Writes input files for an Atoms object with a Castep
@@ -188,22 +200,31 @@ class ReadWriteCastep(ReadWrite):
                 self._create_calculator(calc_type=calc_type)
             else:
                 self._update_calculator(calc_type)
-            a.set_calculator(self._calc)
+            a.calc = self._calc
             with silence_stdio():
-                io.write(os.path.join(folder, sname + '.cell'),
-                         a, magnetic_moments='initial')
-            write_param(os.path.join(folder, sname + '.param'),
-                        a.calc.param, force_write=True)
+                io.write(
+                    os.path.join(folder, sname + ".cell"),
+                    a,
+                    magnetic_moments="initial",
+                )
+            write_param(
+                os.path.join(folder, sname + ".param"),
+                a.calc.param,
+                force_write=True,
+            )
 
             if self.script is not None:
                 stxt = open(self.script).read()
                 stxt = stxt.format(seedname=sname)
-                with open(os.path.join(folder, 'script.sh'), 'w') as sf:
+                with open(os.path.join(folder, "script.sh"), "w") as sf:
                     sf.write(stxt)
         else:
-            raise(NotImplementedError("Calculation type {} is not implemented."
-                                      " Please choose 'GEOM_OPT' or 'MAGRES'"
-                                      .format(calc_type)))
+            raise (
+                NotImplementedError(
+                    "Calculation type {} is not implemented."
+                    " Please choose 'GEOM_OPT' or 'MAGRES'".format(calc_type)
+                )
+            )
 
     def _create_calculator(self, calc_type=None):
         with silence_stdio():
@@ -212,24 +233,23 @@ class ReadWriteCastep(ReadWrite):
             else:
                 calc = Castep()
 
-        mu_symbol = self.params.get('mu_symbol', 'H:mu')
+        mu_symbol = self.params.get("mu_symbol", "H:mu")
 
         # Start by ensuring that the muon mass and gyromagnetic ratios are
         # included
         gamma_block = calc.cell.species_gamma.value
         if gamma_block is None:
-            calc.cell.species_gamma = add_to_castep_block(gamma_block,
-                                                          mu_symbol,
-                                                          constants.m_gamma,
-                                                          'gamma')
+            calc.cell.species_gamma = add_to_castep_block(
+                gamma_block, mu_symbol, constants.m_gamma, "gamma"
+            )
 
             mass_block = calc.cell.species_mass.value
-            calc.cell.species_mass = add_to_castep_block(mass_block, mu_symbol,
-                                                         constants.m_mu_amu,
-                                                         'mass')
+            calc.cell.species_mass = add_to_castep_block(
+                mass_block, mu_symbol, constants.m_mu_amu, "mass"
+            )
 
         # Now assign the k-points
-        k_points_param = self.params.get('k_points_grid')
+        k_points_param = self.params.get("k_points_grid")
 
         if k_points_param is not None:
             calc.cell.kpoint_mp_grid = list_to_string(k_points_param)
@@ -238,10 +258,10 @@ class ReadWriteCastep(ReadWrite):
                 calc.cell.kpoint_mp_grid = list_to_string([1, 1, 1])
 
         # Read the parameters
-        pfile = self.params.get('castep_param', None)
+        pfile = self.params.get("castep_param", None)
         if pfile is not None:
             with silence_stdio():
-                calc.param = read_param(self.params['castep_param']).param
+                calc.param = read_param(self.params["castep_param"]).param
 
         self._calc = calc
 
@@ -256,12 +276,12 @@ class ReadWriteCastep(ReadWrite):
         if calc_type == "MAGRES":
             # check if our calculator is already set up for Magres
             # if it is, we don't need to modify the calc.
-            if not self._calc.param.task == 'Magres':
+            if not self._calc.param.task == "Magres":
                 self._create_hfine_castep_calculator()
         elif calc_type == "GEOM_OPT":
             # check if our calculator is already set up for geom opt
             # if it is, we don't need to modify the calc.
-            if not self._calc.param.task == 'GeometryOptimization':
+            if not self._calc.param.task == "GeometryOptimization":
                 self._create_geom_opt_castep_calculator()
         return self._calc
 
@@ -277,14 +297,13 @@ class ReadWriteCastep(ReadWrite):
         self._calc.param.charge = None
         self._calc.cell.fix_all_cell = None
 
-        pfile = self.params.get('castep_param', None)
+        pfile = self.params.get("castep_param", None)
         if pfile is not None:
             with silence_stdio():
-                self._calc.param = read_param(
-                    self.params['castep_param']).param
+                self._calc.param = read_param(self.params["castep_param"]).param
 
-        self._calc.param.task = 'Magres'
-        self._calc.param.magres_task = 'Hyperfine'
+        self._calc.param.task = "Magres"
+        self._calc.param.magres_task = "Hyperfine"
 
         return self._calc
 
@@ -296,7 +315,7 @@ class ReadWriteCastep(ReadWrite):
         self._calc.cell.cell_constraints = None
         self._calc.cell.fix_all_cell = True
 
-        self._calc.param.task = 'GeometryOptimization'
+        self._calc.param.task = "GeometryOptimization"
 
         # Remove symmetry operations if they exist
         self._calc.cell.symmetry_ops.value = None
@@ -307,15 +326,15 @@ class ReadWriteCastep(ReadWrite):
         # been provided.
         # If neither of these have been set, we use the default values.
 
-        charge_param = self.params.get('charged')
+        charge_param = self.params.get("charged")
 
         if charge_param is not None:
-            self._calc.param.charge = charge_param*1.0
+            self._calc.param.charge = charge_param * 1.0
         else:
             if self._calc.param.charge is None:
-                self._calc.param.charge = False*1.0
+                self._calc.param.charge = False * 1.0
 
-        geom_steps_param = self.params.get('geom_steps')
+        geom_steps_param = self.params.get("geom_steps")
 
         if geom_steps_param is not None:
             self._calc.param.geom_max_iter = geom_steps_param
@@ -323,7 +342,7 @@ class ReadWriteCastep(ReadWrite):
             if self._calc.param.geom_max_iter.value is None:
                 self._calc.param.geom_max_iter = 30
 
-        geom_force_tol_param = self.params.get('geom_force_tol')
+        geom_force_tol_param = self.params.get("geom_force_tol")
 
         if geom_force_tol_param is not None:
             self._calc.param.geom_force_tol = geom_force_tol_param
@@ -331,7 +350,7 @@ class ReadWriteCastep(ReadWrite):
             if self._calc.param.geom_force_tol.value is None:
                 self._calc.param.geom_force_tol = 0.05
 
-        max_scf_cycles_param = self.params.get('max_scc_steps')
+        max_scf_cycles_param = self.params.get("max_scc_steps")
 
         if max_scf_cycles_param is not None:
             self._calc.param.max_scf_cycles.value = max_scf_cycles_param
@@ -372,14 +391,16 @@ def parse_castep_bands(infile, header=False):
     if header is True:
         return n_kpts, n_evals
     if int(lines[1].split()[-1]) != 1:
-        raise ValueError("""Either incorrect file format detected or greater
+        raise ValueError(
+            """Either incorrect file format detected or greater
                             than 1 spin component used (parse_castep_bands
-                            only works with 1 spin component.)""")
+                            only works with 1 spin component.)"""
+        )
     # Parse eigenvalues
     bands = np.zeros((n_kpts, n_evals))
     for kpt in range(n_kpts):
         for eval in range(n_evals):
-            bands[kpt][eval] = float(lines[11+eval+kpt*(n_evals+2)].strip())
+            bands[kpt][eval] = float(lines[11 + eval + kpt * (n_evals + 2)].strip())
     return bands
 
 
@@ -393,14 +414,14 @@ def parse_castep_mass_block(mass_block):
     |   masses (dict):      Dictionary of masses by species symbol
     """
 
-    mass_tokens = [l.split() for l in mass_block.split('\n')]
+    mass_tokens = [lm.split() for lm in mass_block.split("\n")]
     custom_masses = {}
 
     units = {
-        'amu': 1,
-        'm_e': cnst.m_e/cnst.u,
-        'kg': 1.0/cnst.u,
-        'g': 1e-3/cnst.u
+        "amu": 1,
+        "m_e": cnst.m_e / cnst.u,
+        "kg": 1.0 / cnst.u,
+        "g": 1e-3 / cnst.u,
     }
 
     # Is the first line a unit?
@@ -409,15 +430,15 @@ def parse_castep_mass_block(mass_block):
         try:
             u = units[mass_tokens[0][0].lower()]
         except KeyError:
-            raise CastepError('Invalid mass unit in species_mass block')
+            raise CastepError("Invalid mass unit in species_mass block")
 
         mass_tokens.pop(0)
 
     for tk in mass_tokens:
         try:
-            custom_masses[tk[0]] = float(tk[1])*u
+            custom_masses[tk[0]] = float(tk[1]) * u
         except (ValueError, IndexError):
-            raise CastepError('Invalid line in species_mass block')
+            raise CastepError("Invalid line in species_mass block")
 
     return custom_masses
 
@@ -440,7 +461,7 @@ def parse_castep_masses(cell):
 
     masses = cell.get_masses()
     elems = cell.get_chemical_symbols()
-    elems = cell.arrays.get('castep_custom_species', elems)
+    elems = cell.arrays.get("castep_custom_species", elems)
 
     masses = [custom_masses.get(elems[i], m) for i, m in enumerate(masses)]
 
@@ -459,13 +480,13 @@ def parse_castep_gamma_block(gamma_block):
     |   gammas (dict):      Dictionary of gyromagnetic ratios by species symbol
     """
 
-    gamma_tokens = [l.split() for l in gamma_block.split('\n')]
+    gamma_tokens = [lg.split() for lg in gamma_block.split("\n")]
     custom_gammas = {}
 
     units = {
-        'agr': cnst.e/cnst.m_e,
-        'radsectesla': 1,
-        'mhztesla': 0.5e-6/np.pi,
+        "agr": cnst.e / cnst.m_e,
+        "radsectesla": 1,
+        "mhztesla": 0.5e-6 / np.pi,
     }
 
     # Is the first line a unit?
@@ -474,15 +495,15 @@ def parse_castep_gamma_block(gamma_block):
         try:
             u = units[gamma_tokens[0][0].lower()]
         except KeyError:
-            raise CastepError('Invalid gamma unit in species_gamma block')
+            raise CastepError("Invalid gamma unit in species_gamma block")
 
         gamma_tokens.pop(0)
 
     for tk in gamma_tokens:
         try:
-            custom_gammas[tk[0]] = float(tk[1])*u
+            custom_gammas[tk[0]] = float(tk[1]) * u
         except (ValueError, IndexError):
-            raise CastepError('Invalid line in species_gamma block')
+            raise CastepError("Invalid line in species_gamma block")
 
     return custom_gammas
 
@@ -492,38 +513,36 @@ def parse_castep_ppots(cfile):
     clines = open(cfile).readlines()
 
     # Find pseudopotential blocks
-    ppot_heads = filter(lambda x: 'Pseudopotential Report' in x[1],
-                        enumerate(clines))
+    ppot_heads = filter(lambda x: "Pseudopotential Report" in x[1], enumerate(clines))
     ppot_blocks_raw = []
 
     for pph in ppot_heads:
         i, _ = pph
         for j, l in enumerate(clines[i:]):
-            if 'Author:' in l:
+            if "Author:" in l:
                 break
-        ppot_blocks_raw.append(clines[i:i+j])
+        ppot_blocks_raw.append(clines[i : i + j])
 
     # Now on to actually parse them
     ppot_blocks = {}
 
-    el_re = re.compile(r'Element:\s+([a-zA-Z]{1,2})\s+'
-                       r'Ionic charge:\s+([0-9.]+)')
-    rc_re = re.compile(r'(?:[0-9]+|loc)\s+[0-9]\s+[\-0-9.]+\s+([0-9.]+)')
-    bohr = cnst.physical_constants['Bohr radius'][0]*1e10
+    el_re = re.compile(r"Element:\s+([a-zA-Z]{1,2})\s+" r"Ionic charge:\s+([0-9.]+)")
+    rc_re = re.compile(r"(?:[0-9]+|loc)\s+[0-9]\s+[\-0-9.]+\s+([0-9.]+)")
+    bohr = cnst.physical_constants["Bohr radius"][0] * 1e10
 
     for ppb in ppot_blocks_raw:
         el = None
         q = None
         rcmin = np.inf
-        for l in ppb:
-            el_m = el_re.search(l)
+        for lp in ppb:
+            el_m = el_re.search(lp)
             if el_m is not None:
                 el, q = el_m.groups()
                 q = float(q)
                 continue
-            rc_m = rc_re.search(l)
+            rc_m = rc_re.search(lp)
             if rc_m is not None:
-                rc = float(rc_m.groups()[0])*bohr
+                rc = float(rc_m.groups()[0]) * bohr
                 rcmin = min(rc, rcmin)
         ppot_blocks[el] = (q, rcmin)
 
@@ -541,25 +560,24 @@ def parse_final_energy(infile):
     |   E (float): Value of final energy
     """
     E = None
-    for l in open(infile).readlines():
-        if "Final energy" in l:
+    for lf in open(infile).readlines():
+        if "Final energy" in lf:
             try:
-                E = float(l.split()[3])
+                E = float(lf.split()[3])
             except ValueError:
-                raise RuntimeError(
-                    "Corrupt .castep file found: {0}".format(infile))
+                raise RuntimeError("Corrupt .castep file found: {0}".format(infile))
     return E
 
 
-def add_to_castep_block(cblock, symbol, value, blocktype='mass'):
+def add_to_castep_block(cblock, symbol, value, blocktype="mass"):
     """Add a pair of the form:
-        symbol  value
-       to a given castep block cblock, given the type.
+     symbol  value
+    to a given castep block cblock, given the type.
     """
 
     parser = {
-        'mass': parse_castep_mass_block,
-        'gamma': parse_castep_gamma_block
+        "mass": parse_castep_mass_block,
+        "gamma": parse_castep_gamma_block,
     }[blocktype]
 
     if cblock is None:
@@ -569,12 +587,9 @@ def add_to_castep_block(cblock, symbol, value, blocktype='mass'):
     # Assign the muon mass
     values[symbol] = value
 
-    cblock = {
-        'mass': 'AMU',
-        'gamma': 'radsectesla'
-    }[blocktype] + '\n'
+    cblock = {"mass": "AMU", "gamma": "radsectesla"}[blocktype] + "\n"
     for k, v in values.items():
-        cblock += '{0} {1}\n'.format(k, v)
+        cblock += "{0} {1}\n".format(k, v)
 
     return cblock
 
@@ -596,18 +611,18 @@ def parse_hyperfine_magres(infile):
 
     # Now go for the magres_old block
 
-    if 'magresblock_magres_old' not in mgr.info:
-        raise RuntimeError('.magres file has no hyperfine information')
+    if "magresblock_magres_old" not in mgr.info:
+        raise RuntimeError(".magres file has no hyperfine information")
 
-    hfine = parse_hyperfine_oldblock(mgr.info['magresblock_magres_old'])
+    hfine = parse_hyperfine_oldblock(mgr.info["magresblock_magres_old"])
 
-    labels, indices = mgr.get_array('labels'), mgr.get_array('indices')
+    labels, indices = mgr.get_array("labels"), mgr.get_array("indices")
 
     hfine_array = []
-    for l, i in zip(labels, indices):
-        hfine_array.append(hfine[l][i])
+    for lb, i in zip(labels, indices):
+        hfine_array.append(hfine[lb][i])
 
-    mgr.new_array('hyperfine', np.array(hfine_array))
+    mgr.new_array("hyperfine", np.array(hfine_array))
 
     return mgr
 
@@ -629,18 +644,19 @@ def parse_hyperfine_oldblock(block):
     sp = None
     n = None
     tens = None
-    block_lines = block.split('\n')
+    block_lines = block.split("\n")
     for i, l in enumerate(block_lines):
-        if 'Atom:' in l:
+        if "Atom:" in l:
             # Get the species and index
             _, sp, n = l.split()
             n = int(n)
-        if 'TOTAL tensor' in l:
-            tens = np.array([[float(x) for x in row.split()]
-                             for row in block_lines[i+2:i+5]])
+        if "TOTAL tensor" in l:
+            tens = np.array(
+                [[float(x) for x in row.split()] for row in block_lines[i + 2 : i + 5]]
+            )
             # And append
             if sp is None:
-                raise RuntimeError('Invalid block in magres hyperfine file')
+                raise RuntimeError("Invalid block in magres hyperfine file")
             if sp not in hfine_dict:
                 hfine_dict[sp] = {}
             hfine_dict[sp][n] = tens

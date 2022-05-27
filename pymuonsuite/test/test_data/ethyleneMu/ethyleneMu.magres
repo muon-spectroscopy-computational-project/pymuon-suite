@@ -3,11 +3,11 @@
 [calculation]
 calc_code CASTEP
 calc_code_version  19.1
-calc_code_hgversion 0a9e5daac2f4+ Castep191_branch Wed, 03 Jul 2019 08:43:28 +0000  
-calc_code_platform linux_x86_64_ifort18                                            
+calc_code_hgversion 0a9e5daac2f4+ Castep191_branch Wed, 03 Jul 2019 08:43:28 +0000
+calc_code_platform linux_x86_64_ifort18
 calc_name ./ethyleneMu_opt_displaced_0/ethyleneMu_opt_displaced_0
-calc_comment                                                                                 
-calc_xcfunctional LDA 
+calc_comment
+calc_xcfunctional LDA
 calc_cutoffenergy    462.59356241 eV
 calc_pspot H 1|0.6|13|15|17|10(qc=8)
 calc_pspot C 2|1.4|10|12|13|20:21(qc=7)
@@ -32,143 +32,143 @@ atom H:mu    H:mu   1          1.3227819999999999E+00          0.000000000000000
 [/magres]
 [magres_old]
 ==========================================================================
-  Using the following values of the magnetogyric ratio                    
+  Using the following values of the magnetogyric ratio
   H      Isotope   1             GAMMA =  2.6752E+08 rad T-1 s-1
   C      Isotope  13             GAMMA =  6.7283E+07 rad T-1 s-1
   H:mu    User defined.            GAMMA =  8.5162E+08 rad T-1 s-1
 ==========================================================================
- 
+
 ============
 Atom: H        1
 ============
 H        1 Coordinates     -0.155    0.888    1.202   A
- 
+
 TOTAL tensor
 
              -31.9305     -0.3111     -0.0650
               -0.3111    -36.3412     -5.7021
               -0.0650     -5.7021    -42.9359
 
-H        1 Eigenvalue  A_xx     -31.8795      
+H        1 Eigenvalue  A_xx     -31.8795
 H        1 Eigenvector A_xx       0.9801     -0.1789      0.0865
-H        1 Eigenvalue  A_yy     -33.0996      
+H        1 Eigenvalue  A_yy     -33.0996
 H        1 Eigenvector A_yy       0.1982      0.8474     -0.4926
-H        1 Eigenvalue  A_zz     -46.2286      
+H        1 Eigenvalue  A_zz     -46.2286
 H        1 Eigenvector A_zz       0.0148      0.4999      0.8660
- 
+
 H        1 Iso:      -37.0692 (MHz)
 ============
 Atom: H        2
 ============
 H        2 Coordinates     -0.155   -0.888    1.202   A
- 
+
 TOTAL tensor
 
              -31.9303      0.3111     -0.0649
                0.3111    -36.3408      5.7022
               -0.0649      5.7022    -42.9357
 
-H        2 Eigenvalue  A_xx     -31.8792      
+H        2 Eigenvalue  A_xx     -31.8792
 H        2 Eigenvector A_xx       0.9801      0.1789      0.0865
-H        2 Eigenvalue  A_yy     -33.0993      
+H        2 Eigenvalue  A_yy     -33.0993
 H        2 Eigenvector A_yy      -0.1982      0.8474      0.4926
-H        2 Eigenvalue  A_zz     -46.2283      
+H        2 Eigenvalue  A_zz     -46.2283
 H        2 Eigenvector A_zz       0.0148     -0.4999      0.8660
- 
+
 H        2 Iso:      -37.0689 (MHz)
 ============
 Atom: H        3
 ============
 H        3 Coordinates     -0.083    0.929   -1.294   A
- 
+
 TOTAL tensor
 
               42.4690      1.6424      4.4738
                1.6424     25.0983     31.9822
                4.4738     31.9822     60.6422
 
-H        3 Eigenvalue  A_xx       6.2617      
+H        3 Eigenvalue  A_xx       6.2617
 H        3 Eigenvector A_xx       0.0237      0.8609     -0.5083
-H        3 Eigenvalue  A_yy      41.9041      
+H        3 Eigenvalue  A_yy      41.9041
 H        3 Eigenvector A_yy       0.9920     -0.0833     -0.0947
-H        3 Eigenvalue  A_zz      80.0438      
+H        3 Eigenvalue  A_zz      80.0438
 H        3 Eigenvector A_zz       0.1239      0.5019      0.8560
- 
+
 H        3 Iso:       42.7365 (MHz)
 ============
 Atom: H        4
 ============
 H        4 Coordinates     -0.083   -0.929   -1.294   A
- 
+
 TOTAL tensor
 
               42.4697     -1.6424      4.4738
               -1.6424     25.0990    -31.9822
                4.4738    -31.9822     60.6428
 
-H        4 Eigenvalue  A_xx       6.2623      
+H        4 Eigenvalue  A_xx       6.2623
 H        4 Eigenvector A_xx      -0.0237      0.8609      0.5083
-H        4 Eigenvalue  A_yy      41.9047      
+H        4 Eigenvalue  A_yy      41.9047
 H        4 Eigenvector A_yy       0.9920      0.0833     -0.0947
-H        4 Eigenvalue  A_zz      80.0444      
+H        4 Eigenvalue  A_zz      80.0444
 H        4 Eigenvector A_zz       0.1239     -0.5019      0.8560
- 
+
 H        4 Iso:       42.7372 (MHz)
 ============
 Atom: C        1
 ============
 C        1 Coordinates      0.233    0.000    0.697   A
- 
+
 TOTAL tensor
 
               29.2390     -0.0000     -2.2543
               -0.0000     33.2494      0.0000
               -2.2543      0.0000     23.4954
 
-C        1 Eigenvalue  A_xx      22.7162      
+C        1 Eigenvalue  A_xx      22.7162
 C        1 Eigenvector A_xx       0.3266      0.0000      0.9451
-C        1 Eigenvalue  A_yy      30.0181      
+C        1 Eigenvalue  A_yy      30.0181
 C        1 Eigenvector A_yy      -0.9451     -0.0000      0.3266
-C        1 Eigenvalue  A_zz      33.2494      
+C        1 Eigenvalue  A_zz      33.2494
 C        1 Eigenvector A_zz       0.0000     -1.0000     -0.0000
- 
+
 C        1 Iso:       28.6613 (MHz)
 ============
 Atom: C        2
 ============
 C        2 Coordinates     -0.080    0.000   -0.735   A
- 
+
 TOTAL tensor
 
             -164.0113     -0.0000     -0.0468
               -0.0000   -164.1929      0.0000
               -0.0468      0.0000   -163.8490
 
-C        2 Eigenvalue  A_xx    -163.8364      
+C        2 Eigenvalue  A_xx    -163.8364
 C        2 Eigenvector A_xx      -0.2588      0.0000      0.9659
-C        2 Eigenvalue  A_yy    -164.0239      
+C        2 Eigenvalue  A_yy    -164.0239
 C        2 Eigenvector A_yy      -0.9659     -0.0000     -0.2588
-C        2 Eigenvalue  A_zz    -164.1929      
+C        2 Eigenvalue  A_zz    -164.1929
 C        2 Eigenvector A_zz      -0.0000     -1.0000      0.0000
- 
+
 C        2 Iso:     -164.0177 (MHz)
 ============
 Atom: H:mu     1
 ============
 H:mu     1 Coordinates      1.323    0.000    0.889   A
- 
+
 TOTAL tensor
 
             -541.3070     -0.0001    -21.3579
               -0.0001   -507.7964     -0.0000
              -21.3579     -0.0000   -536.6432
 
-H:mu     1 Eigenvalue  A_xx    -507.7964      
+H:mu     1 Eigenvalue  A_xx    -507.7964
 H:mu     1 Eigenvector A_xx       0.0000     -1.0000     -0.0000
-H:mu     1 Eigenvalue  A_yy    -517.4903      
+H:mu     1 Eigenvalue  A_yy    -517.4903
 H:mu     1 Eigenvector A_yy       0.6676      0.0000     -0.7445
-H:mu     1 Eigenvalue  A_zz    -560.4599      
+H:mu     1 Eigenvalue  A_zz    -560.4599
 H:mu     1 Eigenvector A_zz       0.7445      0.0000      0.6676
- 
+
 H:mu     1 Iso:     -528.5822 (MHz)
 [/magres_old]

@@ -1,6 +1,6 @@
 BASE=`pwd`
 for d in ethyleneMu_opt_displaced/*
-do	
+do
 	echo "Running " $d
 	cd $d
 	dftb+ > dftb.out

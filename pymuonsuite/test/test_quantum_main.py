@@ -20,12 +20,16 @@ _RUN_DFTB = False
 
 
 class TestQuantum(unittest.TestCase):
-
     def remove_phonons_data(self, dir_files):
         for f in dir_files:
-            if not (f.endswith(".yaml") or f.endswith("Mu.xyz")
-                    or f.endswith(".sh") or f.endswith(".castep")
-                    or f.endswith(".magres") or f.endswith(".phonon")):
+            if not (
+                f.endswith(".yaml")
+                or f.endswith("Mu.xyz")
+                or f.endswith(".sh")
+                or f.endswith(".castep")
+                or f.endswith(".magres")
+                or f.endswith(".phonon")
+            ):
                 if os.path.isfile(f):
                     os.remove(f)
 
@@ -44,7 +48,8 @@ class TestQuantum(unittest.TestCase):
         folder = _TESTDATA_DIR + "/dftb-phonons/"
         os.chdir(folder)
         yaml_file = "quantum.yaml"
-        sys.argv[1:] = ["-w", yaml_file]
+        structure_file = "ethyleneMu_opt.xyz"
+        sys.argv[1:] = ["-tw", structure_file, yaml_file]
         nq_entry()
 
         if _RUN_DFTB:
@@ -52,7 +57,7 @@ class TestQuantum(unittest.TestCase):
         else:
             os.chdir(_TESTDATA_DIR + "/dftb-nq-results")
 
-        sys.argv[1:] = [yaml_file]
+        sys.argv[1:] = [structure_file, yaml_file]
         nq_entry()
         self.assertTrue(os.path.exists("averages.dat"))
 

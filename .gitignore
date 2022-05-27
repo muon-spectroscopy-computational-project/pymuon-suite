@@ -129,3 +129,9 @@ examples/quantum/*
 docs/*
 !docs/*.md
 !docs/Makefile
+
+# Pycharm
+.idea/*
+
+# virtualenvs
+.venv*

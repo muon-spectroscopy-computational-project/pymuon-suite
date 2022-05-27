@@ -4,7 +4,7 @@ loop_
 _publ_author_name
 'Graf D L'
 _journal_name_full 'American Mineralogist'
-_journal_volume 46 
+_journal_volume 46
 _journal_year 1961
 _journal_page_first 1283
 _journal_page_last 1316
@@ -70,4 +70,3 @@ _atom_site_fract_z
 Ca   0.00000   0.00000   0.00000
 C   0.00000   0.00000   0.25000
 O   0.25780   0.00000   0.25000
-
