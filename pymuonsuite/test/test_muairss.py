@@ -18,7 +18,8 @@ import numpy as np
 
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-_TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data/Si2")
+_TESTDATA_DIR_SI = os.path.join(_TEST_DIR, "test_data/Si2")
+_TESTDATA_DIR_ETHYLENE = os.path.join(_TEST_DIR, "test_data/ethyleneMu")
 
 #  Setting _RUN_DFTB to True requires dftb+ to be installed locally
 #  and will test running dftb using the files output by muairss
@@ -30,11 +31,12 @@ _READ_GAUSSIAN_OUT = False
 
 def _clean_testdata_dir():
 
-    os.chdir(_TESTDATA_DIR)
+    dirs_to_clean = [_TESTDATA_DIR_SI, _TESTDATA_DIR_ETHYLENE]
 
     folders = [
         "Si2_clusters",
-        "ethylene_clusters" "muon-airss-out-uep",
+        "ethylene_clusters",
+        "muon-airss-out-uep",
         "muon-airss-out-castep",
         "muon-airss-out-dftb",
         "muon-airss-out-gaussian",
@@ -45,20 +47,25 @@ def _clean_testdata_dir():
         "Si2_Si2_uep_clusters.dat",
         "Si2_Si2_castep_clusters.dat",
         "Si2_Si2_dftb+_clusters.dat",
-        "ethylene_clusters.txt" "ethylene_ethylene_gaussian_clusters.dat" "all.cell",
+        "ethylene_clusters.txt",
+        "ethylene_ethylene_gaussian_clusters.dat",
+        "all.cell",
     ]
 
-    for f in files:
-        try:
-            os.remove(f)
-        except FileNotFoundError:
-            pass
+    for d in dirs_to_clean:
+        os.chdir(d)
 
-    for f in folders:
-        try:
-            shutil.rmtree(f)
-        except FileNotFoundError:
-            pass
+        for f in files:
+            try:
+                os.remove(f)
+            except FileNotFoundError:
+                pass
+
+        for f in folders:
+            try:
+                shutil.rmtree(f)
+            except FileNotFoundError:
+                pass
 
 
 class TestMuairss(unittest.TestCase):
@@ -67,13 +74,13 @@ class TestMuairss(unittest.TestCase):
 
     def testUEP(self):
         try:
-            yaml_file = os.path.join(_TESTDATA_DIR, "Si2-muairss-uep.yaml")
-            cell_file = os.path.join(_TESTDATA_DIR, "Si2.cell")
+            yaml_file = os.path.join(_TESTDATA_DIR_SI, "Si2-muairss-uep.yaml")
+            cell_file = os.path.join(_TESTDATA_DIR_SI, "Si2.cell")
             input_params = load_input_file(yaml_file, MuAirssSchema)
 
             # Run Muairss write:
             sys.argv[1:] = ["-tw", cell_file, yaml_file]
-            os.chdir(_TESTDATA_DIR)
+            os.chdir(_TESTDATA_DIR_SI)
             run_muairss()
             # Check all folders contain a yaml file
             for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/uep/"):
@@ -89,10 +96,10 @@ class TestMuairss(unittest.TestCase):
 
             # Run UEP
             if platform.system() == "Windows":
-                script_path = os.path.join(_TESTDATA_DIR, "script-uep-windows.ps1")
+                script_path = os.path.join(_TESTDATA_DIR_SI, "script-uep-windows.ps1")
                 subprocess.call(["powershell", "-File", os.path.normpath(script_path)])
             else:
-                subprocess.call(os.path.join(_TESTDATA_DIR, "script-uep"))
+                subprocess.call(os.path.join(_TESTDATA_DIR_SI, "script-uep"))
 
             # Check all folders contain UEP file
             for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/uep/"):
@@ -113,16 +120,16 @@ class TestMuairss(unittest.TestCase):
 
     def testCASTEP(self):
         try:
-            yaml_file = os.path.join(_TESTDATA_DIR, "Si2-muairss-castep.yaml")
-            cell_file = os.path.join(_TESTDATA_DIR, "Si2.cell")
-            param_file = os.path.join(_TESTDATA_DIR, "Si2.param")
+            yaml_file = os.path.join(_TESTDATA_DIR_SI, "Si2-muairss-castep.yaml")
+            cell_file = os.path.join(_TESTDATA_DIR_SI, "Si2.cell")
+            param_file = os.path.join(_TESTDATA_DIR_SI, "Si2.param")
             input_params = load_input_file(yaml_file, MuAirssSchema)
             with silence_stdio(True, True):
                 castep_param = read_param(param_file).param
 
             # Run Muairss write:
             sys.argv[1:] = ["-tw", cell_file, yaml_file]
-            os.chdir(_TESTDATA_DIR)
+            os.chdir(_TESTDATA_DIR_SI)
             run_muairss()
             # Check all folders contain a yaml file
             for (rootDir, subDirs, files) in os.walk("muon-airss-out-castep/castep/"):
@@ -162,7 +169,7 @@ class TestMuairss(unittest.TestCase):
                     # equal = atoms.cell == input_atoms.cell
                     # self.assertTrue(equal.all())
 
-            yaml_file = os.path.join(_TESTDATA_DIR, "Si2-muairss-castep-read.yaml")
+            yaml_file = os.path.join(_TESTDATA_DIR_SI, "Si2-muairss-castep-read.yaml")
             sys.argv[1:] = [cell_file, yaml_file]
             run_muairss()
 
@@ -200,15 +207,15 @@ class TestMuairss(unittest.TestCase):
 
     def testDFTB(self):
         try:
-            yaml_file = os.path.join(_TESTDATA_DIR, "Si2-muairss-dftb.yaml")
-            cell_file = os.path.join(_TESTDATA_DIR, "Si2.cell")
+            yaml_file = os.path.join(_TESTDATA_DIR_SI, "Si2-muairss-dftb.yaml")
+            cell_file = os.path.join(_TESTDATA_DIR_SI, "Si2.cell")
             input_params = load_input_file(yaml_file, MuAirssSchema)
             with silence_stdio(True, True):
                 input_atoms = io.read(cell_file)
 
             # Run Muairss write:
             sys.argv[1:] = ["-tw", cell_file, yaml_file]
-            os.chdir(_TESTDATA_DIR)
+            os.chdir(_TESTDATA_DIR_SI)
             run_muairss()
             # Check all folders contain a dftb_in.hsd and geo_end.gen
             for rootDir, subDirs, files in os.walk(
@@ -230,9 +237,9 @@ class TestMuairss(unittest.TestCase):
 
             # Run DFTB
             if _RUN_DFTB:
-                subprocess.call(os.path.join(_TESTDATA_DIR, "script-dftb"))
+                subprocess.call(os.path.join(_TESTDATA_DIR_SI, "script-dftb"))
             else:
-                yaml_file = os.path.join(_TESTDATA_DIR, "Si2-muairss-dftb-read.yaml")
+                yaml_file = os.path.join(_TESTDATA_DIR_SI, "Si2-muairss-dftb-read.yaml")
 
             input_params = load_input_file(yaml_file, MuAirssSchema)
 

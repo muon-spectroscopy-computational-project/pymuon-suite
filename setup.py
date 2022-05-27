@@ -57,7 +57,7 @@ if __name__ == "__main__":
         install_requires=[
             "numpy",
             "scipy",
-            "ase>=3.18.1",
+            "ase>=3.22.0",
             "pyyaml",
             "schema",
             "spglib>0.8",
