@@ -17,7 +17,6 @@ _TESTDATA_DIR = os.path.join(_TEST_DIR, "test_data")
 
 
 class TestReadWriteDFTB(unittest.TestCase):
-
     def test_read(self):
         folder = _TESTDATA_DIR + "/ethyleneMu"
         # does not contain any dftb files
@@ -26,30 +25,31 @@ class TestReadWriteDFTB(unittest.TestCase):
         # an empty folder:
         with self.assertRaises(OSError) as e:
             reader.read(folder)
-            self.assertTrue('no such file or directory' in e)
+            self.assertTrue("no such file or directory" in e)
 
-        folder = os.path.join(folder,
-                              "dftb-nq-results/ethyleneMu_opt_displaced/"
-                              "ethyleneMu_opt_displaced_0")
+        folder = os.path.join(
+            folder,
+            "dftb-nq-results/ethyleneMu_opt_displaced/" "ethyleneMu_opt_displaced_0",
+        )
         # tests dftb files being read:
         self.assertTrue(reader.read(folder))
 
         # tests hyperfine being read:
         atoms = reader.read(folder, read_spinpol=True)
         # checks if added hyperfine to atom array:
-        self.assertIn('hyperfine', atoms.arrays.keys())
+        self.assertIn("hyperfine", atoms.arrays.keys())
 
         # checks if phonon info has been loaded into atom object:
         # No phonon file in this folder
-        self.assertNotIn('ph_evecs', atoms.info.keys())
-        self.assertNotIn('ph_evals', atoms.info.keys())
+        self.assertNotIn("ph_evecs", atoms.info.keys())
+        self.assertNotIn("ph_evals", atoms.info.keys())
 
         # phonon file in this folder:
         folder = os.path.join(_TESTDATA_DIR, "ethyleneMu/dftb-phonons")
         self.assertTrue(reader.read(folder))
         atoms2 = reader.read(folder, read_phonons=True)
-        self.assertIn('ph_evecs', atoms2.info.keys())
-        self.assertIn('ph_evals', atoms2.info.keys())
+        self.assertIn("ph_evecs", atoms2.info.keys())
+        self.assertIn("ph_evals", atoms2.info.keys())
 
     def test_create_calc(self):
         # Tests whether the correct values of the parameters are set
@@ -57,23 +57,29 @@ class TestReadWriteDFTB(unittest.TestCase):
         # a dftb input file.
 
         def check_geom_opt_params(params, calc_params):
+            self.assertEqual(calc_params["Hamiltonian_Charge"], params["charged"] * 1.0)
+            self.assertEqual(calc_params["Driver_MaxSteps"], params["geom_steps"])
             self.assertEqual(
-                calc_params['Hamiltonian_Charge'], params['charged']*1.0)
+                calc_params["Driver_MaxForceComponent [eV/AA]"],
+                params["geom_force_tol"],
+            )
             self.assertEqual(
-                calc_params['Driver_MaxSteps'], params['geom_steps'])
-            self.assertEqual(
-                calc_params['Driver_MaxForceComponent [eV/AA]'],
-                params['geom_force_tol'])
-            self.assertEqual(
-                calc_params['Hamiltonian_MaxSccIterations'],
-                params['max_scc_steps'])
+                calc_params["Hamiltonian_MaxSccIterations"],
+                params["max_scc_steps"],
+            )
 
         # In the case that a params dict is provided, the values for the
         # parameters should be taken from here.
-        params = {"k_points_grid": [2, 2, 2],
-                  "geom_force_tol": 0.01, 'dftb_set': 'pbc-0-3',
-                  'dftb_optionals': [], 'geom_steps': 500,
-                  "max_scc_steps": 150, "charged": False, "dftb_pbc": True}
+        params = {
+            "k_points_grid": [2, 2, 2],
+            "geom_force_tol": 0.01,
+            "dftb_set": "pbc-0-3",
+            "dftb_optionals": [],
+            "geom_steps": 500,
+            "max_scc_steps": 150,
+            "charged": False,
+            "dftb_pbc": True,
+        }
         reader = ReadWriteDFTB(params=params)
         # First test a geom opt calculator:
         calc_geom_opt = reader._create_calculator(calc_type="GEOM_OPT")
@@ -87,12 +93,14 @@ class TestReadWriteDFTB(unittest.TestCase):
 
         # In the case that a calculator is provided, the new calculator should
         # retain the same properties.
-        args = {'Hamiltonian_Charge': params['charged']*1.0,
-                'Driver_MaxSteps': params['geom_steps'],
-                'Driver_MaxForceComponent [eV/AA]': params['geom_force_tol'],
-                'Hamiltonian_MaxSccIterations': params['max_scc_steps']}
-        dargs = DFTBArgs(params['dftb_set'])
-        dargs.set_optional('spinpol.json', True)
+        args = {
+            "Hamiltonian_Charge": params["charged"] * 1.0,
+            "Driver_MaxSteps": params["geom_steps"],
+            "Driver_MaxForceComponent [eV/AA]": params["geom_force_tol"],
+            "Hamiltonian_MaxSccIterations": params["max_scc_steps"],
+        }
+        dargs = DFTBArgs(params["dftb_set"])
+        dargs.set_optional("spinpol.json", True)
         args.update(dargs.args)
         calc = Dftb(kpts=params["k_points_grid"], **args)
         reader = ReadWriteDFTB(calc=calc)
@@ -107,9 +115,14 @@ class TestReadWriteDFTB(unittest.TestCase):
 
         # In the case that we do not supply a params dict or a calculator,
         # the new calculator should get the default settings:
-        params = {'k_points_grid': None, 'geom_force_tol': 0.05,
-                  'dftb_set': '3ob-3-1', 'geom_steps': 30,
-                  'max_scc_steps': 200, 'charged': False}
+        params = {
+            "k_points_grid": None,
+            "geom_force_tol": 0.05,
+            "dftb_set": "3ob-3-1",
+            "geom_steps": 30,
+            "max_scc_steps": 200,
+            "charged": False,
+        }
         reader = ReadWriteDFTB()
         # First test a geom opt calculator:
         calc_geom_opt = reader._create_calculator(calc_type="GEOM_OPT")
@@ -125,25 +138,37 @@ class TestReadWriteDFTB(unittest.TestCase):
         # atoms read from those input files is the same as the
         # atoms used to generate them.
         try:
-            params = {'geom_force_tol': 0.01, 'dftb_set': '3ob-3-1',
-                      'geom_steps': 10, 'max_scc_steps': 200,
-                      'dftb_pbc': True, 'kpoints_grid': [2, 2, 2]}
+            params = {
+                "geom_force_tol": 0.01,
+                "dftb_set": "3ob-3-1",
+                "geom_steps": 10,
+                "max_scc_steps": 200,
+                "dftb_pbc": True,
+                "kpoints_grid": [2, 2, 2],
+            }
 
             output_folder = os.path.join(_TESTDATA_DIR, "test_save")
             os.mkdir(output_folder)
 
             # read in cell file to get atom:
-            atoms = io.read(os.path.join(
-                _TESTDATA_DIR, "ethyleneMu/ethyleneMu.xyz"))
+            atoms = io.read(os.path.join(_TESTDATA_DIR, "ethyleneMu/ethyleneMu.xyz"))
 
             # test writing input files
             reader = ReadWriteDFTB(params=params)
-            reader.write(atoms, output_folder, sname="ethylene_geom_opt",
-                         calc_type="SPINPOL")
+            reader.write(
+                atoms,
+                output_folder,
+                sname="ethylene_geom_opt",
+                calc_type="SPINPOL",
+            )
             atoms_read = reader.read(output_folder)
             self.assertEqual(atoms, atoms_read)
-            reader.write(atoms, output_folder, sname="ethylene_geom_opt",
-                         calc_type="GEOM_OPT")
+            reader.write(
+                atoms,
+                output_folder,
+                sname="ethylene_geom_opt",
+                calc_type="GEOM_OPT",
+            )
             atoms_read = reader.read(output_folder)
             self.assertEqual(atoms, atoms_read)
         finally:

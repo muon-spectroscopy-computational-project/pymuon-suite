@@ -2,9 +2,9 @@
 
 %BLOCK lattice_cart
    ANG
-       2.69546400000000        2.69546400000000        0.00000000000000    
-       2.69546400000000        0.00000000000000        2.69546400000000    
-       0.00000000000000        2.69546400000000        2.69546400000000    
+       2.69546400000000        2.69546400000000        0.00000000000000
+       2.69546400000000        0.00000000000000        2.69546400000000
+       0.00000000000000        2.69546400000000        2.69546400000000
 %ENDBLOCK lattice_cart
 
 %BLOCK cell_constraints
@@ -22,12 +22,12 @@ FIX_COM : true
 
 %BLOCK species_mass
    AMU
-   H:mu      0.1134289259    
+   H:mu      0.1134289259
 %ENDBLOCK species_mass
 
 %BLOCK species_gamma
    radsectesla
-   H:mu       851615456.6    
+   H:mu       851615456.6
 %ENDBLOCK species_gamma
 
 %BLOCK species_pot
@@ -46,4 +46,3 @@ SYMMETRY_TOL :     0.001000
 %ENDBLOCK symmetry_ops
 
 kpoint_mp_grid :    1   1   1
-
