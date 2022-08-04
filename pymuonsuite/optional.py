@@ -32,12 +32,14 @@ def requireEuphonicQPM(import_name="euphonic_qpm"):
                 raise RuntimeError(
                     """
                 Can't use castep phonon interface due to Euphonic not being
-                installed. Please download and install Euphonic from Github:
+                installed. Please install Euphonic using your preferred package manager:
 
-                HTTPS:  https://github.com/pace-neutrons/Euphonic.git
-                SSH:    git@github.com:pace-neutrons/Euphonic.git
+                pip install euphonic
+                OR
+                conda install euphonic
 
-                and try again."""
+                and try again. Help can be found in the Euphonic install documentation:
+                https://euphonic.readthedocs.io/en/latest/installation.html"""
                 )
             else:
                 kwargs[import_name] = _euphonic_qpm

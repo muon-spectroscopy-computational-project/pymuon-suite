@@ -9,6 +9,17 @@ Requires Python 3.7+. Install with pip or conda:
 
 `conda install pymuonsuite`
 
+If you plan to read CASTEP .phonon files, you will also need to install 
+[Euphonic](https://github.com/pace-neutrons/Euphonic):
+
+`pip install euphonic`
+
+`conda install euphonic`
+
+Help with Euphonic installation can be found in the 
+[Euphonic documentation](https://euphonic.readthedocs.io/en/latest/installation.html).
+
+
 ## Command line scripts
 
 The following is a list of currently supported command line scripts. For any
