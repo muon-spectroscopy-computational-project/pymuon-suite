@@ -3,18 +3,42 @@
 
 name: Python package tests
 
-on: push
+on:
+  # Triggers the workflow on push or pull request events but only for non-docs commits
+  push:
+    paths-ignore:
+      - CITATION.cff
+      - .github/workflows/citation-cff.yml
+  pull_request:
+    paths-ignore:
+      - CITATION.cff
+      - .github/workflows/citation-cff.yml
 
 jobs:
+  lint:
+    name: Lint with flake8 and black
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install wheel
+        if [ -f requirements-lint.txt ]; then pip install -r requirements-lint.txt; else pip install .[dev]; fi
+    - name: Lint with flake8
+      run: flake8 . --count --show-source --statistics
+    - name: Check formatting with black
+      run: black --check .
+
   build:
     name: Test on Python ${{ matrix.python-version }} and ${{ matrix.os }}
+    needs: lint # don't run if linting failed
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10"]
-        # todo: extend to windows-latest
-        os: [ubuntu-latest, macOS-latest]
+        python-version: ["3.7", "3.10"]
+        os: [ubuntu-latest, macOS-latest, windows-latest]
 
     steps:
     - uses: actions/checkout@v2
@@ -28,11 +52,8 @@ jobs:
         pip install wheel
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+      shell: bash # Windows runners have Git Bash installed so this should work on all runners
     - name: Install package
       run: pip install .
-    - name: Lint with flake8
-      run: flake8 . --count --show-source --statistics
-    - name: Check formatting with black
-      run: black --check .
     - name: Test with pytest
       run: pytest
