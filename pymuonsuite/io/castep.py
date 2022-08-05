@@ -214,9 +214,9 @@ class ReadWriteCastep(ReadWrite):
             )
 
             if self.script is not None:
-                stxt = open(self.script).read()
+                stxt = open(self.script, newline="").read()
                 stxt = stxt.format(seedname=sname)
-                with open(os.path.join(folder, "script.sh"), "w") as sf:
+                with open(os.path.join(folder, "script.sh"), "w", newline="") as sf:
                     sf.write(stxt)
         else:
             raise (
