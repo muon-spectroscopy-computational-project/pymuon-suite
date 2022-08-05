@@ -145,6 +145,50 @@ class TestReadWriteCastep(unittest.TestCase):
         finally:
             shutil.rmtree(output_folder)
 
+    def test_write_script(self):
+        # read in cell file to get atom
+        try:
+            input_folder = _TESTDATA_DIR + "/Si2"
+            output_folder = os.path.join(_TESTDATA_DIR, "test_save")
+            os.mkdir(output_folder)
+
+            os.chdir(input_folder)
+
+            yaml_file = os.path.join(input_folder, "Si2-muairss-castep.yaml")
+            cell_file = os.path.join(input_folder, "Si2.cell")
+            input_params = load_input_file(yaml_file, MuAirssSchema)
+
+            with silence_stdio():
+                atoms = io.read(cell_file)
+
+            # write output including script
+            reader = ReadWriteCastep(
+                params=input_params, script=input_params.get("script_file")
+            )
+            reader.write(
+                atoms,
+                output_folder,
+                sname="Si2_geom_opt",
+                calc_type="GEOM_OPT",
+            )
+
+            # read back in and check that scripts are as intended
+            with open(
+                os.path.join(output_folder, "script.sh"), newline=""
+            ) as script_written:
+                with open(
+                    os.path.join(input_folder, "submit_Si2_geom_opt.sh"), newline=""
+                ) as script_expect:
+                    script_written_lines = script_written.readlines()
+                    script_expect_lines = script_expect.readlines()
+                    for written, expect in zip(
+                        script_written_lines, script_expect_lines
+                    ):
+                        self.assertEqual(written, expect)
+
+        finally:
+            shutil.rmtree(output_folder)
+
 
 if __name__ == "__main__":
 
