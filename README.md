@@ -5,9 +5,31 @@ Collection of scripts and utilities for muon spectroscopy.
 
 Requires Python 3.7+. Install with pip or conda:
 
-`pip install pymuonsuite`
+`pip install pymuonsuite` (less recommended on Windows machines)
 
 `conda install pymuonsuite`
+
+If you plan to read CASTEP .phonon files, you will also need to install
+[Euphonic](https://github.com/pace-neutrons/Euphonic):
+
+`pip install euphonic`
+
+`conda install euphonic`
+
+Help with Euphonic installation can be found in the
+[Euphonic documentation](https://euphonic.readthedocs.io/en/latest/installation.html).
+
+### `spglib` build failed during pip install
+
+On some platforms, additional tools are needed to build the `spglib` Python module when installing
+via pip. On Windows, you may need to install
+[Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/); on Linux
+you may need to `apt-get install python-dev` or `yum install python-devel` according to your
+distribution. This should not be necessary if installing via conda.
+
+Further help with Spglib installation can be found in the
+[Spglib documentation](https://spglib.github.io/spglib/python-spglib.html#installation).
+
 
 ## Command line scripts
 
