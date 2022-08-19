@@ -5,7 +5,7 @@ Collection of scripts and utilities for muon spectroscopy.
 
 Requires Python 3.7+. Install with pip or conda:
 
-`pip install pymuonsuite` (less recommended on Windows machines)
+`pip install pymuonsuite`
 
 `conda install pymuonsuite`
 
@@ -25,7 +25,8 @@ On some platforms, additional tools are needed to build the `spglib` Python modu
 via pip. On Windows, you may need to install
 [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/); on Linux
 you may need to `apt-get install python-dev` or `yum install python-devel` according to your
-distribution. This should not be necessary if installing via conda.
+distribution. This should not be necessary if installing via conda, and so we recommend using 
+conda if you want to avoid installing these tools.
 
 Further help with Spglib installation can be found in the
 [Spglib documentation](https://spglib.github.io/spglib/python-spglib.html#installation).
