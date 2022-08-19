@@ -60,7 +60,7 @@ if __name__ == "__main__":
             "ase>=3.18.1",
             "pyyaml",
             "schema",
-            "spglib>0.8",
+            "spglib>2.0.0",
             "soprano>=0.8.11",
             "parse-fmt>=0.5",
         ],
