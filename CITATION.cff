@@ -59,12 +59,14 @@ keywords:
   - "muon quantum effects"
 license: GPL-3.0
 version: v0.2.3
-date-released: '2022-02-08'
-# permanent identifiers - to come
-# identifiers:
-#  - type: doi
-#    value:
-#    description:
+date-released: '2022-08-26'
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.7025643
+    description: The concept DOI for the collection containing all versions of pymuonsuite.
+  - type: doi
+    value: 10.5281/zenodo.7025644
+    description: The versioned DOI for the version 0.2.3 of pymuonsuite.
 
 references:
   - scope: "Cite this for pm-muairss and pm-muairss-gen"
