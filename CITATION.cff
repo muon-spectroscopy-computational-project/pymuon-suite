@@ -58,7 +58,7 @@ keywords:
   - "local magnetic field at the muon site"
   - "muon quantum effects"
 license: GPL-3.0
-version: v0.2.3
+version: v0.3.0.dev0
 date-released: '2022-08-26'
 identifiers:
   - type: doi
