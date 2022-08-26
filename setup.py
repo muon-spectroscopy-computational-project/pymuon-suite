@@ -65,7 +65,8 @@ if __name__ == "__main__":
             "parse-fmt>=0.5",
         ],
         extras_require={
-            "dev": ["pytest", "flake8", "black>=22.3.0", "pre-commit", "euphonic"]
+            "dev": ["pytest", "flake8", "black>=22.3.0", "pre-commit"],
+            "phonons": ["euphonic"],
         },
         package_data={"pymuonsuite": sk_pkgdata},
         entry_points={
