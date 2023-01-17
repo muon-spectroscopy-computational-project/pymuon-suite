@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - add-build-action-#75
 
 jobs:
   build_wheels:
