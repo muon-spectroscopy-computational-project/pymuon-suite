@@ -1,8 +1,6 @@
 import pathlib
 from setuptools import setup, find_packages
 
-from pymuonsuite import __version__
-
 this_dir = pathlib.Path(__file__).parent
 readme_text = (this_dir / "README.md").read_text()
 
@@ -25,9 +23,13 @@ if __name__ == "__main__":
             os.path.join("data/dftb_pars/", "*"),
         ]
 
+    version = {}
+    with open("pymuonsuite/__init__.py", encoding="utf-8") as fp:
+        exec(fp.read(), version)  # pylint: disable=exec-used
+
     setup(
         name="PyMuonSuite",
-        version=__version__,
+        version=version["__version__"],
         description=("A suite of utilities for muon spectroscopy"),
         long_description=readme_text,
         long_description_content_type="text/markdown",
