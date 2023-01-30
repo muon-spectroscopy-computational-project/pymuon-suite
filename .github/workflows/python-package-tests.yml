@@ -52,6 +52,7 @@ jobs:
         pip install wheel
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
         if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+        if [ -f requirements-test.txt ]; then pip install -r requirements-test.txt; fi
       shell: bash # Windows runners have Git Bash installed so this should work on all runners
     - name: Install package
       run: pip install .

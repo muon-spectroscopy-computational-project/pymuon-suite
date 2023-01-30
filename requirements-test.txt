@@ -1,0 +1,2 @@
+-i https://test.pypi.org/simple/
+spglib==2.1.0rc1
