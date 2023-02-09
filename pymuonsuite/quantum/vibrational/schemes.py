@@ -303,6 +303,142 @@ This is very likely to cause inaccuracy in averaging.
         return msg
 
 
+class AllAtomDisplacements(DisplacementScheme):
+    """TODO
+    """
+
+    def __init__(self, evals, evecs, masses, eigenvector_index, sigma_n=3):
+        super(self.__class__, self).__init__(evals, evecs, masses)
+
+        self._eigenvector_index = eigenvector_index
+        self._sigma_n = sigma_n  # Number of sigmas covered
+
+    @property
+    def eigenvector_index(self):
+        return self._eigenvector_index
+
+    @property
+    def eigenvector(self):
+        return self._evecs[self.eigenvector_index]
+
+    @property
+    def eigenvalue(self):
+        return self._evals[self._eigenvector_index]
+
+    @property
+    def sigma(self):
+        return self._sigmas[self._eigenvector_index]
+
+    # @property
+    # def i(self):
+    #     return self._i
+
+    @property
+    def sigma_n(self):
+        return self._sigma_n
+
+    def recalc_displacements(self, n=20, T=0):
+
+        self._Td = T
+        self._n = n
+        # Displacements along the three normal modes of choice
+        dz = np.linspace(-self.sigma_n, self.sigma_n, n)
+
+        self._dq = dz * self.sigma
+
+        # Turn these into position displacements
+        print(self.eigenvector.shape)
+        print(self.masses.shape)
+        dx = np.multiply.outer(self._dq, self.eigenvector)
+        print(dx.shape)
+        dx *= 1e10 / self.masses[:, None] ** 0.5
+
+        # We need also the central configuration,
+        # so depending on whether n is even or odd
+        # we get two different situations
+        self._dx = np.zeros((n + 1, self._N, 3))
+        self._dx[1:, :, :] = dx
+        if n % 2 == 1:
+            central_index = int((n + 1) / 2)
+            # Remove the superfluous zeroes
+            self._dx = np.delete(self._dx, central_index, axis=0)
+
+        return self.displacements
+
+    def recalc_weights(self, T=0):
+
+        self._Tw = T
+
+        tfac = _wnumSigmaEnhance(self.eigenvector, T)
+
+        # Now for the weights
+        dz = np.linspace(-self.sigma_n, self.sigma_n, self.n)
+        w0 = -2.0  # Weight of the central configuration
+
+        rho = np.exp(-(dz**2))
+        rhoall = rho[None, :] ** tfac[:, None]
+        rhoall /= np.sum(rhoall, axis=1)[:, None]
+
+        if self.n % 2 == 1:
+            ci = int((self.n - 1) / 2)
+            # Fix the central configuration's weight
+            w0 += np.sum(rhoall[:, ci])
+            rhoall = np.delete(rhoall, ci, axis=1)
+
+        self._w = np.zeros(np.prod(rhoall.shape) + 1)
+        self._w[0] = w0
+        self._w[1:] = np.concatenate(rhoall)
+
+        return self.weights
+
+    def __str__(self):
+        msg = """Independent Displacements Scheme
+Displaces one single atom of index i along the
+three phonon modes with greatest Atomic Participation Ratio (APR).
+
+-------------------------
+
+Atom index: {i}
+
+Phonon frequencies: \n{evals} cm^-1
+
+Displacement vectors: \n{evecs}
+
+Temperature: \n{Td} K (displacements), {Tw} K (weights)
+
+Max sigma N: \n{sN}
+
+Weights: \n{w}
+
+-------------------------
+        """.format(
+            i=self.i,
+            evals="\t".join(map(str, self.major_evals)),
+            evecs="\n".join(map(str, self.major_evecs)),
+            Td=self.Td,
+            Tw=self.Tw,
+            w=self.weights,
+            sN=self.sigma_n,
+        )
+
+        if self.Tw != self.Td:
+            msg += """
+WARNING: Temperatures for displacements and weights are different.
+This can be a cause of inaccuracy in averaging.
+
+------------------------
+"""
+        if self.Tw > self.Td:
+            msg += """
+WARNING: Temperatures for weights is higher than for displacements.
+This is very likely to cause inaccuracy in averaging.
+
+------------------------
+"""
+
+        return msg
+
+
 class MonteCarloDisplacements(DisplacementScheme):
     """MonteCarloDisplacements
 

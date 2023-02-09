@@ -12,6 +12,7 @@ from pymuonsuite.quantum.vibrational.phonons import ase_phonon_calc
 from pymuonsuite.quantum.vibrational.average import (
     muon_vibrational_average_write,
     muon_vibrational_average_read,
+    vibrational_displacement_write,
 )
 from pymuonsuite.schemas import (
     load_input_file,
@@ -45,6 +46,14 @@ def nq_entry():
                         (=generate and WRITE structures) or 'r' (=READ and
                         analyse results). Default is READ.""",
     )
+    parser.add_argument(
+        "-a",
+        "--all",
+        action="store_true",
+        dest="all",
+        help="""Displace all atoms in structure instead of only the muon.
+                        Only compatible with WRITE task.""",
+    )
 
     args = parser.parse_args()
 
@@ -55,7 +64,14 @@ def nq_entry():
     if params["average_T"] is None:
         params["average_T"] = params["displace_T"]
 
-    if args.task == "w":
+    if args.all:
+        if args.task != "w":
+            raise ValueError(
+                "Only the WRITE task is supported for displacement of --all "
+                "atoms."
+            )
+        vibrational_displacement_write(args.structure, **params)
+    elif args.task == "w":
         try:
             muon_vibrational_average_write(args.structure, **params)
         except IOError as e:

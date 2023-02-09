@@ -261,6 +261,8 @@ MuonHarmonicSchema = Schema(
         Optional("average_file", default="averages.dat"): validate_str,
         # Random seed for generation
         Optional("random_seed", default=None): int,
+        # Phonon mode to select for displacing all atoms
+        Optional("mode_index", default=-1): int,
     }
 )
 
