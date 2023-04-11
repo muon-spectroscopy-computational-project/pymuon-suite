@@ -4,7 +4,7 @@ Author: Simone Sturniolo and Adam Laverack
 
 
 import os
-from ase import io
+from ase import Atoms, io
 import numpy as np
 from datetime import datetime
 
@@ -126,6 +126,7 @@ Parameter file: {param}
                     f.write(
                         "\t{0:.2f}\t\t{1:.2f}\t\t{2:.2f}\n".format(Emin, Eavg, Estd)
                     )
+                    structure = coll[np.argmin(E)].structures[0]
 
                     fdat.write(
                         "\t".join(
@@ -137,9 +138,9 @@ Parameter file: {param}
                                     Emin,
                                     Eavg,
                                     Estd,
-                                    coll[np.argmin(E)].structures[0].positions[-1][0],
-                                    coll[np.argmin(E)].structures[0].positions[-1][1],
-                                    coll[np.argmin(E)].structures[0].positions[-1][2],
+                                    structure.positions[-1][0],
+                                    structure.positions[-1][1],
+                                    structure.positions[-1][2],
                                 ],
                             )
                         )
@@ -148,7 +149,7 @@ Parameter file: {param}
 
                     f.write(
                         "\n\tMinimum energy structure: {0}\n".format(
-                            coll[np.argmin(E)].structures[0].info["name"]
+                            structure.info["name"]
                         )
                     )
 
@@ -157,47 +158,17 @@ Parameter file: {param}
                         params["clustering_save_type"] == "structures"
                         or params["clustering_save_min"]
                     ):
-                        # For backwards-compatability with old pymuonsuite
-                        # versions
-                        if params["clustering_save_min"]:
-                            if params["clustering_save_format"] is None:
-                                params["clustering_save_format"] = "cif"
-
-                        try:
-                            calc_path = os.path.join(clustering_save_path, calc)
-                            if not os.path.exists(calc_path):
-                                os.mkdir(calc_path)
-                            fname = "{0}_{1}_min_cluster_" "{2}.{3}".format(
-                                params["name"],
-                                calc,
-                                i + 1,
-                                params["clustering_save_format"],
-                            )
-                            with silence_stdio():
-                                structure = coll[np.argmin(E)].structures[0]
-                                if params["calculator"] == "uep":
-                                    structure = make_muonated_supercell(
-                                        structure,
-                                        params["supercell"],
-                                        params["mu_symbol"],
-                                    )
-
-                                io.write(os.path.join(calc_path, fname), structure)
-                        except io.formats.UnknownFileTypeError as e:
-                            print(
-                                "ERROR: File format '{0}' is not "
-                                "recognised. Modify 'clustering_save_format'"
-                                " and try again.".format(e)
-                            )
-                            return
-                        except ValueError as e:
-                            print(
-                                "ERROR: {0}. Modify 'clustering_save_format'"
-                                "and try again.".format(e)
-                            )
+                        success = write_structure(
+                            params,
+                            clustering_save_path,
+                            calc,
+                            f"{params['name']}_{calc}_min_cluster_{i+1}",
+                            structure,
+                        )
+                        if not success:
                             return
 
-                    min_energy_structs.append(coll[np.argmin(E)].structures[0])
+                    min_energy_structs.append(structure)
 
                     f.write("\n\n\tStructure list:")
 
@@ -273,6 +244,58 @@ Parameter file: {param}
             f.write("\n--------------------------\n\n")
 
         f.write("\n==========================\n\n")
+
+
+def write_structure(
+    params: dict, clustering_save_path: str, calc: str, seedname: str, structure: Atoms
+) -> bool:
+    """Writes the minimal energy structure in a cluster to file.
+
+    | Args:
+    |   params (dict): PyMuonSuite MUAIRSS parameters.
+    |   clustering_save_path (str): Directory to save the clusters in.
+    |   calc (str): Calculator used for the optimisation.
+    |   seedname (str): Seedname for the saved structure files.
+    |   structure (Atoms): ASE Atoms to save.
+    |
+    | Returns:
+    |   (bool): Whether the structure was written to file successfully.
+    """
+    # For backwards-compatibility with old pymuonsuite versions
+    if params["clustering_save_min"]:
+        if params["clustering_save_format"] is None:
+            params["clustering_save_format"] = "cif"
+
+    try:
+        calc_path = os.path.join(clustering_save_path, calc)
+        if not os.path.exists(calc_path):
+            os.mkdir(calc_path)
+
+        with silence_stdio():
+            if calc == "uep":
+                structure = make_muonated_supercell(
+                    structure, params["supercell"], params["mu_symbol"]
+                )
+
+            if params["clustering_save_format"].lower() == "cell":
+                # Account for CASTEP calc settings
+                read_write_castep = ReadWriteCastep(params)
+                read_write_castep.write_cell(structure, calc_path, seedname)
+            else:
+                filename = f"{seedname}.{params['clustering_save_format']}"
+                io.write(os.path.join(calc_path, filename), structure)
+
+        return True
+
+    except io.formats.UnknownFileTypeError as e:
+        print(
+            f"ERROR: File format '{e}' is not recognised. "
+            "Modify 'clustering_save_format' and try again."
+        )
+        return False
+    except ValueError as e:
+        print(f"ERROR: {e}. Modify 'clustering_save_format' and try again.")
+        return False
 
 
 def write_phonon_report(args, params, phdata):
