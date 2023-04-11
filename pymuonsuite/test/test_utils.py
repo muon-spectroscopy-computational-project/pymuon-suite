@@ -22,12 +22,10 @@ class TestUtils(unittest.TestCase):
                     positions.append([2 * i, 2 * j, 2 * k])
         positions += [[1, 1, 1]]
         self.assertTrue((supercell_atoms.get_positions() == positions).all())
+        species = supercell_atoms.get_array("castep_custom_species")
         self.assertTrue(
-            (
-                supercell_atoms.get_array("castep_custom_species")
-                == si_symbols + [custom_symbol]
-            ).all(),
-            f"Expected {si_symbols + [custom_symbol]} but got {supercell_atoms.get_array('castep_custom_species')}",
+            (species == si_symbols + [custom_symbol]).all(),
+            f"Expected {si_symbols + [custom_symbol]} but got {species}",
         )
 
     def test_make_muonated_supercell(self):
