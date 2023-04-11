@@ -15,14 +15,13 @@ import argparse as ap
 from spglib import find_primitive
 
 from ase import Atoms, io
-from ase.build import make_supercell
 from soprano.utils import customize_warnings, silence_stdio
 from soprano.collection import AtomsCollection
 from soprano.collection.generate import defectGen
 from soprano.analyse.phylogen import PhylogenCluster, Gene
 from soprano.rnd import Random
 
-from pymuonsuite.utils import make_3x3, safe_create_folder
+from pymuonsuite.utils import make_supercell, safe_create_folder
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
@@ -60,13 +59,7 @@ def generate_muairss_collection(struct, params):
         )
 
     # Make a supercell
-    sm = make_3x3(params["supercell"])
-    # ASE's make_supercell is weird, avoid if not necessary...
-    smdiag = np.diag(sm).astype(int)
-    if np.all(np.diag(smdiag) == sm):
-        scell0 = struct.repeat(smdiag)
-    else:
-        scell0 = make_supercell(struct, sm)
+    scell0 = make_supercell(struct, params["supercell"])
 
     reduced_struct = find_primitive_structure(struct)
 

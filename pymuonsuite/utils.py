@@ -1,6 +1,11 @@
-import shutil
 import os
+import shutil
+
+from ase import Atoms
+from ase.build import make_supercell as make_supercell_ase
+
 import numpy as np
+
 from soprano.utils import safe_input
 
 
@@ -45,6 +50,60 @@ def make_3x3(a):
         raise ValueError("Invalid argument passed do make_3x3")
 
 
+def make_supercell(structure: Atoms, supercell: int) -> Atoms:
+    """Expand the structure into the defined supercell. If supercell is a single
+    number, it is expanded along each axis by the specified factor. Lists of 3
+    or 9 elements are also supported, in which case the cell will be expanded by
+    the amount corresponding to each direction.
+
+    | Args:
+    |   structure (Atoms): the structure to be expanded
+    |   supercell (int, float or list): either a single number, a list of
+    |                                   numbers of size 1, 3, or 9, or a 2D
+    |                                   list of size 9
+    |
+    | Returns:
+    |   Atoms: an ASE Atoms object with expanded size
+    """
+    supercell_matrix = make_3x3(supercell)
+    # ASE's make_supercell is weird, avoid if not necessary...
+    supercell_matrix_diag = np.diag(supercell_matrix).astype(int)
+    if np.all(np.diag(supercell_matrix_diag) == supercell_matrix):
+        return structure.repeat(supercell_matrix_diag)
+    else:
+        return make_supercell_ase(structure, supercell_matrix)
+
+
+def make_muonated_supercell(structure: Atoms, supercell: int, mu_symbol: str) -> Atoms:
+    """Expand a structure containing a muon into the defined supercell. The
+    muon is not duplicated in the expansion (i.e. the only muon in the output
+    will be at its original position).
+
+    If supercell is a single number, it is expanded along each axis by the
+    specified factor. Lists of 3 or 9 elements are also supported, in which
+    case the cell will be expanded by the amount corresponding to each
+    direction.
+
+    | Args:
+    |   structure (Atoms): the structure to be expanded, with the muon being
+    |                      the final atom in the structure
+    |   supercell (int, float or list): either a single number, a list of
+    |                                   numbers of size 1, 3, or 9, or a 2D
+    |                                   list of size 9
+    |   mu_symbol (str): castep_custom_species to use for the muon
+    |
+    | Returns:
+    |   Atoms: an ASE Atoms object with expanded size"""
+    structure = structure.copy()  # Avoid in place modifications
+    muon = structure.pop()
+    supercell_structure = make_supercell(structure, supercell)
+    chemical_symbols = supercell_structure.get_chemical_symbols()
+    castep_custom_species = np.array(chemical_symbols + [mu_symbol])
+    supercell_structure += muon
+    supercell_structure.set_array("castep_custom_species", castep_custom_species)
+    return supercell_structure
+
+
 def safe_create_folder(folder_name):
     """Create a folder at path with safety checks for overwriting.
 
@@ -80,7 +139,6 @@ def make_process_slices(N, M):
 
 
 def create_plane_grid(hkl, cell, f0, f1, N=20):
-
     # Create a grid of points along a crystal plane
 
     hkl = np.array(hkl).astype(int)

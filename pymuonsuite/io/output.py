@@ -8,7 +8,7 @@ from ase import io
 import numpy as np
 from datetime import datetime
 
-from pymuonsuite.utils import safe_create_folder
+from pymuonsuite.utils import make_muonated_supercell, safe_create_folder
 from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
 
@@ -38,7 +38,6 @@ def write_tensors(tensors, filename, symbols):
 
 
 def write_cluster_report(args, params, clusters):
-
     if params["clustering_method"] == "hier":
         clustinfo = """
 Clustering method: Hierarchical
@@ -55,7 +54,6 @@ Clustering method: k-Means
         )
 
     with open(params["name"] + "_clusters.txt", "w") as f:
-
         f.write(
             """
 ****************************
@@ -83,11 +81,9 @@ Parameter file: {param}
         )
 
         for name, cdata in clusters.items():
-
             f.write("Clusters for {0}:\n".format(name))
 
             if params["clustering_save_min"] or params["clustering_save_type"]:
-
                 if params["clustering_save_folder"] is not None:
                     clustering_save_path = safe_create_folder(
                         params["clustering_save_folder"]
@@ -100,7 +96,6 @@ Parameter file: {param}
                     raise RuntimeError("Could not create folder {0}")
 
             for calc, clusts in cdata.items():
-
                 # Computer readable
                 fdat = open(
                     params["name"] + "_{0}_{1}_clusters.dat".format(name, calc),
@@ -115,7 +110,6 @@ Parameter file: {param}
                 min_energy_structs = []
 
                 for i, g in enumerate(cgroups):
-
                     f.write(
                         "\n\n\t-----------\n\tCluster "
                         "{0}\n\t-----------\n".format(i + 1)
@@ -180,11 +174,16 @@ Parameter file: {param}
                                 params["clustering_save_format"],
                             )
                             with silence_stdio():
-                                io.write(
-                                    os.path.join(calc_path, fname),
-                                    coll[np.argmin(E)].structures[0],
-                                )
-                        except (io.formats.UnknownFileTypeError) as e:
+                                structure = coll[np.argmin(E)].structures[0]
+                                if params["calculator"] == "uep":
+                                    structure = make_muonated_supercell(
+                                        structure,
+                                        params["supercell"],
+                                        params["mu_symbol"],
+                                    )
+
+                                io.write(os.path.join(calc_path, fname), structure)
+                        except io.formats.UnknownFileTypeError as e:
                             print(
                                 "ERROR: File format '{0}' is not "
                                 "recognised. Modify 'clustering_save_format'"
@@ -277,9 +276,7 @@ Parameter file: {param}
 
 
 def write_phonon_report(args, params, phdata):
-
     with open(params["name"] + "_phonons.txt", "w") as f:
-
         f.write(
             """
     ****************************
@@ -328,7 +325,6 @@ def write_phonon_report(args, params, phdata):
 
 
 def write_symmetry_report(args, symdata, wpoints, fpos):
-
     print("Wyckoff points symmetry report for {0}".format(args.structure))
     print("Space Group International Symbol: " "{0}".format(symdata["international"]))
     print("Space Group Hall Number: " "{0}".format(symdata["hall_number"]))
