@@ -85,9 +85,13 @@ class ChargeDistribution(object):
         cppot = None
         try:
             with silence_stdio():
-                cppot = io.read(seedpath + ".cell").calc.cell.species_pot.value
+                structure = io.read(seedpath + ".cell")
+                # Use spins from initial cell file rather than CASTEP results
+                initial_spins = structure.get_initial_magnetic_moments()
+                self._struct.set_initial_magnetic_moments(initial_spins)
+                cppot = structure.calc.cell.species_pot.value
         except IOError:
-            pass  # If not available, ignore this
+            print(f"WARNING: cell file {seedpath}.cell not found")
         if cppot is not None:
             ppf = [lpp.split() for lpp in cppot.split("\n") if lpp]
             for el, pppath in ppf:
