@@ -5,7 +5,7 @@ Author: Laura Murgatroyd
 
 
 class ReadWrite(object):
-    def __init__(self, params={}, script=None, calc=None):
+    def __init__(self, params=None, script=None, calc=None):
         """
         |   params (dict)           parameters for writing input files
         |   script (str):           Path to a file containing a submission
@@ -19,7 +19,23 @@ class ReadWrite(object):
         """
         self._calc = calc
         self.script = script
-        self.params = params
+        self.params = self._validate_params(params)
+
+    def _validate_params(self, params: dict) -> dict:
+        """
+        | Args:
+        |   params (dict): dict of parameters to validate
+        | Returns:
+        |   (dict): params, or an empty dict if they were None
+        | Raises:
+        |   TypeError: params is neither None nor a dict
+        """
+        if params is None:
+            return {}
+        elif isinstance(params, dict):
+            return params
+        else:
+            raise TypeError(f"params should be a dict, not {type(params)}")
 
     def read(self, folder, sname=None):
         raise (
@@ -40,11 +56,7 @@ class ReadWrite(object):
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
         """
-        if not (isinstance(params, dict)):
-            raise ValueError("params should be a dict, not ", type(params))
-            return
-        else:
-            self.params = params
+        self.params = self._validate_params(params)
 
     def set_script(self, script):
         """

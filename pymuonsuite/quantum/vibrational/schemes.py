@@ -126,7 +126,9 @@ class DisplacementScheme(object):
     def load(file):
         return pickle.load(open(file))
 
-    def recalc_all(self, displ_args={}, weights_args={}):
+    def recalc_all(self, displ_args: dict = None, weights_args: dict = None):
+        displ_args = {} if displ_args is None else displ_args
+        weights_args = {} if weights_args is None else weights_args
         self.recalc_displacements(**displ_args)
         self.recalc_weights(**weights_args)
 

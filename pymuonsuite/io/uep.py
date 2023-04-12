@@ -10,7 +10,7 @@ from pymuonsuite.io.readwrite import ReadWrite
 
 
 class ReadWriteUEP(ReadWrite):
-    def __init__(self, params={}, script=None):
+    def __init__(self, params=None, script=None):
         self.set_script(script)
         self.set_params(params)
 
