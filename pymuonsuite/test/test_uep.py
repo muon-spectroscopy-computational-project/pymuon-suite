@@ -22,10 +22,10 @@ class TestReadWriteUEP(unittest.TestCase):
         reader = ReadWriteUEP()
         # test that we do not get any result for trying to read
         # an empty folder:
-        try:
+        with self.assertRaises(OSError) as e:
             reader.read(folder, sname)
-        except Exception as e:
-            print(e)
+        self.assertIn("could not read UEP file in", str(e.exception))
+
         folder = os.path.join(_TESTDATA_DIR, "Si2/uep-result")
         # tests uep file being read, and compares structure to
         # that in the xyz file - these should be equal
@@ -117,11 +117,9 @@ class TestReadWriteUEP(unittest.TestCase):
             params["charged"] = False
 
             reader = ReadWriteUEP(params=params)
-
-            reader.write(atoms, output_folder)
-
-        except Exception as e:
-            print(e)
+            with self.assertRaises(RuntimeError) as e:
+                reader.write(atoms, output_folder)
+            self.assertIn("Can't use UEP method for neutral system", str(e.exception))
         finally:
             shutil.rmtree("test_save")
 

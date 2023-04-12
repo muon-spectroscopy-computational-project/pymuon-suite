@@ -60,6 +60,57 @@ class TestMuairss(unittest.TestCase):
     def setUp(self):
         _clean_testdata_dir()
 
+    def testBatchUEP(self):
+        try:
+            yaml_file = os.path.join(_TESTDATA_DIR, "Si2-muairss-uep.yaml")
+            cell_file = os.path.join(_TESTDATA_DIR, "batch")
+            input_params = load_input_file(yaml_file, MuAirssSchema)
+
+            # Run Muairss write:
+            sys.argv[1:] = ["-tw", cell_file, yaml_file]
+            os.chdir(_TESTDATA_DIR)
+            run_muairss()
+            # Check all folders contain a yaml file
+            for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/Si2/uep/"):
+                for s in subDirs:
+                    expected_file = os.path.join(
+                        "muon-airss-out-uep/Si2/uep/" + s, s + ".yaml"
+                    )
+                    self.assertTrue(os.path.exists(expected_file))
+                    params = load_input_file(expected_file, UEPOptSchema)
+                    self.assertEqual(params["geom_steps"], input_params["geom_steps"])
+                    self.assertEqual(params["opt_tol"], input_params["geom_force_tol"])
+                    self.assertEqual(params["gw_factor"], input_params["uep_gw_factor"])
+
+            # Run UEP
+            if platform.system() == "Windows":
+                script_path = os.path.join(_TESTDATA_DIR, "script-uep-windows.ps1")
+                subprocess.run(["powershell", "-File", os.path.normpath(script_path)])
+            else:
+                subprocess.run(
+                    [
+                        os.path.join(_TESTDATA_DIR, "script-uep"),
+                        "muon-airss-out-uep/Si2/uep/",
+                    ]
+                )
+
+            # Check all folders contain UEP file
+            for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/Si2/uep/"):
+                for s in subDirs:
+                    expected_file = os.path.join(
+                        "muon-airss-out-uep/Si2/uep/" + s, s + ".uep"
+                    )
+                    self.assertTrue(os.path.exists(expected_file))
+
+            sys.argv[1:] = [cell_file, yaml_file]
+            run_muairss()
+
+            self.assertTrue(os.path.exists("Si2_clusters.txt"))
+            self.assertTrue(os.path.exists("Si2_Si2_uep_clusters.dat"))
+        finally:
+            #  Remove all created files and folders
+            _clean_testdata_dir()
+
     def testUEP(self):
         try:
             yaml_file = os.path.join(_TESTDATA_DIR, "Si2-muairss-uep.yaml")
@@ -85,9 +136,14 @@ class TestMuairss(unittest.TestCase):
             # Run UEP
             if platform.system() == "Windows":
                 script_path = os.path.join(_TESTDATA_DIR, "script-uep-windows.ps1")
-                subprocess.call(["powershell", "-File", os.path.normpath(script_path)])
+                subprocess.run(["powershell", "-File", os.path.normpath(script_path)])
             else:
-                subprocess.call(os.path.join(_TESTDATA_DIR, "script-uep"))
+                subprocess.run(
+                    [
+                        os.path.join(_TESTDATA_DIR, "script-uep"),
+                        "muon-airss-out-uep/uep/",
+                    ]
+                )
 
             # Check all folders contain UEP file
             for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/uep/"):
@@ -225,7 +281,7 @@ class TestMuairss(unittest.TestCase):
 
             # Run DFTB
             if _RUN_DFTB:
-                subprocess.call(os.path.join(_TESTDATA_DIR, "script-dftb"))
+                subprocess.run(os.path.join(_TESTDATA_DIR, "script-dftb"))
             else:
                 yaml_file = os.path.join(_TESTDATA_DIR, "Si2-muairss-dftb-read.yaml")
 
