@@ -13,7 +13,7 @@ from ase.calculators.castep import CastepParam
 from ase.io.castep import read_param
 
 from pymuonsuite.muairss import main as run_muairss
-from pymuonsuite.schemas import MuAirssSchema, UEPOptSchema, load_input_file 
+from pymuonsuite.schemas import MuAirssSchema, UEPOptSchema, load_input_file
 from pymuonsuite.utils import list_to_string
 
 from soprano.utils import silence_stdio
