@@ -230,14 +230,12 @@ def muairss_batch_io(args, global_params, save=False):
 
     for path in structure_files:
         name = parse_structure_name(path)
-        parameter_file = os.path.join(structures_path, "{}.yaml".format(name))
-        if not os.path.isfile(parameter_file):
-            parameter_file = None
         with silence_stdio():
             struct = io.read(path)
         params = dict(global_params)  # Copy
         params["name"] = name
-        if parameter_file is not None:
+        parameter_file = os.path.join(structures_path, "{}.yaml".format(name))
+        if os.path.isfile(parameter_file):
             params = load_input_file(parameter_file, MuAirssSchema, merge=params)
         params["out_folder"] = params["name"]
 

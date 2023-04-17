@@ -1,6 +1,5 @@
 #!/bin/bash
-target=$1
-for folder in "$target"*
+for folder in "$1"/*
 do
 	pm-uep-opt $folder/$(basename $folder).yaml
 done

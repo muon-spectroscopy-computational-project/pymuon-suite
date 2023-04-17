@@ -88,7 +88,7 @@ def validate_save_min(value):
     return isinstance(value, bool)
 
 
-def load_input_file(fname, param_schema, merge=None):
+def load_input_file(fname, param_schema: Schema, merge: dict = None):
     """Load a given input YAML file and validate it with a schema."""
 
     if merge is None:
@@ -96,13 +96,14 @@ def load_input_file(fname, param_schema, merge=None):
             params = yaml.safe_load(params_file)
     else:
         try:
-            param_schema.validate(merge)
+            existing_params = {k: v for k, v in merge.items() if v is not None}
+            param_schema.validate(existing_params)
         except SchemaError as e:
-            message = "Invalid merge params passed to" " load_input_file\n{0}".format(e)
-            raise RuntimeError(message)
+            message = "Invalid merge params passed to load_input_file"
+            raise RuntimeError(message) from e
         with open(fname, "r") as params_file:
             new_params = yaml.safe_load(params_file)
-        params = dict(merge)
+        params = dict(existing_params)
         params.update(new_params)
 
     if params is None:

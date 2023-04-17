@@ -1,14 +1,19 @@
 """Tests for ReadWriteUEP methods"""
 
+import glob
 import os
 import shutil
+import sys
 import unittest
 
-import numpy as np
 from ase import io
-from pymuonsuite.io.uep import ReadWriteUEP
 
-from pymuonsuite.schemas import load_input_file, MuAirssSchema
+import numpy as np
+
+from pymuonsuite.calculate.uep.__main__ import plot_entry
+from pymuonsuite.io.uep import ReadWriteUEP
+from pymuonsuite.schemas import MuAirssSchema, load_input_file
+
 from soprano.utils import silence_stdio
 
 _TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -122,6 +127,36 @@ class TestReadWriteUEP(unittest.TestCase):
             self.assertIn("Can't use UEP method for neutral system", str(e.exception))
         finally:
             shutil.rmtree("test_save")
+
+
+class TestPlotUEP(unittest.TestCase):
+    def tearDown(self):
+        for f in glob.glob("Si8.*.*.dat"):
+            os.remove(f)
+
+    def test_plot(self):
+        input_folder = _TESTDATA_DIR + "/Si8"
+        os.chdir(input_folder)
+        sys.argv[1:] = ["Si8.yaml"]
+        plot_entry()
+        for i in (1, 2, 3):
+            self.assertTrue(os.path.exists(f"Si8.line.{i}.dat"))
+        for i in (1, 2):
+            self.assertTrue(os.path.exists(f"Si8.plane.{i}.dat"))
+
+    def test_plot_invalid_line(self):
+        input_folder = _TESTDATA_DIR + "/Si8"
+        os.chdir(input_folder)
+        sys.argv[1:] = ["Si8-invalid-line.yaml"]
+        with self.assertRaises(SystemExit):
+            plot_entry()
+
+    def test_plot_invalid_plane(self):
+        input_folder = _TESTDATA_DIR + "/Si8"
+        os.chdir(input_folder)
+        sys.argv[1:] = ["Si8-invalid-plane.yaml"]
+        with self.assertRaises(SystemExit):
+            plot_entry()
 
 
 if __name__ == "__main__":
