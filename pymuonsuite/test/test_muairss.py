@@ -69,14 +69,10 @@ class TestMuairss(unittest.TestCase):
     ):
         for (rootDir, subDirs, files) in os.walk(out_dir):
             for s in subDirs:
-                expected_file = os.path.join(
-                    out_dir, s, s + ".cell"
-                )
+                expected_file = os.path.join(out_dir, s, s + ".cell")
                 script_file = input_params["script_file"]
                 if script_file is not None:
-                    expected_script = os.path.join(
-                        out_dir, s, "script.sh"
-                    )
+                    expected_script = os.path.join(out_dir, s, "script.sh")
                     self.assertTrue(os.path.exists(expected_script))
 
                 self.assertTrue(os.path.exists(expected_file))
@@ -86,9 +82,7 @@ class TestMuairss(unittest.TestCase):
                     atoms.calc.cell.kpoint_mp_grid.value,
                     list_to_string(input_params["k_points_grid"]),
                 )
-                expected_param_file = os.path.join(
-                    out_dir, s, s + ".param"
-                )
+                expected_param_file = os.path.join(out_dir, s, s + ".param")
                 self.assertTrue(os.path.exists(expected_param_file))
                 with silence_stdio():
                     output_castep_param = read_param(expected_param_file).param
@@ -122,9 +116,7 @@ class TestMuairss(unittest.TestCase):
     def check_write_uep(self, out_dir: str, input_params: dict):
         for (rootDir, subDirs, files) in os.walk(out_dir):
             for s in subDirs:
-                expected_file = os.path.join(
-                        out_dir, s, s + ".yaml"
-                    )
+                expected_file = os.path.join(out_dir, s, s + ".yaml")
                 self.assertTrue(os.path.exists(expected_file))
                 params = load_input_file(expected_file, UEPOptSchema)
                 self.assertEqual(params["geom_steps"], input_params["geom_steps"])
@@ -135,8 +127,8 @@ class TestMuairss(unittest.TestCase):
         if platform.system() == "Windows":
             script_path = os.path.join(_TESTDATA_DIR, "script-uep-windows.ps1")
             subprocess.run(
-                    ["powershell", "-File", os.path.normpath(script_path), out_dir]
-                )
+                ["powershell", "-File", os.path.normpath(script_path), out_dir]
+            )
         else:
             subprocess.run([os.path.join(_TESTDATA_DIR, "script-uep"), out_dir])
 
