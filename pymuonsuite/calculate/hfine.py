@@ -59,13 +59,13 @@ def compute_hfine_tensor(
     N = len(points)
 
     magmoms = np.array(spins).astype(float)
-    species = np.array(species).astype("S2")
+    species = np.array(species)
     if species.shape == ():
         species = np.repeat(species[None], N)
     for i, s in enumerate(species):
-        if s == b"e":
+        if s == "e":
             mm = 2 * _bohrmag
-        elif s == b"mu":
+        elif s == "mu":
             mm = mu_cnst.m_gamma * cnst.hbar
         else:
             mm = _get_isotope_data(s, "gamma")[0] * cnst.hbar
@@ -140,7 +140,7 @@ def compute_hfine_mullpop(
     |                        magnetization). Default is True
     |   fermi (bool):        if True, include a Fermi contact term
     |                        (magnetization at site i). Default is True
-    |   fermi_neigh (bool):  if True, include an empyrical neighbour
+    |   fermi_neigh (bool):  if True, include an empirical neighbour
     |                        correction for the Fermi contact term.
     |                        Default is False
 

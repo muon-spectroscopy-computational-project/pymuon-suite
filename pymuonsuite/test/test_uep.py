@@ -11,6 +11,7 @@ from ase import io
 import numpy as np
 
 from pymuonsuite.calculate.uep.__main__ import plot_entry
+from pymuonsuite.calculate.uep.charged import ChargeDistribution
 from pymuonsuite.io.uep import ReadWriteUEP
 from pymuonsuite.schemas import MuAirssSchema, load_input_file
 
@@ -157,6 +158,116 @@ class TestPlotUEP(unittest.TestCase):
         sys.argv[1:] = ["Si8-invalid-plane.yaml"]
         with self.assertRaises(SystemExit):
             plot_entry()
+
+
+class TestChargeDistribution(unittest.TestCase):
+    def tearDown(self):
+        for f in glob.glob("test.*"):
+            os.remove(f)
+
+    def test_validate_points(self):
+        input_folder = _TESTDATA_DIR + "/Si2"
+        os.chdir(input_folder)
+        charge_distribution = ChargeDistribution("Si2")
+        self.assertTrue(
+            np.all(charge_distribution._validate_points([0, 0, 0]) == [[0, 0, 0]])
+        )
+        self.assertTrue(
+            np.all(charge_distribution._validate_points([[0, 0, 0]]) == [[0, 0, 0]])
+        )
+        self.assertTrue(
+            np.all(
+                charge_distribution._validate_points([[0, 0, 0], [1, 1, 1]])
+                == [[0, 0, 0], [1, 1, 1]]
+            )
+        )
+
+    def test_basic(self):
+        input_folder = _TESTDATA_DIR + "/Si2"
+        os.chdir(input_folder)
+        charge_distribution = ChargeDistribution("Si2")
+
+        self.assertTrue(
+            np.allclose(
+                charge_distribution.cell,
+                [
+                    [2.6954645, 2.6954645, 0.0],
+                    [2.6954645, 0.0, 2.6954645],
+                    [0.0, 2.6954645, 2.6954645],
+                ],
+            )
+        )
+        self.assertAlmostEqual(charge_distribution.volume, 39.1679503)
+        self.assertTrue(charge_distribution.chemical_symbols == ["Si", "Si"])
+        self.assertTrue(
+            np.allclose(
+                charge_distribution.positions,
+                [[0.0, 0.0, 0.0], [1.34773225, 1.34773225, 1.34773225]],
+            )
+        )
+        self.assertTrue(
+            np.allclose(
+                charge_distribution.scaled_positions, [[0, 0, 0], [0.25, 0.25, 0.25]]
+            )
+        )
+        self.assertFalse(charge_distribution.has_spin)
+        self.assertAlmostEqual(charge_distribution.thomasFermiE, 0.3015282)
+
+    def test_spin(self):
+        input_folder = _TESTDATA_DIR + "/YbCuAs2"
+        os.chdir(input_folder)
+        charge_distribution = ChargeDistribution("YbCuAs2")
+
+        self.assertTrue(
+            np.allclose(
+                charge_distribution.cell,
+                [[3.842, 0.0, 0.0], [0.0, 3.842, 0.0], [0.0, 0.0, 9.743]],
+            )
+        )
+        self.assertAlmostEqual(charge_distribution.volume, 143.8160723)
+        self.assertTrue(
+            charge_distribution.chemical_symbols
+            == ["Cu", "Cu", "As", "As", "As", "As", "Yb", "Yb"]
+        )
+        self.assertTrue(
+            np.allclose(
+                charge_distribution.positions,
+                [
+                    [2.8815, 0.9605, 4.8715],
+                    [0.9605, 2.8815, 4.8715],
+                    [2.8815, 0.9605, 0.0],
+                    [0.9605, 2.8815, 0.0],
+                    [2.8815, 2.8815, 3.32962154],
+                    [0.9605, 0.9605, 6.41337847],
+                    [0.9605, 0.9605, 2.30306983],
+                    [2.8815, 2.8815, 7.43993017],
+                ],
+            )
+        )
+        self.assertTrue(
+            np.allclose(
+                charge_distribution.scaled_positions,
+                [
+                    [0.75, 0.25, 0.5],
+                    [0.25, 0.75, 0.5],
+                    [0.75, 0.25, 0.0],
+                    [0.25, 0.75, 0.0],
+                    [0.75, 0.75, 0.341745],
+                    [0.25, 0.25, 0.658255],
+                    [0.25, 0.25, 0.236382],
+                    [0.75, 0.75, 0.763618],
+                ],
+            )
+        )
+        self.assertTrue(charge_distribution.has_spin)
+        self.assertAlmostEqual(charge_distribution.thomasFermiE, 6.2406736)
+
+    def test_charged(self):
+        input_folder = _TESTDATA_DIR + "/Si2"
+        os.chdir(input_folder)
+        with self.assertRaises(RuntimeError) as e:
+            ChargeDistribution("Si2-charged")
+        self.assertIn("Cell is not neutral", str(e.exception))
 
 
 if __name__ == "__main__":
