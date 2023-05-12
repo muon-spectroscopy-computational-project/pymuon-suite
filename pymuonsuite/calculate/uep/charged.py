@@ -86,9 +86,9 @@ class ChargeDistribution(object):
         try:
             with silence_stdio():
                 structure = io.read(seedpath + ".cell")
-                # Use spins from initial cell file rather than CASTEP results
-                initial_spins = structure.get_initial_magnetic_moments()
-                self._struct.set_initial_magnetic_moments(initial_spins)
+                # Set all spins to 0 rather than use the CASTEP results
+                spins = [0] * len(self._struct.positions)
+                self._struct.set_initial_magnetic_moments(spins)
                 cppot = structure.calc.cell.species_pot.value
         except IOError:
             print(f"WARNING: cell file {seedpath}.cell not found")
