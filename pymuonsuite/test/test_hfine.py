@@ -21,9 +21,7 @@ class TestHyperfine(unittest.TestCase):
         )
 
     def test_compute_hydrogen(self):
-        hyperfine_tensor = compute_hfine_tensor(
-            [[0.0, 0.0, 0.0]], [0], species=["H"]
-        )
+        hyperfine_tensor = compute_hfine_tensor([[0.0, 0.0, 0.0]], [0], species=["H"])
         self.assertTrue(
             np.all(
                 hyperfine_tensor == [[0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]]
