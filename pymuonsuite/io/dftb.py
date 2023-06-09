@@ -312,6 +312,13 @@ class ReadWriteDFTB(ReadWrite):
                 if args.get("Hamiltonian_Charge") is None:
                     args["Hamiltonian_Charge"] = 0.0
 
+            particle_mass_param = self.params.get("particle_mass_amu")
+
+            if particle_mass_param is not None:
+                args["Driver_Masses_Mass_MassPerAtom [amu]"] = particle_mass_param
+            elif args.get("Driver_Masses_Mass_MassPerAtom [amu]") is None:
+                args["Driver_Masses_Mass_MassPerAtom [amu]"] = constants.m_mu_amu
+
             geom_steps_param = self.params.get("geom_steps")
 
             if geom_steps_param is not None:

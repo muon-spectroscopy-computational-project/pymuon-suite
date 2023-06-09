@@ -7,6 +7,7 @@ import os
 from ase import io
 import numpy as np
 from datetime import datetime
+from scipy.constants import physical_constants as pcnst
 
 from pymuonsuite.utils import safe_create_folder
 from pymuonsuite.io.castep import ReadWriteCastep
@@ -17,7 +18,6 @@ from soprano.utils import silence_stdio
 
 
 def write_cluster_report(args, params, clusters):
-
     if params["clustering_method"] == "hier":
         clustinfo = """
 Clustering method: Hierarchical
@@ -137,6 +137,19 @@ Parameter file: {param}
                         )
                     )
 
+                    # update symbol and mass of defect in minimum energy structure
+                    min_energy_struct = coll[np.argmin(E)].structures[0]
+                    csp = min_energy_struct.get_chemical_symbols()[:-1] + [
+                        params.get("mu_symbol", "H:mu")
+                    ]
+                    min_energy_struct.set_array("castep_custom_species", np.array(csp))
+                    masses = min_energy_struct.get_masses()[:-1]
+                    masses = np.append(
+                        masses,
+                        params.get("particle_mass_amu", pcnst["muon mass in u"][0]),
+                    )
+                    min_energy_struct.set_masses(np.array(masses))
+
                     # Save minimum energy structure
                     if (
                         params["clustering_save_type"] == "structures"
@@ -158,11 +171,13 @@ Parameter file: {param}
                                 i + 1,
                                 params["clustering_save_format"],
                             )
+
                             with silence_stdio():
                                 io.write(
                                     os.path.join(calc_path, fname),
-                                    coll[np.argmin(E)].structures[0],
+                                    min_energy_struct,
                                 )
+
                         except (io.formats.UnknownFileTypeError) as e:
                             print(
                                 "ERROR: File format '{0}' is not "
@@ -177,7 +192,7 @@ Parameter file: {param}
                             )
                             return
 
-                    min_energy_structs.append(coll[np.argmin(E)].structures[0])
+                    min_energy_structs.append(min_energy_struct)
 
                     f.write("\n\n\tStructure list:")
 

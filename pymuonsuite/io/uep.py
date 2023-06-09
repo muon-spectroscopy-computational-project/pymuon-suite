@@ -7,6 +7,7 @@ import subprocess as sp
 from ase import Atoms
 from scipy.constants import physical_constants as pcnst
 from pymuonsuite.io.readwrite import ReadWrite
+from pymuonsuite.utils import get_element_from_custom_symbol
 
 
 class ReadWriteUEP(ReadWrite):
@@ -26,7 +27,10 @@ class ReadWriteUEP(ReadWrite):
             raise (IOError("Error: could not read UEP file in {0}".format(folder)))
             return
 
-        a = calc.atoms + Atoms("H", positions=[calc._x_opt])
+        mu_symbol_element = get_element_from_custom_symbol(
+            self.params.get("mu_symbol", "H:mu")
+        )
+        a = calc.atoms + Atoms(mu_symbol_element, positions=[calc._x_opt])
 
         a.info["name"] = sname
 

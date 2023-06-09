@@ -79,6 +79,14 @@ def make_process_slices(N, M):
     return slices
 
 
+def get_element_from_custom_symbol(symbol: str):
+    """For a custom symbol of the form "X:custom", return the chemical symbol
+    represented by X.
+    """
+
+    return symbol.split(":", 1)[0].lower().capitalize()
+
+
 class BackupFile:
     """Backup a file before performing an operation
 

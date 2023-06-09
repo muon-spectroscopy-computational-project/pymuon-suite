@@ -13,6 +13,7 @@ from scipy import constants as cnst
 
 from pymuonsuite.schemas import UEPOptSchema, UEPPlotSchema, load_input_file
 from pymuonsuite.calculate.uep.charged import ChargeDistribution
+from pymuonsuite.utils import get_element_from_custom_symbol
 
 from parsefmt.fmtreader import FMTError
 
@@ -312,7 +313,10 @@ def geomopt_entry():
     # Now dump results
     if params["save_pickle"]:
         pickle.dump(results, open(seedpath + ".uep.pkl", "wb"))
-        muon = Atoms("H", positions=[results["x"]])
+        mu_symbol_element = get_element_from_custom_symbol(
+            params.get("mu_symbol", "H:mu")
+        )
+        muon = Atoms(mu_symbol_element, positions=[results["x"]])
     if params["save_structs"]:
         io.write(seedpath + ".xyz", results["struct"] + muon)
 

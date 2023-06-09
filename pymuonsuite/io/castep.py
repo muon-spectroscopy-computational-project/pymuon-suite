@@ -227,6 +227,7 @@ class ReadWriteCastep(ReadWrite):
                 calc = Castep()
 
         mu_symbol = self.params.get("mu_symbol", "H:mu")
+        particle_mass = self.params.get("particle_mass_amu", constants.m_mu_amu)
 
         # Start by ensuring that the muon mass and gyromagnetic ratios are
         # included
@@ -238,7 +239,7 @@ class ReadWriteCastep(ReadWrite):
 
             mass_block = calc.cell.species_mass.value
             calc.cell.species_mass = add_to_castep_block(
-                mass_block, mu_symbol, constants.m_mu_amu, "mass"
+                mass_block, mu_symbol, particle_mass, "mass"
             )
 
         # Now assign the k-points
