@@ -4,13 +4,17 @@ Author: Simone Sturniolo and Adam Laverack
 
 
 import os
-from ase import Atoms, io
-import numpy as np
 from datetime import datetime
 
-from pymuonsuite.utils import make_muonated_supercell, safe_create_folder
+from ase import Atoms, io
+
+import numpy as np
+
 from pymuonsuite.io.castep import ReadWriteCastep
 from pymuonsuite.io.dftb import ReadWriteDFTB
+from pymuonsuite.utils import make_muonated_supercell, safe_create_folder
+
+from scipy.constants import physical_constants as pcnst
 
 from soprano.collection import AtomsCollection
 from soprano.utils import silence_stdio
@@ -131,6 +135,19 @@ Parameter file: {param}
                             structure.info["name"]
                         )
                     )
+
+                    # update symbol and mass of defect in minimum energy structure
+                    structure = coll[np.argmin(E)].structures[0]
+                    csp = structure.get_chemical_symbols()[:-1] + [
+                        params.get("mu_symbol", "H:mu")
+                    ]
+                    structure.set_array("castep_custom_species", np.array(csp))
+                    masses = structure.get_masses()[:-1]
+                    masses = np.append(
+                        masses,
+                        params.get("particle_mass_amu", pcnst["muon mass in u"][0]),
+                    )
+                    structure.set_masses(np.array(masses))
 
                     # Save minimum energy structure
                     if (
