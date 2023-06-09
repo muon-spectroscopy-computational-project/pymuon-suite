@@ -115,7 +115,7 @@ class TestMuairss(unittest.TestCase):
                         self.assertTrue(equal.all())
                     count += 1
 
-    def check_write_uep(self, out_dir: str, input_params: dict):
+    def check_write_uep(self, out_dir: str, input_params: dict, **kwargs):
         for (rootDir, subDirs, files) in os.walk(out_dir):
             for s in subDirs:
                 expected_file = os.path.join(out_dir, s, s + ".yaml")
@@ -124,6 +124,8 @@ class TestMuairss(unittest.TestCase):
                 self.assertEqual(params["geom_steps"], input_params["geom_steps"])
                 self.assertEqual(params["opt_tol"], input_params["geom_force_tol"])
                 self.assertEqual(params["gw_factor"], input_params["uep_gw_factor"])
+                for key in kwargs:
+                    self.assertEqual(params[key], kwargs[key])
 
     def run_uep(self, out_dir: str, uep_save_structs: bool = False):
         if platform.system() == "Windows":
@@ -229,33 +231,12 @@ class TestMuairss(unittest.TestCase):
             os.chdir(_TESTDATA_DIR)
             run_muairss()
             # Check all folders contain a yaml file
-            for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/uep/"):
-                for s in subDirs:
-                    expected_file = os.path.join(
-                        "muon-airss-out-uep/uep/" + s, s + ".yaml"
-                    )
-                    self.assertTrue(os.path.exists(expected_file))
-                    params = load_input_file(expected_file, UEPOptSchema)
-                    self.assertEqual(
-                        params["particle_mass"],
-                        input_params["particle_mass_amu"]
-                        * pcnst["atomic mass constant"][0],
-                    )
+            out_dir = "muon-airss-out-uep/uep"
+            mass = input_params["particle_mass_amu"] * pcnst["atomic mass constant"][0]
+            self.check_write_uep(out_dir, input_params, particle_mass=mass)
 
             # Run UEP
-            if platform.system() == "Windows":
-                script_path = os.path.join(_TESTDATA_DIR, "script-uep-windows.ps1")
-                subprocess.call(["powershell", "-File", os.path.normpath(script_path)])
-            else:
-                subprocess.call(os.path.join(_TESTDATA_DIR, "script-uep"))
-
-            # Check all folders contain UEP file
-            for (rootDir, subDirs, files) in os.walk("muon-airss-out-uep/uep/"):
-                for s in subDirs:
-                    expected_file = os.path.join(
-                        "muon-airss-out-uep/uep/" + s, s + ".uep"
-                    )
-                    self.assertTrue(os.path.exists(expected_file))
+            self.run_uep(out_dir)
 
             # Run Muairss read:
             sys.argv[1:] = [cell_file, yaml_file]
