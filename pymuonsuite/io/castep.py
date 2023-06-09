@@ -21,7 +21,7 @@ customize_warnings()
 
 
 class ReadWriteCastep(ReadWrite):
-    def __init__(self, params={}, script=None, calc=None):
+    def __init__(self, params=None, script=None, calc=None):
         """
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
@@ -39,13 +39,6 @@ class ReadWriteCastep(ReadWrite):
         self._calc = calc
         if calc is not None and params != {}:
             self._create_calculator()
-
-    def _validate_params(self, params):
-        if not (isinstance(params, dict)):
-            raise ValueError("params should be a dict, not ", type(params))
-            return
-        else:
-            return params
 
     def set_params(self, params):
         """

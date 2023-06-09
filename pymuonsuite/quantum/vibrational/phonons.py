@@ -21,7 +21,7 @@ ASEPhononData = namedtuple(
 def ase_phonon_calc(
     struct,
     calc=None,
-    kpoints=[1, 1, 1],
+    kpoints=(1, 1, 1),
     ftol=0.01,
     force_clean=False,
     name="asephonon",
@@ -36,7 +36,7 @@ def ase_phonon_calc(
     |   calc (ase.Calculator):  Calculator for energies and forces (if not
     |                           present, use the one from struct)
     |   kpoints (np.ndarray):   Kpoint grid for phonon calculation. If None, just
-    |                           do a Vibration modes calculation (default is [1,1,1])
+    |                           do a Vibration modes calculation (default is (1,1,1))
     |   ftol (float):           Tolerance for geometry optimisation (default
     |                           is 0.01 eV/Ang)
     |   force_clean (bool):     If True, force a deletion of all phonon files

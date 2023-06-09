@@ -1,0 +1,4 @@
+[run]
+branch = True
+source = pymuonsuite
+omit = pymuonsuite/test/*

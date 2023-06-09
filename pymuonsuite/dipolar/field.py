@@ -72,11 +72,12 @@ class DipolarField(object):
         self,
         atoms,
         mu_pos,
-        isotopes={},
+        isotopes=None,
         isotope_list=None,
         cutoff=10,
         overlap_eps=1e-3,
     ):
+        isotopes = {} if isotopes is None else isotopes
 
         # Get positions, cell, and species, only things we care about
         self.cell = np.array(atoms.get_cell())
@@ -147,7 +148,7 @@ class DipolarField(object):
     def dipten(self):
         return np.sum(self.spins[:, None, None] * self._dT, axis=0)
 
-    def frequency(self, axis=[0, 0, 1]):
+    def frequency(self, axis=(0, 0, 1)):
 
         D = self.dipten()
         return np.sum(np.dot(D, axis) * axis)
@@ -173,7 +174,7 @@ class DipolarField(object):
 
         return om, spec
 
-    def random_spec_uniaxial(self, axis=[0, 0, 1], width=None, h_steps=100, occ=1.0):
+    def random_spec_uniaxial(self, axis=(0, 0, 1), width=None, h_steps=100, occ=1.0):
 
         # Consider individual dipolar constants
         DD = self.spins[:, None, None] * self._dT
