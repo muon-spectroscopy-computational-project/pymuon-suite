@@ -6,7 +6,7 @@ from copy import deepcopy
 import numpy as np
 import scipy.constants as cnst
 
-from ase import io
+from ase import Atoms, io
 from ase.calculators.castep import Castep
 from ase.io.castep import read_param, write_param
 from ase.io.magres import read_magres
@@ -177,46 +177,65 @@ class ReadWriteCastep(ReadWrite):
         |   calc_type (str):        Castep task which will be performed:
         |                           "GEOM_OPT" or "MAGRES"
         """
-        if calc_type == "GEOM_OPT" or calc_type == "MAGRES":
-            if sname is None:
-                sname = os.path.split(folder)[-1]  # Same as folder name
+        if sname is None:
+            sname = os.path.split(folder)[-1]  # Same as folder name
 
-            self._calc = deepcopy(self._calc)
+        self.write_cell(a, folder, sname, calc_type)
 
-            # We only use the calculator attached to the atoms object if a calc
-            # has not been set when initialising the ReadWrite object OR we
-            # have not called write() and made a calculator before.
+        write_param(
+            os.path.join(folder, sname + ".param"),
+            a.calc.param,
+            force_write=True,
+        )
 
-            if self._calc is None:
-                if isinstance(a.calc, Castep):
-                    self._calc = deepcopy(a.calc)
-                self._create_calculator(calc_type=calc_type)
-            else:
-                self._update_calculator(calc_type)
-            a.calc = self._calc
-            with silence_stdio():
-                io.write(
-                    os.path.join(folder, sname + ".cell"),
-                    a,
-                    magnetic_moments="initial",
-                )
-            write_param(
-                os.path.join(folder, sname + ".param"),
-                a.calc.param,
-                force_write=True,
-            )
+        if self.script is not None:
+            stxt = open(self.script).read()
+            stxt = stxt.format(seedname=sname)
+            with open(os.path.join(folder, "script.sh"), "w", newline="\n") as sf:
+                sf.write(stxt)
 
-            if self.script is not None:
-                stxt = open(self.script).read()
-                stxt = stxt.format(seedname=sname)
-                with open(os.path.join(folder, "script.sh"), "w", newline="\n") as sf:
-                    sf.write(stxt)
-        else:
+    def write_cell(
+        self, a: Atoms, folder: str, sname: str, calc_type: str = "GEOM_OPT"
+    ):
+        """Writes only the cell file for an Atoms object, but includes settings
+        from the Castep calculator.
+
+        | Args:
+        |   a (ase.Atoms):          Atoms object to write. Can have a Castep
+        |                           calculator attached to carry cell/param
+        |                           keywords.
+        |   folder (str):           Path to save the input files to.
+        |   sname (str):            Seedname to save the files with. If not
+        |                           given, use the name of the folder.
+        |   calc_type (str):        Castep task which will be performed:
+        |                           "GEOM_OPT" or "MAGRES"
+        """
+        if calc_type != "GEOM_OPT" and calc_type != "MAGRES":
             raise (
                 NotImplementedError(
                     "Calculation type {} is not implemented."
                     " Please choose 'GEOM_OPT' or 'MAGRES'".format(calc_type)
                 )
+            )
+
+        self._calc = deepcopy(self._calc)
+
+        # We only use the calculator attached to the atoms object if a calc
+        # has not been set when initialising the ReadWrite object OR we
+        # have not called write() and made a calculator before.
+        if self._calc is None:
+            if isinstance(a.calc, Castep):
+                self._calc = deepcopy(a.calc)
+            self._create_calculator(calc_type=calc_type)
+        else:
+            self._update_calculator(calc_type)
+        a.calc = self._calc
+
+        with silence_stdio():
+            io.write(
+                os.path.join(folder, sname + ".cell"),
+                a,
+                magnetic_moments="initial",
             )
 
     def _create_calculator(self, calc_type=None):
