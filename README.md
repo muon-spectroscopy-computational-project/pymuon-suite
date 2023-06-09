@@ -1,9 +1,12 @@
+[![Build Status](https://github.com/muon-spectroscopy-computational-project/pymuon-suite/actions/workflows/python-package-tests.yml/badge.svg?branch=main)](https://github.com/muon-spectroscopy-computational-project/pymuon-suite/actions/workflows/python-package-tests.yml)
+[![Codecov](https://codecov.io/gh/muon-spectroscopy-computational-project/pymuon-suite/branch/main/graph/badge.svg)](https://codecov.io/gh/muon-spectroscopy-computational-project/pymuon-suite)
+
 # pymuon-suite
 Collection of scripts and utilities for muon spectroscopy.
 
 ## Installation
 
-Requires Python 3.7+. Install with pip or conda:
+Requires Python 3.8+. Install with pip or conda:
 
 `pip install pymuonsuite`
 

@@ -7,6 +7,7 @@ import os
 from ase import Atoms, io
 import numpy as np
 from datetime import datetime
+from scipy.constants import physical_constants as pcnst
 
 from pymuonsuite.utils import make_muonated_supercell, safe_create_folder
 from pymuonsuite.io.castep import ReadWriteCastep
@@ -14,27 +15,6 @@ from pymuonsuite.io.dftb import ReadWriteDFTB
 
 from soprano.collection import AtomsCollection
 from soprano.utils import silence_stdio
-
-
-def write_tensors(tensors, filename, symbols):
-    """
-    Write out a set of 2 dimensional tensors for every atom in a system.
-
-    | Args:
-    |   tensors(Numpy float array, shape: (Atoms, :, :): A list of tensors
-    |       for each atom.
-    |   filename(str): Filename for file.
-    |   symbols(str array): List containing chemical symbol of each atom in
-    |       system.
-    |
-    | Returns: Nothing
-    """
-    tensfile = open(filename, "w")
-    for i in range(np.size(tensors, 0)):
-        tensfile.write("{0} {1}\n".format(symbols[i], i))
-        tensfile.write(
-            "\n".join(["\t".join([str(x) for x in ln]) for ln in tensors[i]]) + "\n"
-        )
 
 
 def write_cluster_report(args, params, clusters):

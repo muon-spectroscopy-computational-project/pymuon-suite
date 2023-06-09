@@ -8,6 +8,7 @@ Python schemas for YAML input files for various scripts
 import yaml
 import numpy as np
 import warnings
+from ase.data import chemical_symbols
 from schema import Optional, Schema, SchemaError
 from scipy.constants import physical_constants as pcnst
 from soprano.utils import customize_warnings
@@ -88,7 +89,15 @@ def validate_save_min(value):
     return isinstance(value, bool)
 
 
-def load_input_file(fname, param_schema, merge=None):
+def validate_mu_symbol(value: str):
+    is_string = validate_str(value)
+    if not is_string:
+        return False
+    elem = value.split(":", 1)[0]
+    return elem.lower().capitalize() in chemical_symbols
+
+
+def load_input_file(fname, param_schema: Schema, merge: dict = None):
     """Load a given input YAML file and validate it with a schema."""
 
     if merge is None:
@@ -96,13 +105,14 @@ def load_input_file(fname, param_schema, merge=None):
             params = yaml.safe_load(params_file)
     else:
         try:
-            param_schema.validate(merge)
+            existing_params = {k: v for k, v in merge.items() if v is not None}
+            param_schema.validate(existing_params)
         except SchemaError as e:
-            message = "Invalid merge params passed to" " load_input_file\n{0}".format(e)
-            raise RuntimeError(message)
+            message = "Invalid merge params passed to load_input_file"
+            raise RuntimeError(message) from e
         with open(fname, "r") as params_file:
             new_params = yaml.safe_load(params_file)
-        params = dict(merge)
+        params = dict(existing_params)
         params.update(new_params)
 
     if params is None:
@@ -148,6 +158,8 @@ MuAirssSchema = Schema(
         Optional("uep_chden", default=""): validate_str,
         # Gaussian Width factor for UEP
         Optional("uep_gw_factor", default=5.0): float,
+        # Particle mass (in amu) for UEP
+        Optional("particle_mass_amu", default=pcnst["muon mass in u"][0]): float,
         # Radius to use when generating muon sites with the possion disk algorithm.
         Optional("poisson_r", default=0.8): float,
         # Van der Waals radius to use when generating muon sites. Default is 0.5.
@@ -171,7 +183,9 @@ MuAirssSchema = Schema(
         Optional("uep_save_structs", default=True): bool,
         # The symbol to use for the muon when writing out the castep custom
         # species.
-        Optional("mu_symbol", default="H:mu"): validate_str,
+        # Must use the format "X:custom" where "X" is an element symbol and
+        # "custom" can be any string.
+        Optional("mu_symbol", default="H:mu"): validate_mu_symbol,
         # Maximum number of geometry optimisation steps
         Optional("geom_steps", default=None): int,
         # Tolerance on geometry optimisation in units of eV/AA.

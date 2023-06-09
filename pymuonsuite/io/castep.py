@@ -21,7 +21,7 @@ customize_warnings()
 
 
 class ReadWriteCastep(ReadWrite):
-    def __init__(self, params={}, script=None, calc=None):
+    def __init__(self, params=None, script=None, calc=None):
         """
         |   params (dict)           Contains muon symbol, parameter file,
         |                           k_points_grid.
@@ -39,13 +39,6 @@ class ReadWriteCastep(ReadWrite):
         self._calc = calc
         if calc is not None and params != {}:
             self._create_calculator()
-
-    def _validate_params(self, params):
-        if not (isinstance(params, dict)):
-            raise ValueError("params should be a dict, not ", type(params))
-            return
-        else:
-            return params
 
     def set_params(self, params):
         """
@@ -253,6 +246,7 @@ class ReadWriteCastep(ReadWrite):
                 calc = Castep()
 
         mu_symbol = self.params.get("mu_symbol", "H:mu")
+        particle_mass = self.params.get("particle_mass_amu", constants.m_mu_amu)
 
         # Start by ensuring that the muon mass and gyromagnetic ratios are
         # included
@@ -264,7 +258,7 @@ class ReadWriteCastep(ReadWrite):
 
             mass_block = calc.cell.species_mass.value
             calc.cell.species_mass = add_to_castep_block(
-                mass_block, mu_symbol, constants.m_mu_amu, "mass"
+                mass_block, mu_symbol, particle_mass, "mass"
             )
 
         # Now assign the k-points

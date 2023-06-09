@@ -38,7 +38,7 @@ customize_warnings()
 
 
 class ReadWriteDFTB(ReadWrite):
-    def __init__(self, params={}, script=None, calc=None):
+    def __init__(self, params=None, script=None, calc=None):
         """
         |   Args:
         |   params (dict):          Contains dftb_set, k_points_grid,
@@ -70,11 +70,7 @@ class ReadWriteDFTB(ReadWrite):
         |                           charged are also required in the case
         |                           of writing geom_opt input files
         """
-        if not (isinstance(params, dict)):
-            raise ValueError("params should be a dict, not ", type(params))
-            return
-
-        self.params = deepcopy(params)
+        self.params = deepcopy(self._validate_params(params))
         # resetting this to None makes sure that the calc is recreated after
         # the params are updated:
         self._calc_type = None
@@ -315,6 +311,13 @@ class ReadWriteDFTB(ReadWrite):
             else:
                 if args.get("Hamiltonian_Charge") is None:
                     args["Hamiltonian_Charge"] = 0.0
+
+            particle_mass_param = self.params.get("particle_mass_amu")
+
+            if particle_mass_param is not None:
+                args["Driver_Masses_Mass_MassPerAtom [amu]"] = particle_mass_param
+            elif args.get("Driver_Masses_Mass_MassPerAtom [amu]") is None:
+                args["Driver_Masses_Mass_MassPerAtom [amu]"] = constants.m_mu_amu
 
             geom_steps_param = self.params.get("geom_steps")
 

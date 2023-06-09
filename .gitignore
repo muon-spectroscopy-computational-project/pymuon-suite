@@ -43,6 +43,7 @@ htmlcov/
 .cache
 nosetests.xml
 coverage.xml
+coverage
 *.cover
 .hypothesis/
 .pytest_cache/
@@ -83,7 +84,7 @@ celerybeat-schedule
 
 # Environments
 .env
-.venv
+.venv*
 env/
 venv/
 ENV/
@@ -132,6 +133,3 @@ docs/*
 
 # Pycharm
 .idea/*
-
-# virtualenvs
-.venv*
