@@ -25,7 +25,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         # an empty folder:
         with self.assertRaises(OSError) as e:
             reader.read(folder)
-            self.assertTrue("no such file or directory" in e)
+        self.assertIn("No geo_end.gen file found in", str(e.exception))
 
         folder = os.path.join(
             folder,

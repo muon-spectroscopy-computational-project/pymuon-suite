@@ -1,5 +1,7 @@
 """Tests for quantum averaging methods"""
 
+import contextlib
+import io
 import unittest
 
 import os
@@ -17,6 +19,12 @@ _RUN_DFTB = False
 #  Setting _RUN_DFTB to True requires dftb+ to be installed locally
 #  and will test generating dftb phonons files, and running the
 #  dftb+ files generated using pm-nq
+
+EXPECTED_WARNING = """Read/write error: Folder ethyleneMu_opt_displaced does not exist
+
+This could mean it was impossible to find the displaced structure folder: maybe you wanted to run with the -t w option to write it?
+
+"""  # noqa: E501
 
 
 class TestQuantum(unittest.TestCase):
@@ -66,6 +74,17 @@ class TestQuantum(unittest.TestCase):
             os.chdir(folder)
         os.remove("ethyleneMu_opt_allconf.xyz")
         shutil.rmtree("ethyleneMu_opt_displaced")
+
+    def test_nq_read_warning(self):
+        folder = _TESTDATA_DIR + "/dftb-phonons/"
+        os.chdir(folder)
+        yaml_file = "quantum.yaml"
+        structure_file = "ethyleneMu_opt.xyz"
+
+        sys.argv[1:] = [structure_file, yaml_file]
+        with contextlib.redirect_stdout(io.StringIO()) as f:
+            nq_entry()
+        self.assertIn(EXPECTED_WARNING, f.getvalue())
 
 
 if __name__ == "__main__":

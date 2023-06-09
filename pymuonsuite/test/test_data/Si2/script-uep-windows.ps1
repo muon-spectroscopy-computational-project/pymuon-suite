@@ -1,4 +1,4 @@
-$Target="muon-airss-out-uep/uep"
+$Target=$args[0]
 
 $SubFolders = Get-ChildItem -Path $Target -Directory
 

@@ -241,6 +241,18 @@ the .cell file."""
     def thomasFermiE(self):
         return self._thomasFermiE
 
+    def _validate_points(self, points: object) -> np.ndarray:
+        """Ensure that points has at least two dimensions.
+
+        Arguments:
+            points {object} -- List of points to be validated.
+
+        Returns:
+            np.ndarray -- Array of points with at least two dimensions
+        """
+        points = np.array(points)
+        return points[None, :] if len(points.shape) == 1 else points
+
     def rho(self, p, max_process_p=20):
         """Charge density
 
@@ -262,9 +274,7 @@ the .cell file."""
         """
 
         # Return charge density at a point or list of points
-        p = np.array(p)
-        if len(p.shape) == 1:
-            p = p[None, :]  # Make it into a list of points
+        p = self._validate_points(p)
 
         # The point list is sliced for convenience, to avoid taking too much
         # memory
@@ -308,9 +318,7 @@ the .cell file."""
         """
 
         # Return potential at a point or list of points
-        p = np.array(p)
-        if len(p.shape) == 1:
-            p = p[None, :]  # Make it into a list of points
+        p = self._validate_points(p)
 
         # The point list is sliced for convenience, to avoid taking too much
         # memory
@@ -356,9 +364,7 @@ the .cell file."""
         """
 
         # Return potential gradient at a point or list of points
-        p = np.array(p)
-        if len(p.shape) == 1:
-            p = p[None, :]  # Make it into a list of points
+        p = self._validate_points(p)
 
         # The point list is sliced for convenience, to avoid taking too much
         # memory
@@ -409,10 +415,7 @@ the .cell file."""
         """
 
         # Return potential Hessian  at a point or a list of points
-
-        p = np.array(p)
-        if len(p.shape) == 1:
-            p = p[None, :]  # Make it into a list of points
+        p = self._validate_points(p)
 
         # The point list is sliced for convenience, to avoid taking too much
         # memory
@@ -481,9 +484,7 @@ the .cell file."""
             )
 
         # Return hyperfine tensors at a point or a list of points
-        p = np.array(p)
-        if len(p.shape) == 1:
-            p = p[None, :]  # Make it into a list of points
+        p = self._validate_points(p)
 
         # The point list is sliced for convenience, to avoid taking too much
         # memory
