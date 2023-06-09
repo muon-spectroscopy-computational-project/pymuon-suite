@@ -76,6 +76,9 @@ class ChargeDistribution(object):
         self._elec_den = FMTReader(seedpath + ".den_fmt")
         with silence_stdio():
             self._struct = io.read(seedpath + ".castep")
+            # Set all spins to 0 rather than use the CASTEP results
+            spins = [0] * len(self._struct.positions)
+            self._struct.set_initial_magnetic_moments(spins)
 
         ppots = parse_castep_ppots(seedpath + ".castep")
 
@@ -85,11 +88,7 @@ class ChargeDistribution(object):
         cppot = None
         try:
             with silence_stdio():
-                structure = io.read(seedpath + ".cell")
-                # Set all spins to 0 rather than use the CASTEP results
-                spins = [0] * len(self._struct.positions)
-                self._struct.set_initial_magnetic_moments(spins)
-                cppot = structure.calc.cell.species_pot.value
+                cppot = io.read(seedpath + ".cell").calc.cell.species_pot.value
         except IOError:
             print(f"WARNING: cell file {seedpath}.cell not found")
         if cppot is not None:
