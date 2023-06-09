@@ -7,7 +7,6 @@ import os
 from ase import Atoms, io
 import numpy as np
 from datetime import datetime
-from scipy.constants import physical_constants as pcnst
 
 from pymuonsuite.utils import make_muonated_supercell, safe_create_folder
 from pymuonsuite.io.castep import ReadWriteCastep
