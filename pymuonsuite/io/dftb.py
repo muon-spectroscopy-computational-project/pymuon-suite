@@ -38,7 +38,7 @@ customize_warnings()
 
 
 class ReadWriteDFTB(ReadWrite):
-    def __init__(self, params={}, script=None, calc=None):
+    def __init__(self, params=None, script=None, calc=None):
         """
         |   Args:
         |   params (dict):          Contains dftb_set, k_points_grid,
@@ -70,11 +70,7 @@ class ReadWriteDFTB(ReadWrite):
         |                           charged are also required in the case
         |                           of writing geom_opt input files
         """
-        if not (isinstance(params, dict)):
-            raise ValueError("params should be a dict, not ", type(params))
-            return
-
-        self.params = deepcopy(params)
+        self.params = deepcopy(self._validate_params(params))
         # resetting this to None makes sure that the calc is recreated after
         # the params are updated:
         self._calc_type = None
