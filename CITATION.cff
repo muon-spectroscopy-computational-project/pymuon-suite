@@ -39,6 +39,10 @@ authors:
     family-names: Austin
     affiliation: Science and Technology Facilities Council
     orcid: 'https://orcid.org/0000-0002-6279-7823'
+  - given-names: Joel
+    family-names: Davies
+    affiliation: Science and Technology Facilities Council
+    orcid: 'https://orcid.org/0000-0002-4153-6819'
   - name: "Muon Spectroscopy Computational Project"
 repository-code: >-
   https://github.com/muon-spectroscopy-computational-project/pymuon-suite
@@ -64,14 +68,14 @@ keywords:
 license: GPL-3.0
 version: v0.3.0
 date-released: '2022-08-26'
-doi: 10.5281/zenodo.7025644
+doi: 10.5281/zenodo.8026711
 identifiers:
   - type: doi
     value: 10.5281/zenodo.7025643
     description: The concept DOI for the collection containing all versions of pymuonsuite.
   - type: doi
-    value: 10.5281/zenodo.7025644
-    description: The versioned DOI for the version 0.2.3 of pymuonsuite.
+    value: 10.5281/zenodo.8026711
+    description: The versioned DOI for the version 0.3.0 of pymuonsuite.
 
 references:
   - scope: "Cite this for pm-muairss and pm-muairss-gen"
