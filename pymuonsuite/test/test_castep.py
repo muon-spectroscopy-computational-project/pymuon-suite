@@ -1,5 +1,6 @@
 """Tests for ReadWriteCastep methods"""
 
+import tempfile
 import unittest
 
 import os
@@ -7,6 +8,7 @@ import shutil
 import numpy as np
 
 from ase import Atoms, io
+from ase.calculators.castep import Castep
 from ase.io.castep import read_param
 
 from pymuonsuite.utils import list_to_string, get_element_from_custom_symbol
@@ -80,6 +82,7 @@ class TestReadWriteCastep(unittest.TestCase):
             cell_file = os.path.join(input_folder, "Si2.cell")
             param_file = os.path.join(input_folder, "Si2.param")
             input_params = load_input_file(yaml_file, MuAirssSchema)
+            input_params["max_scc_steps"] = 31
 
             with silence_stdio():
                 castep_param = read_param(param_file).param
@@ -93,6 +96,7 @@ class TestReadWriteCastep(unittest.TestCase):
                 sname="Si2_geom_opt",
                 calc_type="GEOM_OPT",
             )
+            self.assertEqual(reader._calc.param.max_scf_cycles.value, "31")
 
             reader.write(atoms, output_folder, sname="Si2_magres", calc_type="MAGRES")
 
@@ -266,6 +270,98 @@ Li:8 8.02246
 
         finally:
             shutil.rmtree(output_folder)
+
+    def test_calc_overwrite(self):
+        # Ensure that if a calculator is provided, it is initialised properly
+        calculator = Castep()
+        read_write_castep = ReadWriteCastep(calc=calculator)
+
+        # Original calculator should have been deep copied, so remain as it was
+        self.assertNotEqual(
+            "radsectesla\nH:mu 851615456.5978916\n",
+            calculator.cell.species_gamma.value,
+        )
+        self.assertNotEqual(
+            "AMU\nH:mu 0.1134289259\n",
+            calculator.cell.species_mass.value,
+        )
+
+        # Copy stored should have appropriate muon values set
+        self.assertEqual(
+            "radsectesla\nH:mu 851615456.5978916\n",
+            read_write_castep._calc.cell.species_gamma.value,
+        )
+        self.assertEqual(
+            "AMU\nH:mu 0.1134289259\n",
+            read_write_castep._calc.cell.species_mass.value,
+        )
+
+    def test_set_params(self):
+        # Ensure set_params changes the calculator object
+        read_write_castep = ReadWriteCastep()
+        read_write_castep.set_params({"mu_symbol": "H:nu"})
+
+        self.assertEqual(
+            "radsectesla\nH:nu 851615456.5978916\n",
+            read_write_castep._calc.cell.species_gamma.value,
+        )
+        self.assertEqual(
+            "AMU\nH:nu 0.1134289259\n",
+            read_write_castep._calc.cell.species_mass.value,
+        )
+
+    def test_read_error(self):
+        # Ensure user receives an error if .castep output file is missing
+        read_write_castep = ReadWriteCastep()
+        si_folder = _TESTDATA_DIR + "/Si2"
+        ethylene_mu_folder = _TESTDATA_DIR + "/ethyleneMu"
+
+        with self.assertRaises(IOError) as e:
+            read_write_castep.read(".")
+        self.assertIn("ERROR: No .castep files found in", str(e.exception))
+
+        with self.assertRaises(IOError) as e:
+            read_write_castep.read(folder=si_folder, read_magres=True)
+        self.assertIn("No .magres files found in", str(e.exception))
+
+        with self.assertRaises(IOError) as e:
+            read_write_castep.read(folder=si_folder, read_phonons=True)
+        self.assertIn("No .phonon files found in", str(e.exception))
+
+        with self.assertRaises(IOError) as e:
+            read_write_castep.read(
+                folder=ethylene_mu_folder,
+                sname="ethyleneMu_no_gamma",
+                read_phonons=True,
+            )
+        self.assertIn(
+            "Could not find gamma point phonons in CASTEP phonon file",
+            str(e.exception),
+        )
+
+    def test_write_cell_calc_type(self):
+        # Ensure calc_type is propagated by write_cell
+        read_write_castep = ReadWriteCastep()
+
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            read_write_castep.write_cell(
+                a=Atoms(["H"]), folder=tmp_dir, sname="H", calc_type="MAGRES"
+            )
+        self.assertEqual("Magres", read_write_castep._calc.param.task.value)
+
+    def test_write_cell_calc_type_error(self):
+        # Ensure user receives an error if using a bad calc_type
+        read_write_castep = ReadWriteCastep()
+
+        with self.assertRaises(NotImplementedError) as e:
+            read_write_castep.write_cell(
+                a=None, folder=None, sname=None, calc_type=None
+            )
+        self.assertIn(
+            "Calculation type None is not implemented. "
+            "Please choose 'GEOM_OPT' or 'MAGRES'",
+            str(e.exception),
+        )
 
 
 if __name__ == "__main__":

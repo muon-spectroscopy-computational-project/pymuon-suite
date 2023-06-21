@@ -144,7 +144,7 @@ class ReadWriteCastep(ReadWrite):
 
             if gamma_i is None:
                 raise CastepError(
-                    "Could not find gamma point phonons in" " CASTEP phonon file"
+                    "Could not find gamma point phonons in CASTEP phonon file"
                 )
 
             atoms.info["ph_evals"] = evals[gamma_i]
@@ -364,10 +364,8 @@ class ReadWriteCastep(ReadWrite):
                 self._calc.param.geom_force_tol = 0.05
 
         max_scf_cycles_param = self.params.get("max_scc_steps")
-
         if max_scf_cycles_param is not None:
-            self._calc.param.max_scf_cycles.value = max_scf_cycles_param
-
+            self._calc.param.max_scf_cycles = max_scf_cycles_param
         else:
             if self._calc.param.max_scf_cycles.value is None:
                 self._calc.param.max_scf_cycles = 30
@@ -376,7 +374,7 @@ class ReadWriteCastep(ReadWrite):
 
         # Remove settings for magres calculator:
         self._calc.param.magres_task = None
-
+        print(self._calc.param.max_scf_cycles.value)
         return self._calc
 
 
