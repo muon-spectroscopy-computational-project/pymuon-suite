@@ -230,7 +230,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         finally:
             shutil.rmtree(output_folder)
 
-    @unittest.mock.patch('sys.stdout', new_callable=StringIO)
+    @unittest.mock.patch("sys.stdout", new_callable=StringIO)
     def test_set_optional(self, mock_stdout):
         # Check info and errors of set_optional
         dftb_args = DFTBArgs("3ob-3-1")
@@ -244,7 +244,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         self.assertEqual("3ob-3-1", dftb_args.name)
         self.assertIn("pymuonsuite/data/dftb_pars/3ob-3-1", dftb_args.path)
 
-    @unittest.mock.patch('sys.stdout', new_callable=StringIO)
+    @unittest.mock.patch("sys.stdout", new_callable=StringIO)
     def test_static(self, mock_stdout):
         # Check static functions
         DFTBArgs.list()
@@ -255,7 +255,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         DFTBArgs.print_refmsg()
         self.assertIn(
             "This calculation makes use of the DFTB parametrisations found at",
-            mock_stdout.getvalue()
+            mock_stdout.getvalue(),
         )
 
 

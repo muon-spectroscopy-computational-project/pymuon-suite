@@ -403,9 +403,8 @@ def parse_castep_bands(infile, header=False):
         return n_kpts, n_evals
     if int(lines[1].split()[-1]) != 1:
         raise ValueError(
-            """Either incorrect file format detected or greater
-                            than 1 spin component used (parse_castep_bands
-                            only works with 1 spin component.)"""
+            "Either incorrect file format detected or greater than 1 spin component "
+            "used (parse_castep_bands only works with 1 spin component)."
         )
     # Parse eigenvalues
     bands = np.zeros((n_kpts, n_evals))
@@ -454,7 +453,7 @@ def parse_castep_mass_block(mass_block):
     return custom_masses
 
 
-def parse_castep_masses(cell):
+def parse_castep_masses(cell: Atoms) -> np.ndarray:
     """Parse CASTEP custom species masses, returning an array of all atom
     masses in .cell file with corrected custom masses.
 
@@ -478,7 +477,7 @@ def parse_castep_masses(cell):
 
     cell.set_masses(masses)
 
-    return masses
+    return np.array(masses)
 
 
 def parse_castep_gamma_block(gamma_block):

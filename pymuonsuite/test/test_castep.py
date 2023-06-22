@@ -12,7 +12,18 @@ from ase.calculators.castep import Castep
 from ase.io.castep import read_param
 
 from pymuonsuite.utils import list_to_string, get_element_from_custom_symbol
-from pymuonsuite.io.castep import ReadWriteCastep
+from pymuonsuite.io.castep import (
+    CastepError,
+    ReadWriteCastep,
+    add_to_castep_block,
+    parse_castep_bands,
+    parse_castep_gamma_block,
+    parse_castep_mass_block,
+    parse_castep_masses,
+    parse_final_energy,
+    parse_hyperfine_magres,
+    parse_hyperfine_oldblock,
+)
 from pymuonsuite.schemas import load_input_file, MuAirssSchema
 
 from soprano.utils import silence_stdio
@@ -362,6 +373,166 @@ Li:8 8.02246
             "Please choose 'GEOM_OPT' or 'MAGRES'",
             str(e.exception),
         )
+
+    def test_parse_castep_bands(self):
+        # Test bands are parsed correctly
+        bands = parse_castep_bands(os.path.join(_TESTDATA_DIR, "io", "spin_1.bands"))
+        k_1 = [
+            -1.30719545,
+            -1.30518607,
+            -1.30518607,
+            -0.42212589,
+            -0.00236496,
+            0.12800951,
+            0.12800951,
+            0.43121450,
+            0.59058383,
+            0.74760086,
+            0.74760086,
+        ]
+        k_2 = [
+            -1.30681854,
+            -1.30542366,
+            -1.30535437,
+            -0.42441211,
+            0.01913897,
+            0.10899750,
+            0.12109690,
+            0.46278464,
+            0.57008484,
+            0.67600432,
+            0.77227510,
+        ]
+
+        self.assertTrue(np.allclose(np.array([k_1, k_2]), bands))
+
+    def test_parse_castep_bands_header(self):
+        # Test bands header is parsed correctly
+        infile = os.path.join(_TESTDATA_DIR, "io", "spin_1.bands")
+        n_kpts, n_evals = parse_castep_bands(infile=infile, header=True)
+
+        self.assertEqual(2, n_kpts)
+        self.assertEqual(11, n_evals)
+
+    def test_parse_castep_bands_error(self):
+        # Test error raised when spin components != 1
+        infile = os.path.join(_TESTDATA_DIR, "io", "spin_2.bands")
+        expected = (
+            "Either incorrect file format detected or greater than 1 spin component "
+            "used (parse_castep_bands only works with 1 spin component)."
+        )
+
+        with self.assertRaises(ValueError) as e:
+            parse_castep_bands(infile=infile)
+        self.assertEqual(expected, str(e.exception))
+
+    def test_parse_castep_masses(self):
+        # Test when present, the BLOCK SPECIES_MASS is read correctly
+        filename = os.path.join(
+            _TESTDATA_DIR, "Si2", "castep-results", "castep", "Si2_1", "Si2_1.cell"
+        )
+        cell = io.read(filename)
+        returned_masses = parse_castep_masses(cell=cell)
+        cell_masses = cell.get_masses()
+
+        for masses in [returned_masses, cell_masses]:
+            self.assertEqual(3, len(masses))
+            self.assertTrue(np.allclose([28.085, 28.085, 0.1134289259], masses))
+
+    def test_parse_castep_masses_no_block(self):
+        # Test when not present, we get default masses back
+        filename = os.path.join(_TESTDATA_DIR, "Si2", "Si2.cell")
+        cell = io.read(filename)
+        returned_masses = parse_castep_masses(cell=cell)
+        cell_masses = cell.get_masses()
+
+        for masses in [returned_masses, cell_masses]:
+            self.assertEqual(2, len(masses))
+            self.assertTrue(np.allclose([28.085, 28.085], masses))
+
+    def test_parse_castep_mass_block_invalid_mass_unit(self):
+        # Test we raise an error for bad units
+        mass_block = "bad_unit_name"
+
+        with self.assertRaises(CastepError) as e:
+            parse_castep_mass_block(mass_block=mass_block)
+        self.assertEqual("Invalid mass unit in species_mass block", str(e.exception))
+
+    def test_parse_castep_mass_block_invalid_line(self):
+        # Test we raise an error for bad line
+        mass_block = "amu\nbad_line"
+
+        with self.assertRaises(CastepError) as e:
+            parse_castep_mass_block(mass_block=mass_block)
+        self.assertEqual("Invalid line in species_mass block", str(e.exception))
+
+    def test_parse_castep_gamma_block(self):
+        # Test we raise an error for bad line
+        gamma_block = "radsectesla\nH:mu 851615456.5978916"
+        custom_gammas = parse_castep_gamma_block(gamma_block=gamma_block)
+
+        self.assertEqual(1, len(custom_gammas))
+        self.assertAlmostEqual(851615456.5978916, custom_gammas["H:mu"])
+
+    def test_parse_castep_gamma_block_invalid_gamma_unit(self):
+        # Test we raise an error for bad units
+        gamma_block = "bad_unit_name"
+
+        with self.assertRaises(CastepError) as e:
+            parse_castep_gamma_block(gamma_block=gamma_block)
+        self.assertEqual("Invalid gamma unit in species_gamma block", str(e.exception))
+
+    def test_parse_castep_gamma_block_invalid_line(self):
+        # Test we raise an error for bad line
+        gamma_block = "radsectesla\nbad_line"
+
+        with self.assertRaises(CastepError) as e:
+            parse_castep_gamma_block(gamma_block=gamma_block)
+        self.assertEqual("Invalid line in species_gamma block", str(e.exception))
+
+    def test_parse_final_energy(self):
+        # Test we parse the final energy from a .castep file
+        infile = os.path.join(_TESTDATA_DIR, "Si2", "Si2.castep")
+        E = parse_final_energy(infile=infile)
+
+        self.assertAlmostEqual(-337.6781491429, E)
+
+    def test_parse_final_energy_error(self):
+        # Test we raise an error for non-float energy
+        with tempfile.NamedTemporaryFile() as f:
+            f.write(b"Final energy = bad_value eV")
+            f.seek(0)
+            with self.assertRaises(RuntimeError) as e:
+                parse_final_energy(f.name)
+
+        self.assertIn("Corrupt .castep file found: ", str(e.exception))
+
+    def test_add_to_castep_block(self):
+        # Test can add to existing blocks
+        cblock = add_to_castep_block("AMU", "H:mu", 0.11)
+
+        self.assertEqual("AMU\nH:mu 0.11\n", cblock)
+
+    def test_parse_hyperfine_magres_no_old(self):
+        # Test error is raised when magresblock_magres_old is missing
+        infile = os.path.join(_TESTDATA_DIR, "io", "no_old.magres")
+        with self.assertRaises(RuntimeError) as e:
+            parse_hyperfine_magres(infile)
+
+        self.assertEqual(".magres file has no hyperfine information", str(e.exception))
+
+    def test_parse_hyperfine_oldblock_invalid(self):
+        # Test error is raised when magres block does not have Atom definitions
+        with self.assertRaises(RuntimeError) as e:
+            parse_hyperfine_oldblock(
+                "TOTAL tensor\n"
+                "\n"
+                "-31.9305 -0.3111 -0.0650\n"
+                "-0.3111 -36.3412 -5.7021\n"
+                "-0.0650 -5.7021 -42.9359\n"
+            )
+
+        self.assertEqual("Invalid block in magres hyperfine file", str(e.exception))
 
 
 if __name__ == "__main__":
