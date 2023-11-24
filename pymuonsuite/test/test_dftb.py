@@ -1,8 +1,8 @@
 """Tests for ReadWriteDFTB methods"""
-
-import unittest
-
+from io import StringIO
 import os
+import unittest
+from unittest import mock
 import shutil
 
 from ase import Atoms, io
@@ -230,6 +230,35 @@ class TestReadWriteDFTB(unittest.TestCase):
 
         finally:
             shutil.rmtree(output_folder)
+
+    @mock.patch("sys.stdout", new_callable=StringIO)
+    def test_set_optional(self, mock_stdout):
+        # Check info and errors of set_optional
+        dftb_args = DFTBArgs("3ob-3-1")
+        dftb_args.set_optional()
+        self.assertIn("Optional files available:", mock_stdout.getvalue())
+
+        with self.assertRaises(KeyError) as e:
+            dftb_args.set_optional("bad_key", True)
+        self.assertEqual("'Optional file bad_key not available'", str(e.exception))
+
+        self.assertEqual("3ob-3-1", dftb_args.name)
+        expected_path = "pymuonsuite/data/dftb_pars/3ob-3-1"
+        self.assertIn(expected_path, dftb_args.path.replace("\\", "/"))
+
+    @mock.patch("sys.stdout", new_callable=StringIO)
+    def test_static(self, mock_stdout):
+        # Check static functions
+        DFTBArgs.list()
+        printed_list = mock_stdout.getvalue()
+        self.assertIn("3ob-3-1", printed_list)
+        self.assertIn("pbc-0-3", printed_list)
+
+        DFTBArgs.print_refmsg()
+        self.assertIn(
+            "This calculation makes use of the DFTB parametrisations found at",
+            mock_stdout.getvalue(),
+        )
 
 
 if __name__ == "__main__":

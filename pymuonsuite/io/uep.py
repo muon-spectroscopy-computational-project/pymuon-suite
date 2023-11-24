@@ -25,7 +25,6 @@ class ReadWriteUEP(ReadWrite):
             calc.read()
         except ValueError:
             raise (IOError("Error: could not read UEP file in {0}".format(folder)))
-            return
 
         mu_symbol_element = get_element_from_custom_symbol(
             self.params.get("mu_symbol", "H:mu")
@@ -116,27 +115,32 @@ class UEPCalculator(object):
 
     @property
     def Eclass(self):
-        self.read()
+        if self._Eclass is None:
+            self.read()
         return self._Eclass
 
     @property
     def Ezp(self):
-        self.read()
+        if self._Ezp is None:
+            self.read()
         return self._Ezp
 
     @property
     def Etot(self):
-        self.read()
+        if self._Etot is None:
+            self.read()
         return self._Etot
 
     @property
     def x_opt(self):
-        self.read()
+        if self._x_opt is None:
+            self.read()
         return self._x_opt
 
     @property
     def fx_opt(self):
-        self.read()
+        if self._fx_opt is None:
+            self.read()
         return self._fx_opt
 
     def get_potential_energy(self, a):
