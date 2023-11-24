@@ -243,7 +243,8 @@ class TestReadWriteDFTB(unittest.TestCase):
         self.assertEqual("'Optional file bad_key not available'", str(e.exception))
 
         self.assertEqual("3ob-3-1", dftb_args.name)
-        self.assertIn("pymuonsuite/data/dftb_pars/3ob-3-1", dftb_args.path)
+        expected_path = "pymuonsuite/data/dftb_pars/3ob-3-1"
+        self.assertIn(expected_path, dftb_args.path.replace("\\", "/"))
 
     @mock.patch("sys.stdout", new_callable=StringIO)
     def test_static(self, mock_stdout):

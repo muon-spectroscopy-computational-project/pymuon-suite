@@ -20,7 +20,6 @@ from pymuonsuite.io.castep import (
     parse_castep_gamma_block,
     parse_castep_mass_block,
     parse_castep_masses,
-    parse_final_energy,
     parse_hyperfine_magres,
     parse_hyperfine_oldblock,
 )
@@ -489,23 +488,6 @@ Li:8 8.02246
         with self.assertRaises(CastepError) as e:
             parse_castep_gamma_block(gamma_block=gamma_block)
         self.assertEqual("Invalid line in species_gamma block", str(e.exception))
-
-    def test_parse_final_energy(self):
-        # Test we parse the final energy from a .castep file
-        infile = os.path.join(_TESTDATA_DIR, "Si2", "Si2.castep")
-        E = parse_final_energy(infile=infile)
-
-        self.assertAlmostEqual(-337.6781491429, E)
-
-    def test_parse_final_energy_error(self):
-        # Test we raise an error for non-float energy
-        with tempfile.NamedTemporaryFile() as f:
-            f.write(b"Final energy = bad_value eV")
-            f.seek(0)
-            with self.assertRaises(RuntimeError) as e:
-                parse_final_energy(f.name)
-
-        self.assertIn("Corrupt .castep file found: ", str(e.exception))
 
     def test_add_to_castep_block(self):
         # Test can add to existing blocks

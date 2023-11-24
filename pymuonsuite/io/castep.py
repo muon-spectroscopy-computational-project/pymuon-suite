@@ -559,26 +559,6 @@ def parse_castep_ppots(cfile):
     return ppot_blocks
 
 
-def parse_final_energy(infile):
-    """
-    Parse final energy from .castep file
-
-    | Args:
-    |   infile (str): Directory of .castep file
-    |
-    | Returns:
-    |   E (float): Value of final energy
-    """
-    E = None
-    for lf in open(infile).readlines():
-        if "Final energy" in lf:
-            try:
-                E = float(lf.split()[3])
-            except ValueError:
-                raise RuntimeError("Corrupt .castep file found: {0}".format(infile))
-    return E
-
-
 def add_to_castep_block(cblock, symbol, value, blocktype="mass"):
     """Add a pair of the form:
      symbol  value
