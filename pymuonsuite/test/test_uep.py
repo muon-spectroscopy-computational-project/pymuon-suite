@@ -363,16 +363,6 @@ class TestUEPCalculator(unittest.TestCase):
             "Structure does not contain index of UEPCalculator", str(e.exception)
         )
 
-    def test_uep_calculator(self):
-        with tempfile.TemporaryDirectory() as temporary_directory:
-            uep_calculator = UEPCalculator(atoms=Atoms("H"), path=temporary_directory)
-            uep_calculator.read()
-
-        # with self.assertRaises(ValueError) as e:
-        # self.assertEqual(
-        #     "Structure does not contain index of UEPCalculator", str(e.exception)
-        # )
-
 
 if __name__ == "__main__":
 

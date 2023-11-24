@@ -2,6 +2,7 @@
 from io import StringIO
 import os
 import unittest
+from unittest import mock
 import shutil
 
 from ase import Atoms, io
@@ -230,7 +231,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         finally:
             shutil.rmtree(output_folder)
 
-    @unittest.mock.patch("sys.stdout", new_callable=StringIO)
+    @mock.patch("sys.stdout", new_callable=StringIO)
     def test_set_optional(self, mock_stdout):
         # Check info and errors of set_optional
         dftb_args = DFTBArgs("3ob-3-1")
@@ -244,7 +245,7 @@ class TestReadWriteDFTB(unittest.TestCase):
         self.assertEqual("3ob-3-1", dftb_args.name)
         self.assertIn("pymuonsuite/data/dftb_pars/3ob-3-1", dftb_args.path)
 
-    @unittest.mock.patch("sys.stdout", new_callable=StringIO)
+    @mock.patch("sys.stdout", new_callable=StringIO)
     def test_static(self, mock_stdout):
         # Check static functions
         DFTBArgs.list()
