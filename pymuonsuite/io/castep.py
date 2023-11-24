@@ -374,7 +374,7 @@ class ReadWriteCastep(ReadWrite):
 
         # Remove settings for magres calculator:
         self._calc.param.magres_task = None
-        print(self._calc.param.max_scf_cycles.value)
+
         return self._calc
 
 
