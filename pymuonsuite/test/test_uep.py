@@ -4,7 +4,6 @@ import glob
 import os
 import shutil
 import sys
-import tempfile
 import unittest
 
 from ase import Atoms, io
