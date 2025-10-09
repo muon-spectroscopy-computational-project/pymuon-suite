@@ -239,30 +239,12 @@ class TestReadWriteCastep(unittest.TestCase):
                 mu_symbol_element, geom_opt_atoms.get_chemical_symbols()[-1]
             )
             self.assertEqual(mu_symbol_element, magres_atoms.get_chemical_symbols()[-1])
-
-            with self.assertRaises(AssertionError):
-                # currently these checks fail,
-                # because custom species masses aren't loaded correctly in ASE
-                # when that is resolved, remove the assertRaises and these should pass
-                self.assertEqual(
-                    input_params["particle_mass_amu"], geom_opt_atoms.get_masses()[-1]
-                )
-                self.assertEqual(
-                    input_params["particle_mass_amu"], magres_atoms.get_masses()[-1]
-                )
-
-            # in the meantime, manually check that file was written correctly
-            # remove this when the above checks are fixed
-            expected_block = """%BLOCK SPECIES_MASS
-AMU
-Li:8 8.02246
-%ENDBLOCK SPECIES_MASS"""
-            with open(os.path.join(output_folder, "Si2_geom_opt.cell"), "r") as f:
-                contents = f.read()
-                self.assertIn(expected_block, contents)
-            with open(os.path.join(output_folder, "Si2_magres.cell"), "r") as f:
-                contents = f.read()
-                self.assertIn(expected_block, contents)
+            self.assertEqual(
+                input_params["particle_mass_amu"], geom_opt_atoms.get_masses()[-1]
+            )
+            self.assertEqual(
+                input_params["particle_mass_amu"], magres_atoms.get_masses()[-1]
+            )
 
         finally:
             shutil.rmtree(output_folder)

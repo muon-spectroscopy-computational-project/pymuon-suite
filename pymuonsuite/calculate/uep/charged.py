@@ -79,6 +79,10 @@ class ChargeDistribution(object):
             # Set all spins to 0 rather than use the CASTEP results
             spins = [0] * len(self._struct.positions)
             self._struct.set_initial_magnetic_moments(spins)
+            # ase>=3.23 will register this change to "initial_magmoms" when in
+            # _calc.check_state as _calc stores a copy of the atoms created on __init__
+            # To avoid this, copy the changes to _struct onto _struct.calc
+            self._struct.calc.atoms = self._struct.copy()
 
         ppots = parse_castep_ppots(seedpath + ".castep")
 
