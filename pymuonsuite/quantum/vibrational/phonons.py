@@ -2,7 +2,6 @@
 Author: Adam Laverack and Simone Sturniolo
 """
 
-
 from collections import namedtuple
 
 import numpy as np

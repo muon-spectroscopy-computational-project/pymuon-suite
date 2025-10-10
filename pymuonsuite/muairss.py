@@ -5,7 +5,6 @@ Utility functions and main script for AIRSS structure generation for muon site
 finding.
 """
 
-
 import os
 import glob
 import warnings

@@ -4,7 +4,6 @@ schemas.py
 Python schemas for YAML input files for various scripts
 """
 
-
 import yaml
 import numpy as np
 import warnings

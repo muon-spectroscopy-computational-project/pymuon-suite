@@ -2,7 +2,6 @@
 Author: Simone Sturniolo and Adam Laverack
 """
 
-
 import os
 from datetime import datetime
 

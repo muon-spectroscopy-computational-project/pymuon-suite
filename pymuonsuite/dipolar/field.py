@@ -4,7 +4,6 @@ field.py
 DipolarField class, computing dipolar field distributions at a muon position
 """
 
-
 import numpy as np
 import scipy.constants as cnst
 from soprano.utils import minimum_supcell, supcell_gridgen

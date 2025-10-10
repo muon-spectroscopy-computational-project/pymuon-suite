@@ -5,7 +5,6 @@ Functions and classes to provide various possible displacement schemes for
 different averaging methods meant to approximate nuclear quantum effects.
 """
 
-
 import pickle
 import numpy as np
 import scipy.constants as cnst
@@ -34,7 +33,6 @@ def _wnumSigmaEnhance(wnums, T=0):
 
 
 class DisplacementScheme(object):
-
     """DisplacementScheme
 
     A generic class template for various quantum averaging displacement

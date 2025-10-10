@@ -5,7 +5,6 @@ Contains imports for libraries considered optional, along with decorators to
 include checks for them.
 """
 
-
 from functools import wraps
 
 try:

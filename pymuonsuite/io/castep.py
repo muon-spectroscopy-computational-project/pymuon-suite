@@ -8,7 +8,7 @@ import scipy.constants as cnst
 
 from ase import Atoms, io
 from ase.calculators.castep import Castep
-from ase.io.castep import read_param, write_param
+from ase.io.castep import read_param, write_param, read_seed
 from ase.io.magres import read_magres
 
 from pymuonsuite import constants
@@ -52,7 +52,6 @@ class ReadWriteCastep(ReadWrite):
         self._create_calculator()
 
     def read(self, folder, sname=None, read_magres=False, read_phonons=False):
-
         """Reads Castep output files.
 
         | Args:
@@ -69,13 +68,20 @@ class ReadWriteCastep(ReadWrite):
 
     def _read_castep(self, folder, sname=None):
         try:
-            if sname is not None:
-                cfile = os.path.join(folder, sname + ".castep")
-            else:
+            if sname is None:
                 cfile = glob.glob(os.path.join(folder, "*.castep"))[0]
                 sname = seedname(cfile)
+
+            absolute_seed = os.path.join(folder, sname)
             with silence_stdio():
-                atoms = io.read(cfile)
+                cell_is_file = os.path.isfile(f"{absolute_seed}.cell")
+                param_is_file = os.path.isfile(f"{absolute_seed}.param")
+                if cell_is_file and param_is_file:
+                    # read_seed will also load the CASTEP .param file and set it as
+                    # atoms.calc.param, needed for reading muairss min clusters
+                    atoms = read_seed(absolute_seed)
+                else:
+                    atoms = io.read(f"{absolute_seed}.castep")
             atoms.info["name"] = sname
             return atoms
 

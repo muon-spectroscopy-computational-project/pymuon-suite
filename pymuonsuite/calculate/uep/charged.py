@@ -3,7 +3,6 @@
 ChargeDistribution class for Unperturbed Electrostatic Potential
 """
 
-
 import os
 
 import numpy as np
@@ -203,14 +202,7 @@ the .cell file."""
 
         # Now, Thomas-Fermi energy
         tfint = np.sum(abs(self._rho / self._vol) ** (5 / 3) * self._vol)
-        C = (
-            0.3
-            * cnst.hbar**2
-            / cnst.m_e
-            * (3 * np.pi**2) ** (2 / 3)
-            / cnst.e
-            * 1e20
-        )
+        C = 0.3 * cnst.hbar**2 / cnst.m_e * (3 * np.pi**2) ** (2 / 3) / cnst.e * 1e20
         self._thomasFermiE = C * tfint
 
     @property
