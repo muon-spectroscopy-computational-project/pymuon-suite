@@ -12,7 +12,7 @@ Pillow==11.3.0
 Pint==0.24.4
 pyparsing==3.0.6
 python-dateutil==2.8.2
-PyYAML==6.0
+PyYAML==6.0.3
 schema==0.7.4
 scipy==1.15.3
 seekpath==2.0.1
