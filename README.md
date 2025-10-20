@@ -6,7 +6,7 @@ Collection of scripts and utilities for muon spectroscopy.
 
 ## Installation
 
-Requires Python 3.9+. Install with pip or conda:
+Requires Python 3.10+. Install with pip or conda:
 
 `pip install pymuonsuite`
 
