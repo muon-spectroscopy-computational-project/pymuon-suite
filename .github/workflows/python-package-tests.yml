@@ -56,8 +56,14 @@ jobs:
     - name: Install choco packages
       if: matrix.os == 'windows-latest'
       run: choco install pkgconfiglite
+    - name: Setup conda
+      if: matrix.os == 'windows-latest' && matrix.python-version == '3.14'
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        python-version: ${{ matrix.python-version }}
     - name: Install conda packages
-      if: matrix.os == 'windows-latest'
+      if: matrix.os == 'windows-latest' && matrix.python-version == '3.14'
       run: conda install openblas
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
