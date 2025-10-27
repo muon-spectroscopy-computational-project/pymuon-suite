@@ -56,6 +56,9 @@ jobs:
     - name: Install choco packages
       if: matrix.os == 'windows-latest'
       run: choco install pkgconfiglite
+    - name: Install conda packages
+      if: matrix.os == 'windows-latest'
+      run: conda install openblas
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
