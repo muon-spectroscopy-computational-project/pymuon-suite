@@ -1,7 +1,7 @@
-flake8==4.0.1
-black==22.3.0
-pytest==6.2.5
+flake8==7.3.0
+black==25.9.0
+pytest==8.4.2
 pytest-cov==4.0.0
-euphonic==1.0.0
+euphonic==1.4.5
 pre-commit
 wheel

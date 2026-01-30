@@ -1,6 +1,5 @@
 """Tests for quantum averaging methods"""
 
-
 import unittest
 import numpy as np
 import scipy.constants as cnst
@@ -43,8 +42,7 @@ class TestDisplacements(unittest.TestCase):
         Avol = self._A(grid)
         Gvol = np.exp(
             -np.sum(
-                (grid / sigmas[None, :]) ** 2
-                * ((1.0 - xi**2) / (1 + xi**2))[None, :],
+                (grid / sigmas[None, :]) ** 2 * ((1.0 - xi**2) / (1 + xi**2))[None, :],
                 axis=1,
             )
         )

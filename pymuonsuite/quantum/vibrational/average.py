@@ -4,7 +4,6 @@ average.py
 Quantum vibrational averages
 """
 
-
 import os
 import numpy as np
 

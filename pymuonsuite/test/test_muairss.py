@@ -69,7 +69,7 @@ class TestMuairss(unittest.TestCase):
     def check_write_castep(
         self, out_dir: str, input_params: dict, castep_param: CastepParam
     ):
-        for (rootDir, subDirs, files) in os.walk(out_dir):
+        for rootDir, subDirs, files in os.walk(out_dir):
             for s in subDirs:
                 expected_file = os.path.join(out_dir, s, s + ".cell")
                 script_file = input_params["script_file"]
@@ -116,7 +116,7 @@ class TestMuairss(unittest.TestCase):
                     count += 1
 
     def check_write_uep(self, out_dir: str, input_params: dict, **kwargs):
-        for (rootDir, subDirs, files) in os.walk(out_dir):
+        for rootDir, subDirs, files in os.walk(out_dir):
             for s in subDirs:
                 expected_file = os.path.join(out_dir, s, s + ".yaml")
                 self.assertTrue(os.path.exists(expected_file))
@@ -137,7 +137,7 @@ class TestMuairss(unittest.TestCase):
             subprocess.run([os.path.join(_TESTDATA_DIR, "script-uep"), out_dir])
 
         # Check all folders contain UEP file
-        for (rootDir, subDirs, files) in os.walk(out_dir):
+        for rootDir, subDirs, files in os.walk(out_dir):
             for s in subDirs:
                 expected_file = os.path.join(out_dir, s, s + ".uep")
                 exists = os.path.exists(expected_file)
@@ -283,7 +283,7 @@ class TestMuairss(unittest.TestCase):
             # Test clustering_write_input has produced files we expect:
             self.assertTrue(os.path.exists("Si2_clusters"))
             calc_folder = "Si2_clusters/castep/"
-            for (rootDir, subDirs, files) in os.walk(calc_folder):
+            for rootDir, subDirs, files in os.walk(calc_folder):
                 for s in subDirs:
                     expected_file = os.path.join(calc_folder + s, s + ".cell")
                     self.assertTrue(os.path.exists(expected_file))
@@ -320,7 +320,7 @@ class TestMuairss(unittest.TestCase):
             os.chdir(_TESTDATA_DIR)
             run_muairss()
             # Check all folders contain a yaml file
-            for (rootDir, subDirs, files) in os.walk("muon-airss-out-castep/castep/"):
+            for rootDir, subDirs, files in os.walk("muon-airss-out-castep/castep/"):
                 for s in subDirs:
                     expected_file = os.path.join(
                         "muon-airss-out-castep/castep/" + s, s + ".cell"
@@ -358,7 +358,7 @@ class TestMuairss(unittest.TestCase):
 
             self.assertTrue(os.path.exists("Si2_clusters"))
             calc_folder = "Si2_clusters/castep/"
-            for (rootDir, subDirs, files) in os.walk(calc_folder):
+            for rootDir, subDirs, files in os.walk(calc_folder):
                 for s in subDirs:
                     expected_file = os.path.join(calc_folder + s, s + ".cell")
                     self.assertTrue(os.path.exists(expected_file))
