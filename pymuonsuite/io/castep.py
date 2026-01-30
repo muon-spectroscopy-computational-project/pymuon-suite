@@ -150,7 +150,7 @@ class ReadWriteCastep(ReadWrite):
 
             if gamma_i is None:
                 raise CastepError(
-                    "Could not find gamma point phonons in" " CASTEP phonon file"
+                    "Could not find gamma point phonons in CASTEP phonon file"
                 )
 
             atoms.info["ph_evals"] = evals[gamma_i]
@@ -370,10 +370,8 @@ class ReadWriteCastep(ReadWrite):
                 self._calc.param.geom_force_tol = 0.05
 
         max_scf_cycles_param = self.params.get("max_scc_steps")
-
         if max_scf_cycles_param is not None:
-            self._calc.param.max_scf_cycles.value = max_scf_cycles_param
-
+            self._calc.param.max_scf_cycles = max_scf_cycles_param
         else:
             if self._calc.param.max_scf_cycles.value is None:
                 self._calc.param.max_scf_cycles = 30
@@ -411,9 +409,8 @@ def parse_castep_bands(infile, header=False):
         return n_kpts, n_evals
     if int(lines[1].split()[-1]) != 1:
         raise ValueError(
-            """Either incorrect file format detected or greater
-                            than 1 spin component used (parse_castep_bands
-                            only works with 1 spin component.)"""
+            "Either incorrect file format detected or greater than 1 spin component "
+            "used (parse_castep_bands only works with 1 spin component)."
         )
     # Parse eigenvalues
     bands = np.zeros((n_kpts, n_evals))
@@ -462,7 +459,7 @@ def parse_castep_mass_block(mass_block):
     return custom_masses
 
 
-def parse_castep_masses(cell):
+def parse_castep_masses(cell: Atoms) -> np.ndarray:
     """Parse CASTEP custom species masses, returning an array of all atom
     masses in .cell file with corrected custom masses.
 
@@ -486,7 +483,7 @@ def parse_castep_masses(cell):
 
     cell.set_masses(masses)
 
-    return masses
+    return np.array(masses)
 
 
 def parse_castep_gamma_block(gamma_block):
@@ -566,26 +563,6 @@ def parse_castep_ppots(cfile):
         ppot_blocks[el] = (q, rcmin)
 
     return ppot_blocks
-
-
-def parse_final_energy(infile):
-    """
-    Parse final energy from .castep file
-
-    | Args:
-    |   infile (str): Directory of .castep file
-    |
-    | Returns:
-    |   E (float): Value of final energy
-    """
-    E = None
-    for lf in open(infile).readlines():
-        if "Final energy" in lf:
-            try:
-                E = float(lf.split()[3])
-            except ValueError:
-                raise RuntimeError("Corrupt .castep file found: {0}".format(infile))
-    return E
 
 
 def add_to_castep_block(cblock, symbol, value, blocktype="mass"):

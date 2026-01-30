@@ -12,7 +12,7 @@ import numpy as np
 
 from pymuonsuite.calculate.uep.__main__ import plot_entry
 from pymuonsuite.calculate.uep.charged import ChargeDistribution
-from pymuonsuite.io.uep import ReadWriteUEP
+from pymuonsuite.io.uep import ReadWriteUEP, UEPCalculator
 from pymuonsuite.schemas import MuAirssSchema, UEPOptSchema, load_input_file
 from pymuonsuite.utils import get_element_from_custom_symbol
 
@@ -55,10 +55,14 @@ class TestReadWriteUEP(unittest.TestCase):
         Eclass = -8.843094140155303
         Ezp = 0.11128549781255458
         Etot = -8.731808642342749
+        x_opt = [2.70844489, 2.70947367, 2.67806673]
+        fx_opt = [0.50823371, 0.49658193, 0.49696361]
         # Check these have been read correctly:
-        self.assertEqual(read_uep.calc._Eclass, Eclass)
-        self.assertEqual(read_uep.calc._Ezp, Ezp)
-        self.assertEqual(read_uep.calc._Etot, Etot)
+        self.assertEqual(read_uep.calc.Eclass, Eclass)
+        self.assertEqual(read_uep.calc.Ezp, Ezp)
+        self.assertEqual(read_uep.calc.Etot, Etot)
+        self.assertTrue(np.allclose(read_uep.calc.x_opt, x_opt))
+        self.assertTrue(np.allclose(read_uep.calc.fx_opt, fx_opt))
 
     def test_create_calc(self):
         folder = os.path.join(_TESTDATA_DIR, "Si2")
@@ -399,6 +403,16 @@ class TestChargeDistribution(unittest.TestCase):
         with self.assertRaises(RuntimeError) as e:
             ChargeDistribution("Si2-charged")
         self.assertIn("Cell is not neutral", str(e.exception))
+
+
+class TestUEPCalculator(unittest.TestCase):
+    def test_uep_calculator_empty_structure(self):
+        uep_calculator = UEPCalculator(atoms=Atoms())
+        with self.assertRaises(ValueError) as e:
+            uep_calculator.read()
+        self.assertEqual(
+            "Structure does not contain index of UEPCalculator", str(e.exception)
+        )
 
 
 if __name__ == "__main__":
