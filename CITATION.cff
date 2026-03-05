@@ -68,14 +68,14 @@ keywords:
 license: GPL-3.0
 version: v0.4.0
 date-released: '2022-08-26'
-doi: 10.5281/zenodo.8026711
+doi: 10.5281/zenodo.18879173
 identifiers:
   - type: doi
     value: 10.5281/zenodo.7025643
     description: The concept DOI for the collection containing all versions of pymuonsuite.
   - type: doi
-    value: 10.5281/zenodo.8026711
-    description: The versioned DOI for the version 0.3.0 of pymuonsuite.
+    value: 10.5281/zenodo.18879173
+    description: The versioned DOI for the version 0.4.0 of pymuonsuite.
 
 references:
   - scope: "Cite this for pm-muairss and pm-muairss-gen"
