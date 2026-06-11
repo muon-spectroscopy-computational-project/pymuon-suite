@@ -23,7 +23,7 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@v8.2.0
     - name: Install dependencies
-      run: uv sync --group lint
+      run: uv sync --locked --only-group lint
     - name: Lint with ruff
       run: uv run ruff check .
     - name: Check formatting with ruff
@@ -76,7 +76,7 @@ jobs:
     - name: Install dependencies
       env:
         UV_NO_BUILD_ISOLATION_PACKAGE: scipy
-      run: uv sync --all-extras --group dev
+      run: uv sync --locked --inexact --all-extras --group dev
     - name: Test with pytest
       run: uv run pytest --cov pymuonsuite --cov-report xml
     - name: Upload to Codecov

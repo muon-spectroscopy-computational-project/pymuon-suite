@@ -1415,7 +1415,7 @@ lint = [
 requires-dist = [
     { name = "ase", specifier = ">=3.18.1" },
     { name = "euphonic", marker = "extra == 'phonons'" },
-    { name = "numpy" },
+    { name = "numpy", specifier = ">=2.0" },
     { name = "parse-fmt", specifier = ">=0.5" },
     { name = "pyyaml" },
     { name = "schema" },
