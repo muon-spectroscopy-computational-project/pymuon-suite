@@ -25,9 +25,9 @@ jobs:
     - name: Install dependencies
       run: uv sync --locked --only-group lint
     - name: Lint with ruff
-      run: uv run ruff check .
+      run: uv run --no-sync ruff check .
     - name: Check formatting with ruff
-      run: uv run ruff format --check .
+      run: uv run --no-sync ruff format --check .
 
   build:
     name: Test on Python ${{ matrix.python-version }} and ${{ matrix.os }}
