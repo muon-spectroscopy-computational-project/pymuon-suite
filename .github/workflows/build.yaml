@@ -13,13 +13,13 @@ jobs:
       matrix:
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Install apt packages
         run: |
           sudo apt-get update
           sudo apt-get install -y libopenblas-dev
       - name: Install uv
-        uses: astral-sh/setup-uv@v3
+        uses: astral-sh/setup-uv@v8.2.0
       - name: Build source distribution and wheel
         run: uv build
       - uses: actions/upload-artifact@v6
