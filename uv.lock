@@ -1421,7 +1421,7 @@ requires-dist = [
     { name = "schema" },
     { name = "scipy" },
     { name = "soprano", specifier = ">=0.8.11" },
-    { name = "spglib", specifier = ">0.8" },
+    { name = "spglib", specifier = ">=2.5" },
 ]
 provides-extras = ["phonons"]
 
