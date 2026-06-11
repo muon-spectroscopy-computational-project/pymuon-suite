@@ -17,7 +17,7 @@ RUN mkdir -p \
 # install requirements
 RUN pip install --upgrade pip && \
     pip install --upgrade setuptools && \
-    pip install -r ${TEMPDIR}/requirements.txt
+    pip install "${TEMPDIR}[phonons]"
 
 # set up startup script
 RUN cp ${TEMPDIR}/run_on_startup_dev.sh . && \

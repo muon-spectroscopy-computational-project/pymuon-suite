@@ -7,7 +7,6 @@ services:
       - ./docs:/home/pymuon-suite/docs
       - ./examples:/home/pymuon-suite/examples
       - ./pymuonsuite:/home/pymuon-suite/pymuonsuite
-      - ./setup.py:/home/pymuon-suite/setup.py
+      - ./pyproject.toml:/home/pymuon-suite/pyproject.toml
       - ./Makefile:/home/pymuon-suite/Makefile
       - ./README.md:/home/pymuon-suite/README.md
-      - ./requirements.txt:/home/pymuon-suite/requirements.txt

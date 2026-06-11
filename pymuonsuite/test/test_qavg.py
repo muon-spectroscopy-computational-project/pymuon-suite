@@ -65,8 +65,8 @@ class TestDisplacements(unittest.TestCase):
         rhos = harmonic_rho_sum(x, m, om)
         rhot = harmonic_rho(x, m, om)
 
-        self.assertAlmostEqual(np.trapz(rhos, x), 1)
-        self.assertAlmostEqual(np.trapz(rhot, x), 1)
+        self.assertAlmostEqual(np.trapezoid(rhos, x), 1)
+        self.assertAlmostEqual(np.trapezoid(rhot, x), 1)
 
         self.assertTrue(np.average((rhos - rhot) ** 2) < 1e-3)
 
@@ -76,8 +76,8 @@ class TestDisplacements(unittest.TestCase):
         rhos = harmonic_rho_sum(x, m, om, T)
         rhot = harmonic_rho(x, m, om, T)
 
-        self.assertAlmostEqual(np.trapz(rhos, x), 1)
-        self.assertAlmostEqual(np.trapz(rhot, x), 1)
+        self.assertAlmostEqual(np.trapezoid(rhos, x), 1)
+        self.assertAlmostEqual(np.trapezoid(rhot, x), 1)
 
         self.assertTrue(np.average((rhos - rhot) ** 2) < 1e-3)
 

@@ -1,6 +1,74 @@
 [build-system]
 requires = [
-    "setuptools",
+    "setuptools>=68",
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyMuonSuite"
+description = "A suite of utilities for muon spectroscopy"
+readme = "README.md"
+license = { text = "GPLv3" }
+authors = [
+    { name = "Simone Sturniolo", email = "simone.sturniolo@stfc.ac.uk" }
+]
+classifiers = [
+    # How mature is this project? Common values are
+    #   3 - Alpha
+    #   4 - Beta
+    #   5 - Production/Stable
+    "Development Status :: 4 - Beta",
+    # Indicate who your project is intended for
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    # Pick your license as you wish (should match "license" above)
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    # Specify the Python versions you support here. In particular,
+    # ensure that you indicate whether you support Python 2, Python 3
+    # or both.
+    "Programming Language :: Python :: 3",
+]
+requires-python = ">=3.10, <3.15"
+dynamic = ["version"]
+dependencies = [
+    "numpy",
+    "scipy",
+    "ase>=3.18.1",
+    "pyyaml",
+    "schema",
+    "spglib>0.8",
+    "soprano>=0.8.11",
+    "parse-fmt>=0.5",
+]
+
+[project.optional-dependencies]
+phonons = ["euphonic"]
+
+[dependency-groups]
+dev = ["pytest", "pytest-cov", "pre-commit", "wheel"]
+lint = ["flake8==7.3.0", "black==25.9.0"]
+
+[project.scripts]
+pm-muairss-gen = "pymuonsuite.muairss:main_generate"
+pm-muairss = "pymuonsuite.muairss:main"
+pm-uep-opt = "pymuonsuite.calculate.uep.__main__:geomopt_entry"
+pm-uep-plot = "pymuonsuite.calculate.uep.__main__:plot_entry"
+pm-nq = "pymuonsuite.quantum.__main__:nq_entry"
+pm-asephonons = "pymuonsuite.quantum.__main__:asephonons_entry"
+pm-symmetry = "pymuonsuite.symmetry:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "pymuonsuite.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["pymuonsuite*"]
+
+[tool.setuptools.package-data]
+pymuonsuite = [
+    "data/dftb_pars/*",
+    "data/dftb_pars/*/*",
+    "data/dftb_pars/*/*/*",
+]

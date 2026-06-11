@@ -38,7 +38,7 @@ def muon_vibrational_average_write(
     displace_T=0,
     phonon_source_file=None,
     phonon_source_type="castep",
-    **kwargs
+    **kwargs,
 ):
     """
     Write input files to compute a vibrational average for a quantity on a muon
@@ -196,7 +196,7 @@ def muon_vibrational_average_read(
     avgprop="hyperfine",
     average_T=0,
     average_file="averages.dat",
-    **kwargs
+    **kwargs,
 ):
     # Open the structure file
     sname = seedname(structure)

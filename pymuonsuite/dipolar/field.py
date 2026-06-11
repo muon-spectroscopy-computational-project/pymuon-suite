@@ -169,7 +169,7 @@ class DipolarField(object):
         else:
             spec = _distr_spec(om, D, eta, nsteps=nsteps)
         spec = (spec + spec[::-1]) / 2
-        spec /= np.trapz(spec, om)  # Normalize
+        spec /= np.trapezoid(spec, om)  # Normalize
 
         return om, spec
 
@@ -215,7 +215,7 @@ class DipolarField(object):
         spec = np.abs(np.fft.fftshift(np.fft.ifft(chfun)))
         om = np.linspace(-width, width, 2 * h_steps + 1)
 
-        spec /= np.trapz(spec, om)
+        spec /= np.trapezoid(spec, om)
 
         return om, spec
 
@@ -281,6 +281,6 @@ class DipolarField(object):
         spec = np.abs(np.fft.fftshift(np.fft.ifft(chfun, axis=-1), axes=(-1)))
         om = np.linspace(-width, width, 2 * h_steps + 1)
 
-        spec /= np.trapz(spec, om, axis=-1)[:, None]
+        spec /= np.trapezoid(spec, om, axis=-1)[:, None]
 
         return om, spec
