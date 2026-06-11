@@ -26,7 +26,6 @@ def requireEuphonicQPM(import_name="euphonic_qpm"):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-
             if _euphonic_qpm is None:
                 raise RuntimeError(
                     """

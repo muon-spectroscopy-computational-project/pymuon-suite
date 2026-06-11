@@ -15,7 +15,6 @@ from pymuonsuite.quantum.vibrational.harmonic import (
 
 
 class TestDisplacements(unittest.TestCase):
-
     # Create mock eigenvalues and eigenvectors
     evals = (
         np.ones(3) * cnst.hbar / cnst.u / (2 * np.pi * cnst.c) * 1e18
@@ -82,7 +81,6 @@ class TestDisplacements(unittest.TestCase):
         self.assertTrue(np.average((rhos - rhot) ** 2) < 1e-3)
 
     def testIndependent(self):
-
         scheme = IndependentDisplacements(
             self.evals, self.evecs, self.masses, 0, sigma_n=5
         )
@@ -123,7 +121,6 @@ class TestDisplacements(unittest.TestCase):
         self.assertSmallRelativeError(avgvolT, avgdisplT, 1e-2)
 
     def testMontecarlo(self):
-
         scheme = MonteCarloDisplacements(self.evals, self.evecs, self.masses)
 
         avgvol = self._A_expect(5, 51, scheme._sigmas * 1e10 / cnst.u**0.5)
@@ -158,5 +155,4 @@ class TestDisplacements(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

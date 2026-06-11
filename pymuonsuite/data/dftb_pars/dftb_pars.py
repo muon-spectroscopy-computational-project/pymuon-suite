@@ -106,7 +106,6 @@ class DFTBArgs(object):
 
     @property
     def args(self):
-
         args = deepcopy(self._args)
 
         for name, value in self._optdict.items():

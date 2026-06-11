@@ -49,7 +49,7 @@ phonons = ["euphonic"]
 
 [dependency-groups]
 dev = ["pytest", "pytest-cov", "pre-commit", "wheel"]
-lint = ["flake8==7.3.0", "black==25.9.0"]
+lint = ["ruff==0.14.6"]
 
 [project.scripts]
 pm-muairss-gen = "pymuonsuite.muairss:main_generate"
@@ -72,3 +72,19 @@ pymuonsuite = [
     "data/dftb_pars/*/*",
     "data/dftb_pars/*/*/*",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+# E203 (whitespace before ':') conflicts with the formatter's slice handling,
+# matching the same exclusion previously applied for black/flake8.
+# E741 (ambiguous variable name `l`/`I`/`O`) is broader in ruff than in
+# flake8/pycodestyle (also flags `for i, l in ...`); ignored to match prior
+# flake8 behaviour, which didn't flag these.
+ignore = ["E203", "E741"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]

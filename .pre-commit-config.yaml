@@ -6,12 +6,9 @@ repos:
     hooks:
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
--   repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.6
     hooks:
-    -   id: flake8
-        args: ["--count", "--show-source", "--statistics"]
--   repo: https://github.com/psf/black
-    rev: 22.3.0
-    hooks:
-    -   id: black
+    -   id: ruff-check
+        args: ["--fix"]
+    -   id: ruff-format

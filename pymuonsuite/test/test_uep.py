@@ -169,7 +169,6 @@ class TestReadWriteUEP(unittest.TestCase):
             shutil.rmtree("test_save")
 
     def test_write_uses_correct_particle_mass(self):
-
         # read in cell file to get atom
         try:
             input_folder = _TESTDATA_DIR + "/Si2"
@@ -402,5 +401,4 @@ class TestChargeDistribution(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

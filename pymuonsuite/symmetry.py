@@ -12,7 +12,6 @@ from pymuonsuite.io.output import write_symmetry_report
 
 
 def main():
-
     parser = ap.ArgumentParser()
     parser.add_argument(
         "structure",

@@ -102,7 +102,7 @@ class ChargeDistribution(object):
                     ppots.update(parse_castep_ppots(f))
                 except IOError:
                     # File not found
-                    print("WARNING: pseudopotential file " "{0} not found".format(f))
+                    print("WARNING: pseudopotential file {0} not found".format(f))
 
         # END OF CASTEP SPECIFIC CODE
 

@@ -24,16 +24,12 @@ def write_cluster_report(args, params, clusters):
         clustinfo = """
 Clustering method: Hierarchical
     t = {t}
-""".format(
-            t=params["clustering_hier_t"]
-        )
+""".format(t=params["clustering_hier_t"])
     elif params["clustering_method"] == "kmeans":
         clustinfo = """
 Clustering method: k-Means
     k = {k}
-""".format(
-            k=params["clustering_kmeans_k"]
-        )
+""".format(k=params["clustering_kmeans_k"])
 
     with open(params["name"] + "_clusters.txt", "w") as f:
         f.write(
@@ -93,8 +89,9 @@ Parameter file: {param}
 
                 for i, g in enumerate(cgroups):
                     f.write(
-                        "\n\n\t-----------\n\tCluster "
-                        "{0}\n\t-----------\n".format(i + 1)
+                        "\n\n\t-----------\n\tCluster {0}\n\t-----------\n".format(
+                            i + 1
+                        )
                     )
                     f.write("\tStructures: {0}\n".format(len(g)))
                     coll = ccolls[i + 1]
@@ -157,7 +154,7 @@ Parameter file: {param}
                             params,
                             clustering_save_path,
                             calc,
-                            f"{params['name']}_{calc}_min_cluster_{i+1}",
+                            f"{params['name']}_{calc}_min_cluster_{i + 1}",
                             structure,
                         )
                         if not success:
@@ -344,8 +341,8 @@ def write_phonon_report(args, params, phdata):
 
 def write_symmetry_report(args, symdata, wpoints, fpos):
     print("Wyckoff points symmetry report for {0}".format(args.structure))
-    print("Space Group International Symbol: " "{0}".format(symdata["international"]))
-    print("Space Group Hall Number: " "{0}".format(symdata["hall_number"]))
+    print("Space Group International Symbol: {0}".format(symdata["international"]))
+    print("Space Group Hall Number: {0}".format(symdata["hall_number"]))
     print("Absolute\t\tFractional\t\tHessian constraints\tOccupied")
 
     # List any Wyckoff point that does not already have an atom in it

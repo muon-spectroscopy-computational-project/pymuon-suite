@@ -134,7 +134,6 @@ class DipolarField(object):
         self.spins = rnorm * 0
 
     def set_moments(self, moments, moment_type="e"):
-
         spins = np.array(moments)
         if spins.shape != (self._an,):
             raise ValueError("Invalid moments array shape")
@@ -148,12 +147,10 @@ class DipolarField(object):
         return np.sum(self.spins[:, None, None] * self._dT, axis=0)
 
     def frequency(self, axis=(0, 0, 1)):
-
         D = self.dipten()
         return np.sum(np.dot(D, axis) * axis)
 
     def pwd_spec(self, width=None, h_steps=100, nsteps=100):
-
         dten = self.dipten()
         evals, evecs = np.linalg.eigh(dten)
         evals = np.sort(evals)
@@ -174,7 +171,6 @@ class DipolarField(object):
         return om, spec
 
     def random_spec_uniaxial(self, axis=(0, 0, 1), width=None, h_steps=100, occ=1.0):
-
         # Consider individual dipolar constants
         DD = self.spins[:, None, None] * self._dT
         Ds = np.dot(np.tensordot(DD, axis, axes=(1, 0)), axis)
@@ -220,7 +216,6 @@ class DipolarField(object):
         return om, spec
 
     def random_spec_pwd(self, width=None, h_steps=100, pwdN=50, occ=1.0):
-
         if width is None:
             width = np.sum(np.abs(self.spins))
 
@@ -240,7 +235,6 @@ class DipolarField(object):
         return om, spec
 
     def random_spec_zf(self, width=None, h_steps=100):
-
         if width is None:
             width = np.sum(np.abs(self.spins))
 

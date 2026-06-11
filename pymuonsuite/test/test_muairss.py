@@ -30,7 +30,6 @@ _RUN_DFTB = False
 
 
 def _clean_testdata_dir():
-
     os.chdir(_TESTDATA_DIR)
 
     folders = [
@@ -495,5 +494,4 @@ class TestMuairss(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

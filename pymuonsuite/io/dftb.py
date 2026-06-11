@@ -145,7 +145,7 @@ class ReadWriteDFTB(ReadWrite):
                 atoms.set_array("hyperfine", np.array(hfine))
             except (IndexError, IOError) as e:
                 raise IOError(
-                    "Could not read hyperfine details due to error: " "{0}".format(e)
+                    "Could not read hyperfine details due to error: {0}".format(e)
                 )
 
         if read_phonons:
@@ -192,7 +192,7 @@ class ReadWriteDFTB(ReadWrite):
                 atoms.info["ph_evecs"] = ph_evecs
             except TypeError:
                 raise RuntimeError(
-                    ("Phonon file {0} does not contain gamma " "point data").format(
+                    ("Phonon file {0} does not contain gamma point data").format(
                         phonon_source_file
                     )
                 )
@@ -285,8 +285,7 @@ class ReadWriteDFTB(ReadWrite):
             except KeyError:
                 if opt == "spinpol.json":
                     raise ValueError(
-                        "DFTB+ parameter set does not allow spin"
-                        "polarised calculations"
+                        "DFTB+ parameter set does not allow spinpolarised calculations"
                     )
                 else:
                     warnings.warn(

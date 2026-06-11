@@ -14,7 +14,7 @@ uv sync --all-extras --group dev --group lint
 ```
 
 This creates a `.venv` in `pymuon-suite/` with the package installed in editable mode, plus all
-dependencies needed for testing (`pytest`, `pytest-cov`), linting (`flake8`, `black`), and
+dependencies needed for testing (`pytest`, `pytest-cov`), linting (`ruff`), and
 optional features (`euphonic` for reading CASTEP `.phonon` files).
 
 Run commands inside this environment with `uv run`, e.g. `uv run pytest pymuonsuite/test/` or
