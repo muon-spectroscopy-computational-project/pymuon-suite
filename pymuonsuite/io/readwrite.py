@@ -40,14 +40,14 @@ class ReadWrite(object):
     def read(self, folder, sname=None):
         raise (
             NotImplementedError(
-                "read method is not implemented for" " ReadWrite baseclass."
+                "read method is not implemented for ReadWrite baseclass."
             )
         )
 
     def write(self, a, folder, sname=None, calc_type=None):
         raise (
             NotImplementedError(
-                "write method is not implemented for" " ReadWrite baseclass."
+                "write method is not implemented for ReadWrite baseclass."
             )
         )
 

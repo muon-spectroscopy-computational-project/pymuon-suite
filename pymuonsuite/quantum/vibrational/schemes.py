@@ -43,7 +43,6 @@ class DisplacementScheme(object):
     """
 
     def __init__(self, evals, evecs, masses, evals_threshold=1e-3):
-
         evals = np.real(evals)
         evecs = np.real(evecs)
         masses = np.array(masses)
@@ -51,8 +50,9 @@ class DisplacementScheme(object):
         if (evals <= max(0, evals_threshold)).any():
             if evals_threshold > 0:
                 print(
-                    "Warning: removing eigenmodes with frequency "
-                    "< {0}".format(evals_threshold)
+                    "Warning: removing eigenmodes with frequency < {0}".format(
+                        evals_threshold
+                    )
                 )
                 evals_i = np.where(evals > evals_threshold)[0]
                 evals = evals[evals_i]
@@ -202,7 +202,6 @@ class IndependentDisplacements(DisplacementScheme):
         return self._sigma_n
 
     def recalc_displacements(self, n=20, T=0):
-
         self._Td = T
         self._n = n
         # Displacements along the three normal modes of choice
@@ -230,7 +229,6 @@ class IndependentDisplacements(DisplacementScheme):
         return self.displacements
 
     def recalc_weights(self, T=0):
-
         self._Tw = T
 
         tfac = _wnumSigmaEnhance(self.major_evals, T)
@@ -333,7 +331,6 @@ class MonteCarloDisplacements(DisplacementScheme):
         return self._T
 
     def recalc_displacements(self, n=50, T=0):
-
         self._n = n
         self._Td = T
 
@@ -353,7 +350,6 @@ class MonteCarloDisplacements(DisplacementScheme):
         return self.displacements
 
     def recalc_weights(self, T=0):
-
         self._Tw = T
 
         if self._Tw > self._Td:

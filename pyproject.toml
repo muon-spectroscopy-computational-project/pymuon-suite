@@ -1,6 +1,90 @@
 [build-system]
 requires = [
-    "setuptools",
+    "setuptools>=68",
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "PyMuonSuite"
+description = "A suite of utilities for muon spectroscopy"
+readme = "README.md"
+license = { text = "GPLv3" }
+authors = [
+    { name = "Simone Sturniolo", email = "simone.sturniolo@stfc.ac.uk" }
+]
+classifiers = [
+    # How mature is this project? Common values are
+    #   3 - Alpha
+    #   4 - Beta
+    #   5 - Production/Stable
+    "Development Status :: 4 - Beta",
+    # Indicate who your project is intended for
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Chemistry",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    # Pick your license as you wish (should match "license" above)
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    # Specify the Python versions you support here. In particular,
+    # ensure that you indicate whether you support Python 2, Python 3
+    # or both.
+    "Programming Language :: Python :: 3",
+]
+requires-python = ">=3.10, <3.15"
+dynamic = ["version"]
+dependencies = [
+    "numpy>=2.0",
+    "scipy",
+    "ase>=3.18.1",
+    "pyyaml",
+    "schema",
+    "spglib>=2.5",
+    "soprano>=0.8.11",
+    "parse-fmt>=0.5",
+]
+
+[project.optional-dependencies]
+phonons = ["euphonic"]
+
+[dependency-groups]
+dev = ["pytest", "pytest-cov", "pre-commit", "wheel"]
+lint = ["ruff==0.14.6"]
+
+[project.scripts]
+pm-muairss-gen = "pymuonsuite.muairss:main_generate"
+pm-muairss = "pymuonsuite.muairss:main"
+pm-uep-opt = "pymuonsuite.calculate.uep.__main__:geomopt_entry"
+pm-uep-plot = "pymuonsuite.calculate.uep.__main__:plot_entry"
+pm-nq = "pymuonsuite.quantum.__main__:nq_entry"
+pm-asephonons = "pymuonsuite.quantum.__main__:asephonons_entry"
+pm-symmetry = "pymuonsuite.symmetry:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "pymuonsuite.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["pymuonsuite*"]
+
+[tool.setuptools.package-data]
+pymuonsuite = [
+    "data/dftb_pars/*",
+    "data/dftb_pars/*/*",
+    "data/dftb_pars/*/*/*",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+# E203 (whitespace before ':') conflicts with the formatter's slice handling,
+# matching the same exclusion previously applied for black/flake8.
+# E741 (ambiguous variable name `l`/`I`/`O`) is broader in ruff than in
+# flake8/pycodestyle (also flags `for i, l in ...`); ignored to match prior
+# flake8 behaviour, which didn't flag these.
+ignore = ["E203", "E741"]
+
+[tool.ruff.lint.per-file-ignores]
+"**/__init__.py" = ["F401"]

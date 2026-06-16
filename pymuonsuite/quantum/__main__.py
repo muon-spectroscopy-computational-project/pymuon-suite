@@ -72,7 +72,6 @@ def nq_entry():
 
 
 def asephonons_entry():
-
     from ase import io
     from ase.calculators.dftb import Dftb
     from pymuonsuite.data.dftb_pars import DFTBArgs
@@ -130,7 +129,7 @@ def asephonons_entry():
         )
     except Exception as e:
         print(e)
-        print("Error: Could not write phonons file, see asephonons.out for" " details.")
+        print("Error: Could not write phonons file, see asephonons.out for details.")
         sys.exit(1)
 
     # Save optimised structure

@@ -40,7 +40,6 @@ class ReadWriteUEP(ReadWrite):
         return a
 
     def write(self, a, folder, sname=None, calc_type=None):
-
         if sname is None:
             sname = os.path.split(folder)[-1]
 
@@ -83,7 +82,6 @@ class UEPCalculator(object):
     """Mock 'calculator' used to store info to set up a UEP calculation"""
 
     def __init__(self, label="struct", atoms=None, index=-1, path="", chden=""):
-
         self.label = label
         self.atoms = atoms
         self.index = index
@@ -143,7 +141,6 @@ class UEPCalculator(object):
         return self._Eclass
 
     def write_input(self, a=None):
-
         if a is None:
             a = self.atoms
 
@@ -171,7 +168,6 @@ class UEPCalculator(object):
             yaml.dump(outdata, yaml_file)
 
     def run(self):
-
         self.write_input()
 
         proc = sp.Popen(
@@ -183,7 +179,6 @@ class UEPCalculator(object):
         stdout, stderr = proc.communicate()
 
     def read(self):
-
         try:
             with open(
                 os.path.join(self.path, self.label + ".uep.pkl"), "rb"

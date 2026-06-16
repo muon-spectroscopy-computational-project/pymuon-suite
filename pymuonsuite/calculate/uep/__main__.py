@@ -33,9 +33,7 @@ by Simone Sturniolo (2018)
 
 Calculations started on {0}
 
-""".format(
-    datetime.datetime.now()
-)
+""".format(datetime.datetime.now())
 
 
 def _make_chdistr(params):
@@ -58,7 +56,6 @@ def _make_chdistr(params):
 
 
 def geomopt(params, outf=None):
-
     t0 = datetime.datetime.now()
 
     chdistr = _make_chdistr(params)
@@ -135,7 +132,7 @@ def geomopt(params, outf=None):
 
         if np.isnan(Ezp):
             outf.write(
-                "Extremum is saddle point, impossible to compute " "zero-point energy"
+                "Extremum is saddle point, impossible to compute zero-point energy"
             )
         else:
             outf.write("Zero-point energy: {0} eV\n".format(Ezp))
@@ -217,7 +214,6 @@ def _interpret_plane(pdef, cell, pos):
 
 
 def plot(params, prefix="uepplot"):
-
     chdistr = _make_chdistr(params)
 
     a = chdistr.atoms

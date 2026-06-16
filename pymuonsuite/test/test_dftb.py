@@ -30,7 +30,7 @@ class TestReadWriteDFTB(unittest.TestCase):
 
         folder = os.path.join(
             folder,
-            "dftb-nq-results/ethyleneMu_opt_displaced/" "ethyleneMu_opt_displaced_0",
+            "dftb-nq-results/ethyleneMu_opt_displaced/ethyleneMu_opt_displaced_0",
         )
         # tests dftb files being read:
         self.assertTrue(reader.read(folder))
@@ -176,7 +176,6 @@ class TestReadWriteDFTB(unittest.TestCase):
             shutil.rmtree(output_folder)
 
     def test_write_uses_correct_particle_mass_and_element(self):
-
         # Tests writing DFTB+ input files, and checks that the
         # atoms read from those input files is the same as the
         # atoms used to generate them.
@@ -233,5 +232,4 @@ class TestReadWriteDFTB(unittest.TestCase):
 
 
 if __name__ == "__main__":
-
     unittest.main()

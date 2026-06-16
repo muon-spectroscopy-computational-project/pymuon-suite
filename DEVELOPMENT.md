@@ -1,7 +1,24 @@
 # Developing pymuonsuite
 
-You will need to set up a development environment. **Using conda is recommended** (but not documented here).
-Docker environments are also available and are described below.
+You will need to set up a development environment. **Using [uv](https://docs.astral.sh/uv/) is
+recommended** (see below). Conda and Docker environments are also available and are described
+below.
+
+## Using uv
+
+[Install uv](https://docs.astral.sh/uv/getting-started/installation/) if you don't already have
+it, then from the `pymuon-suite` directory:
+
+```bash
+uv sync --all-extras --group dev --group lint
+```
+
+This creates a `.venv` in `pymuon-suite/` with the package installed in editable mode, plus all
+dependencies needed for testing (`pytest`, `pytest-cov`), linting (`ruff`), and
+optional features (`euphonic` for reading CASTEP `.phonon` files).
+
+Run commands inside this environment with `uv run`, e.g. `uv run pytest pymuonsuite/test/` or
+`uv run pm-muairss --help`.
 
 ## Pre-commit Hook
 
@@ -10,6 +27,11 @@ which are enforced by the GitHub Actions workflow. It is not mandatory to use th
 fixing code style!
 
 To use it, download the `pre-commit` package:
+
+For uv (already included in the `dev` group from `uv sync`):
+```
+uv run pre-commit install
+```
 
 For pip:
 ```

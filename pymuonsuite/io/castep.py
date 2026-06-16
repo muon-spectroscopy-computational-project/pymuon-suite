@@ -150,7 +150,7 @@ class ReadWriteCastep(ReadWrite):
 
             if gamma_i is None:
                 raise CastepError(
-                    "Could not find gamma point phonons in" " CASTEP phonon file"
+                    "Could not find gamma point phonons in CASTEP phonon file"
                 )
 
             atoms.info["ph_evals"] = evals[gamma_i]
@@ -528,7 +528,6 @@ def parse_castep_gamma_block(gamma_block):
 
 
 def parse_castep_ppots(cfile):
-
     clines = open(cfile).readlines()
 
     # Find pseudopotential blocks

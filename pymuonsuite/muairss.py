@@ -54,7 +54,6 @@ def find_primitive_structure(struct):
 
 
 def generate_muairss_collection(struct, params):
-
     if params["mu_symbol"] in struct.get_chemical_symbols():
         print(
             "WARNING: chosen muon symbol conflicts with existing elements in"
@@ -166,7 +165,6 @@ def save_muairss_collection(struct, params, batch_path=""):
 
 
 def load_muairss_collection(struct, params, batch_path=""):
-
     # Output folder
     out_path = os.path.join(batch_path, params["out_folder"])
 
@@ -199,9 +197,7 @@ def load_muairss_collection(struct, params, batch_path=""):
             print(
                 """If more than 10% of structures could not be loaded,
 we advise adjusting the parameters and re-running the {0}
-optimisation for the structures that failed.""".format(
-                    cname
-                )
+optimisation for the structures that failed.""".format(cname)
             )
 
         loaded[cname] = dc
@@ -256,7 +252,6 @@ def muairss_batch_io(args, global_params, save=False):
 
 
 def muairss_cluster(struct, collection, params, name=None):
-
     if name is None:
         name = params["name"]
 
