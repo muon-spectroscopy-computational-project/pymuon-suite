@@ -1,0 +1,32 @@
+#$magres-abinitio-v1.0
+# See http://www.ccpnc.ac.uk/pmwiki.php/CCPNC/Fileformat for format definition and code samples and libraries
+[calculation]
+calc_code CASTEP
+calc_code_version  19.1
+calc_code_hgversion 0a9e5daac2f4+ Castep191_branch Wed, 03 Jul 2019 08:43:28 +0000
+calc_code_platform linux_x86_64_ifort18
+calc_name ./ethyleneMu_opt_displaced_0/ethyleneMu_opt_displaced_0
+calc_comment
+calc_xcfunctional LDA
+calc_cutoffenergy    462.59356241 eV
+calc_pspot H 1|0.6|13|15|17|10(qc=8)
+calc_pspot C 2|1.4|10|12|13|20:21(qc=7)
+calc_pspot H:mu 1|0.6|13|15|17|10(qc=8)
+calc_kpoint_mp_grid 1 1 1
+calc_kpoint_mp_offset       0.00000000      0.00000000      0.00000000
+[/calculation]
+[atoms]
+units lattice Angstrom
+lattice           1.0000000000000000E+01          0.0000000000000000E+00          0.0000000000000000E+00          0.0000000000000000E+00          1.0000000000000000E+01          0.0000000000000000E+00          0.0000000000000000E+00          0.0000000000000000E+00          1.0000000000000000E+01
+units atom Angstrom
+symmetry x,y,z
+atom H       H   1         -1.5512699999999999E-01          8.8836499999999996E-01          1.2021580000000001E+00
+atom H       H   2         -1.5512699999999999E-01         -8.8836499999999996E-01          1.2021580000000001E+00
+atom H       H   3         -8.2740999999999995E-02          9.2869500000000005E-01         -1.2938659999999995E+00
+atom H       H   4         -8.2740999999999995E-02         -9.2869500000000005E-01         -1.2938659999999995E+00
+atom C       C   1          2.3266099999999998E-01          0.0000000000000000E+00          6.9729699999999983E-01
+atom C       C   2         -7.9706999999999986E-02          0.0000000000000000E+00         -7.3524999999999996E-01
+atom H:mu    H:mu   1          1.3227819999999999E+00          0.0000000000000000E+00          8.8884999999999992E-01
+[/atoms]
+[magres]
+[/magres]
