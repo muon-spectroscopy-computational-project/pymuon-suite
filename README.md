@@ -50,4 +50,6 @@ optimisation using Poisson spheres distribution and different calculators, as we
 * `pm-nq`: generates input files for quantum effects using a phonon
 approximation or analyses the results (work in progress)
 
-For more in-depth information about each tool and their usage, [check the Wiki](https://github.com/muon-spectroscopy-computational-project/pymuon-suite/wiki).
+For more in-depth information about each tool and their usage, check the
+[documentation](https://muon-spectroscopy-computational-project.github.io/pymuon-suite/).
+To build the documentation locally, see [`docs/README.md`](docs/README.md).
