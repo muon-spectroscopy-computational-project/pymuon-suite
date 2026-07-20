@@ -4,6 +4,8 @@ name: Build and deploy docs
 on:
   # Triggers the workflow on push or pull request events but only for changes to docs
   push:
+    branches:
+      - main
     paths:
       - "docs/**"
       - .github/workflows/docs.yml
@@ -25,6 +27,8 @@ jobs:
   build:
     name: Build docs
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -46,10 +50,10 @@ jobs:
         with:
           path: docs/site
 
-  # Deploy docs only if this is an update to main (or triggered manually)
+  # Deploy docs only if this is an update to main (pushed or triggered manually)
   deploy:
     name: Deploy docs
-    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     needs: build
     runs-on: ubuntu-latest
     permissions:

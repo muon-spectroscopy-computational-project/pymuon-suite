@@ -4,15 +4,10 @@ repo_url: https://github.com/muon-spectroscopy-computational-project/pymuon-suit
 theme: readthedocs
 
 markdown_extensions:
-  - pymdownx.arithmatex:
-      generic: true
   - admonition
   - pymdownx.superfences # Allows code block nesting in admonition
   - pymdownx.highlight:
       use_pygments: false # Avoids duplicate borders around blocks
-extra_javascript:
-  - js/config.js
-  - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js
 nav:
   - Home: index.md
   - Installation: installation.md

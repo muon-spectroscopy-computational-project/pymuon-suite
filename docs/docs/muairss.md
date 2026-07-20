@@ -140,8 +140,7 @@ present a list of acceptable keywords to use in this file.
 * **dftb\_pbc** _(bool)_: whether to turn on periodic boundary conditions in
   DFTB+. Default is True.
 * **max\_scc\_steps** _(int)_: if applicable, max number of SCC steps to
-  perform before giving up. Default is 200 which is also the default for
-  DFTB+.
+  perform before giving up. Defaults to DFTB+'s own default of 200.
 
 ## UEP keywords
 
