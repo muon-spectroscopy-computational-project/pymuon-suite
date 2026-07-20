@@ -11,6 +11,22 @@ validated at startup. Structure files are read with the
 [Atomic Simulation Environment (ASE)](https://docs.ase-lib.org/), so any
 ASE-readable format (CIF, CASTEP `.cell`, XYZ, ...) is accepted.
 
+However it must be stressed that `pymuon-suite` is *not*:
+
+* a quantum chemistry software. `pymuon-suite` does not provide any internal
+  way of computing the energies or forces between atoms; instead, it relies on
+  external tools such as [CASTEP](https://www.castep.org/) or
+  [DFTB+](https://dftbplus.org/) to do that;
+* a simulation tool for muon spin spectroscopy experiments. If that's what
+  you're looking for, check out
+  [muspinsim](https://github.com/muon-spectroscopy-computational-project/muspinsim)
+  or QUANTUM, which runs within [Mantid](https://www.mantidproject.org/),
+  instead;
+* a tool to compute the energy levels or X-ray emissions for negatively
+  charged muons. If that's what you need, check out
+  [mudirac](https://github.com/muon-spectroscopy-computational-project/mudirac)
+  instead.
+
 ## Command line tools
 
 | Command | Purpose |
@@ -24,6 +40,12 @@ ASE-readable format (CIF, CASTEP `.cell`, XYZ, ...) is accepted.
 | `pm-symmetry` | Symmetry analysis of a structure: Wyckoff points and candidate stopping sites |
 
 For any of them, use `<script> --help` to see usage information.
+
+Installing `pymuon-suite` also means that its core library gets added to your
+Python environment: it becomes possible to use `import pymuonsuite` in any
+Python script, and access its internal functions and classes. However,
+`pymuon-suite` is mainly designed as a set of tools, so this documentation is
+not focused on its inner workings.
 
 ## Typical workflows
 
@@ -40,6 +62,18 @@ unperturbed electrostatic potential — no further DFT calculations needed.
 [`pm-nq`](./quantum.md) to displace the muon along its phonon modes, run DFT
 on the displaced structures, and average properties such as hyperfine
 couplings over the quantum distribution.
+
+## Acknowledgments
+
+`pymuon-suite` is written as part of the Muon Spectroscopy Computational
+Project, a collaboration between the
+[Scientific Computing Department](https://www.sc.stfc.ac.uk/) and the
+[ISIS Muon Group](https://www.isis.stfc.ac.uk/Pages/Muons.aspx) within the
+[Science and Technology Facilities Council](https://www.ukri.org/councils/stfc/).
+It uses heavily the [Atomic Simulation Environment](https://docs.ase-lib.org/)
+and [Soprano](https://github.com/CCP-NC/soprano) libraries. It also contains
+data extracted from [DFTB.org](https://dftb.org/) to help running Density
+Functional Tight Binding calculations.
 
 ## Citing pymuon-suite
 

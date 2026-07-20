@@ -10,6 +10,15 @@ pip install pymuonsuite
 conda install pymuonsuite
 ```
 
+(If you have not set up the `conda-forge` channel before, first run:
+
+```
+conda config --add channels conda-forge
+conda config --set channel_priority strict
+```
+
+)
+
 If you plan to read CASTEP `.phonon` files, you will also need to install
 [Euphonic](https://github.com/pace-neutrons/Euphonic):
 
@@ -36,6 +45,24 @@ to avoid installing these tools.
 
 Further help with Spglib installation can be found in the
 [Spglib documentation](https://spglib.readthedocs.io/en/latest/python-interface.html).
+
+## Installation from source (not recommended)
+
+If you can't or don't want to use the pip or conda install methods above, you
+can install `pymuon-suite` from source instead. Given a running Python
+environment:
+
+1. download the `pymuon-suite` source code, either as a ZIP file — choosing
+   one of the
+   [Releases](https://github.com/muon-spectroscopy-computational-project/pymuon-suite/releases)
+   if there are any — or by directly cloning the repository;
+2. after the source code is unzipped and accessible in a folder, enter your
+   command line console and navigate to that folder;
+3. run the install command `pip install ./` within that folder to install the
+   suite as well as all its missing dependencies.
+
+Once that's done, you will have access to all the `pymuon-suite` tools from
+the command line.
 
 ## Development installation
 
