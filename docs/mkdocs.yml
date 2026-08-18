@@ -11,7 +11,12 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Installation: installation.md
-  - Muon site search (pm-muairss): muairss.md
-  - UEP optimisation and plotting (pm-uep-opt, pm-uep-plot): uep.md
-  - Quantum effects (pm-nq, pm-asephonons): quantum.md
-  - Symmetry analysis (pm-symmetry): symmetry.md
+  - Reference:
+      - Muon site search (pm-muairss): muairss.md
+      - UEP optimisation and plotting (pm-uep-opt, pm-uep-plot): uep.md
+      - Quantum effects (pm-nq, pm-asephonons): quantum.md
+      - Symmetry analysis (pm-symmetry): symmetry.md
+  - Tutorials:
+      - The symmetry analysis method: tutorials/symmetry.md
+      - The Unperturbed Electrostatic Potential method: tutorials/uep.md
+      - Vibrational averaging: tutorials/vibrational.md
