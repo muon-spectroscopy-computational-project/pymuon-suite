@@ -126,10 +126,8 @@ examples/quantum/*
 !examples/quantum/quantum.yaml
 !examples/quantum/run_all.sh
 
-# Documentatation
-docs/*
-!docs/*.md
-!docs/Makefile
+# Documentation (built site)
+docs/site/
 
 # Pycharm
 .idea/*

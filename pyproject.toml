@@ -50,6 +50,7 @@ phonons = ["euphonic"]
 [dependency-groups]
 dev = ["pytest", "pytest-cov", "pre-commit", "wheel"]
 lint = ["ruff==0.14.6"]
+docs = ["mkdocs>=1.6", "pymdown-extensions"]
 
 [project.scripts]
 pm-muairss-gen = "pymuonsuite.muairss:main_generate"

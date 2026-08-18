@@ -1,0 +1,17 @@
+site_name: pymuon-suite Documentation
+repo_url: https://github.com/muon-spectroscopy-computational-project/pymuon-suite
+
+theme: readthedocs
+
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences # Allows code block nesting in admonition
+  - pymdownx.highlight:
+      use_pygments: false # Avoids duplicate borders around blocks
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Muon site search (pm-muairss): muairss.md
+  - UEP optimisation and plotting (pm-uep-opt, pm-uep-plot): uep.md
+  - Quantum effects (pm-nq, pm-asephonons): quantum.md
+  - Symmetry analysis (pm-symmetry): symmetry.md
